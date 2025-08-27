@@ -1,12 +1,32 @@
-'use client'
-import React, { useState } from 'react';
-import { 
-  Users, DollarSign, TrendingUp, Star, Calendar, RefreshCw,
-  ArrowUpRight, ArrowDownRight, Receipt, ShoppingBag, Clock,
-  Phone, MapPin, Award, Activity, Eye, Target, MessageSquare,
-  FileText, QrCode, BarChart3, Building2
-} from 'lucide-react';
-import { IoMdInformationCircleOutline } from 'react-icons/io';
+"use client";
+import React, { useState } from "react";
+import {
+  Users,
+  DollarSign,
+  TrendingUp,
+  Star,
+  Calendar,
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight,
+  Receipt,
+  ShoppingBag,
+  Clock,
+  Phone,
+  MapPin,
+  Award,
+  Activity,
+  Eye,
+  Target,
+  MessageSquare,
+  FileText,
+  QrCode,
+  BarChart3,
+  Building2,
+} from "lucide-react";
+import { IoMdInformationCircleOutline } from "react-icons/io";
+import { useBranchOverview, useBranchStats } from "@/lib/queries/branch";
+import { useBranchStore, useBusinessStore } from "@/store/store";
 
 // Mock data for business overview
 const mockOverviewData = {
@@ -22,77 +42,81 @@ const mockOverviewData = {
   activeGrowth: 9.7,
   monthlyRevenue: 2340000,
   monthlyGrowth: 18.4,
-  weeklyTopCustomer: { 
-    phone: "+234 801 234 5678", 
+  weeklyTopCustomer: {
+    phone: "+234 801 234 5678",
     spend: 45000,
-    visits: 3
+    visits: 3,
   },
   weeklyMostFrequentCustomer: {
     phone: "+234 902 345 6789",
     visits: 8,
     totalSpend: 28000,
-    avgPerVisit: 3500
+    avgPerVisit: 3500,
   },
   todayStats: {
     revenue: 125000,
     customers: 23,
     transactions: 67,
     visits: 89,
-    avgTransaction: 1866
+    avgTransaction: 1866,
   },
   recentActivity: [
-    { 
-      id: 1, 
-      type: 'purchase',
-      customer: '+234 801 234 5678', 
+    {
+      id: 1,
+      type: "purchase",
+      customer: "+234 801 234 5678",
       amount: 15000,
-      time: '2 min ago',
-      branch: 'Main Store'
+      time: "2 min ago",
+      branch: "Main Store",
     },
-    { 
-      id: 2, 
-      type: 'customer',
-      customer: '+234 902 345 6789', 
-      action: 'New customer registered',
-      time: '5 min ago',
-      branch: 'Mall Branch'
+    {
+      id: 2,
+      type: "customer",
+      customer: "+234 902 345 6789",
+      action: "New customer registered",
+      time: "5 min ago",
+      branch: "Mall Branch",
     },
-    { 
-      id: 3, 
-      type: 'purchase',
-      customer: '+234 803 456 7890', 
+    {
+      id: 3,
+      type: "purchase",
+      customer: "+234 803 456 7890",
       amount: 8500,
-      time: '12 min ago',
-      branch: 'Downtown'
+      time: "12 min ago",
+      branch: "Downtown",
     },
-    { 
-      id: 4, 
-      type: 'purchase',
-      customer: '+234 804 567 8901', 
+    {
+      id: 4,
+      type: "purchase",
+      customer: "+234 804 567 8901",
       amount: 22000,
-      time: '18 min ago',
-      branch: 'Main Store'
-    }
-  ]
+      time: "18 min ago",
+      branch: "Main Store",
+    },
+  ],
 };
 
 // Header Component
 const OverviewHeader = () => {
-  const currentDate = new Date().toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 mb-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Business Overview</h1>
-          <p className="text-gray-600">Track customer spending, loyalty, and business performance</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">
+            Business Overview
+          </h1>
+          <p className="text-gray-600">
+            Track customer spending, loyalty, and business performance
+          </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Calendar size={16} />
@@ -111,7 +135,10 @@ const OverviewHeader = () => {
 // Info Tooltip Component
 const InfoTooltip = ({ text }) => (
   <div className="group relative">
-    <IoMdInformationCircleOutline className="text-gray-400 hover:text-gray-600 cursor-help" size={16} />
+    <IoMdInformationCircleOutline
+      className="text-gray-400 hover:text-gray-600 cursor-help"
+      size={16}
+    />
     <div className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg w-48 z-50">
       {text}
       <div className="absolute -bottom-1 right-4 w-2 h-2 bg-gray-900 rotate-45"></div>
@@ -120,74 +147,108 @@ const InfoTooltip = ({ text }) => (
 );
 
 // Overview Cards Component
-const OverviewCards = ({ data }) => {
+const OverviewCards = ({ data, isLoading, error }) => {
   const cards = [
     {
-      title: 'Total Customer Spend',
-      value: `₦${(data.totalSpend / 1000000).toFixed(1)}M`,
-      subtitle: 'All-time revenue',
-      change: data.spendGrowth,
+      title: "Total Customer Spend",
+      value: data ? `₦${(data.totalSpend / 1000000).toFixed(1)}M` : "₦0M",
+      subtitle: "All-time revenue",
+      change: data ? data?.spendGrowth : 0,
       icon: DollarSign,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      info: 'Total amount spent by all customers since business started'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      info: "Total amount spent by all customers since business started",
     },
     {
-      title: 'Total Customers',
-      value: data.totalCustomers.toLocaleString(),
-      subtitle: 'Unique customers',
-      change: data.customerGrowth,
+      title: "Total Customers",
+      value: data ? data.totalCustomers.toLocaleString() : "0",
+      subtitle: "Unique customers",
+      change: data ? data?.customerGrowth : 12,
       icon: Users,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      info: 'Total number of unique customers who have made purchases'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      info: "Total number of unique customers who have made purchases",
     },
     {
-      title: 'Average Spend per Customer',
-      value: `₦${(data.avgSpendPerCustomer / 1000).toFixed(0)}K`,
-      subtitle: 'Per customer',
-      change: data.avgSpendGrowth,
+      title: "Average Spend per Customer",
+      value: data
+        ? `₦${(data.avgSpendPerCustomer / 1000).toFixed(0)}K`
+        : "₦20K",
+      subtitle: "Per customer",
+      change: data ? data?.avgSpendGrowth : 0,
       icon: TrendingUp,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      info: 'Average amount each customer spends over their lifetime'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      info: "Average amount each customer spends over their lifetime",
     },
     {
-      title: 'Total Visits',
-      value: data.totalVisits.toLocaleString(),
-      subtitle: 'All transactions',
-      change: data.visitsGrowth,
+      title: "Total Visits",
+      value: data ? data.totalVisits.toLocaleString() : "0",
+      subtitle: "All transactions",
+      change: data ? data?.visitsGrowth : 0,
       icon: Receipt,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      info: 'Total number of purchase transactions across all customers'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      info: "Total number of purchase transactions across all customers",
     },
     {
-      title: 'Active Customers',
-      value: data.activeCustomers.toLocaleString(),
-      subtitle: 'Last 30 days',
-      change: data.activeGrowth,
+      title: "Active Customers",
+      value: data ? data.activeCustomers.toLocaleString() : "0",
+      subtitle: "Last 30 days",
+      change: data ? data?.activeGrowth : 0,
       icon: Activity,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      info: 'Customers who made at least one purchase in the last 30 days'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      info: "Customers who made at least one purchase in the last 30 days",
     },
     {
-      title: 'Monthly Revenue',
-      value: `₦${(data.monthlyRevenue / 1000000).toFixed(1)}M`,
-      subtitle: 'This month',
-      change: data.monthlyGrowth,
+      title: "Monthly Revenue",
+      value: data ? `₦${(data.monthlyRevenue / 1000000).toFixed(1)}M` : "₦0M",
+      subtitle: "This month",
+      change: data ? data?.monthlyGrowth : 0,
       icon: Target,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      info: 'Total revenue generated in the current month'
-    }
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      info: "Total revenue generated in the current month",
+    },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {cards.map((card, index) => (
+          <div
+            key={index}
+            className="bg-white p-6 rounded-lg border border-gray-200"
+          >
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="col-span-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-600">{error?.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       {cards.map((card, index) => (
-        <div key={index} className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+        <div
+          key={index}
+          className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+        >
           <div className="flex items-start justify-between mb-4">
             <div className={`p-3 ${card.bgColor} rounded-lg`}>
               <card.icon size={20} className={card.color} />
@@ -196,7 +257,9 @@ const OverviewCards = ({ data }) => {
           </div>
           <div>
             <p className="text-sm text-gray-600 mb-1">{card.title}</p>
-            <p className="text-2xl font-semibold text-gray-900 mb-1">{card.value}</p>
+            <p className="text-2xl font-semibold text-gray-900 mb-1">
+              {card.value}
+            </p>
             <p className="text-xs text-gray-500 mb-3">{card.subtitle}</p>
             <div className="flex items-center gap-1">
               {card.change > 0 ? (
@@ -204,7 +267,11 @@ const OverviewCards = ({ data }) => {
               ) : (
                 <ArrowDownRight size={14} className="text-red-600" />
               )}
-              <span className={`text-sm font-medium ${card.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <span
+                className={`text-sm font-medium ${
+                  card.change > 0 ? "text-green-600" : "text-red-600"
+                }`}
+              >
                 {Math.abs(card.change)}%
               </span>
               <span className="text-sm text-gray-500">vs last month</span>
@@ -216,65 +283,108 @@ const OverviewCards = ({ data }) => {
   );
 };
 
-// Today's Stats Component
-const TodayStats = ({ data }) => {
+// TodayStats component
+const TodayStats = ({ data, isLoading, error }) => {
   const formatCurrency = (amount) => `₦${amount.toLocaleString()}`;
-  
+
+  if (isLoading) {
+    return (
+      <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Today's Performance
+          </h3>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Clock size={16} />
+            <span>Real-time data</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="text-center">
+              <div className="animate-pulse">
+                <div className="h-12 w-12 bg-gray-200 rounded-lg mx-auto mb-3"></div>
+                <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-600">{error?.message}</p>
+        </div>
+      </div>
+    );
+  }
+
   const stats = [
     {
-      title: 'Today\'s Revenue',
-      value: formatCurrency(data.todayStats.revenue),
+      title: "Today's Revenue",
+      value: data ? formatCurrency(data.todayStats.revenue) : "₦0",
       icon: DollarSign,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
     },
     {
-      title: 'New Customers',
-      value: data.todayStats.customers.toString(),
+      title: "New Customers",
+      value: data ? data.todayStats.customers.toString() : "0",
       icon: Users,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
     },
     {
-      title: 'Transactions',
-      value: data.todayStats.transactions.toString(),
+      title: "Transactions",
+      value: data ? data.todayStats.transactions.toString() : "0",
       icon: Receipt,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
     },
     {
-      title: 'Visits',
-      value: data.todayStats.visits.toString(),
+      title: "Visits",
+      value: data ? data.todayStats.visits.toString() : "0",
       icon: Eye,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
     },
     {
-      title: 'Avg. Transaction',
-      value: formatCurrency(data.todayStats.avgTransaction),
+      title: "Avg. Transaction",
+      value: data ? formatCurrency(data.todayStats.avgTransaction) : "₦0",
       icon: TrendingUp,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10'
-    }
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+    },
   ];
 
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Today's Performance</h3>
+        <h3 className="text-lg font-semibold text-gray-900">
+          Today's Performance
+        </h3>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Clock size={16} />
           <span>Real-time data</span>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
         {stats.map((stat, index) => (
           <div key={index} className="text-center">
-            <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center mx-auto mb-3`}>
+            <div
+              className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center mx-auto mb-3`}
+            >
               <stat.icon size={20} className={stat.color} />
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">
+              {stat.value}
+            </div>
             <div className="text-sm text-gray-600">{stat.title}</div>
           </div>
         ))}
@@ -302,11 +412,15 @@ const TopCustomerCard = ({ customer, frequentCustomer }) => {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Total Spent:</span>
-            <span className="text-2xl font-bold text-[#1A73E8]">₦{(customer.spend / 1000).toFixed(0)}K</span>
+            <span className="text-2xl font-bold text-[#1A73E8]">
+              ₦{(customer.spend / 1000).toFixed(0)}K
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Visits this week:</span>
-            <span className="font-semibold text-gray-900">{customer.visits}</span>
+            <span className="font-semibold text-gray-900">
+              {customer.visits}
+            </span>
           </div>
           <button className="w-full mt-4 px-4 py-2 bg-[#1A73E8] text-white rounded-lg hover:bg-[#1557B0] transition-colors text-sm font-medium">
             View Customer Details
@@ -320,24 +434,34 @@ const TopCustomerCard = ({ customer, frequentCustomer }) => {
           <div className="p-2 bg-[#1A73E8]/10 rounded-lg">
             <Activity size={20} className="text-[#1A73E8]" />
           </div>
-          <h3 className="font-semibold text-gray-900">Most Frequent This Week</h3>
+          <h3 className="font-semibold text-gray-900">
+            Most Frequent This Week
+          </h3>
         </div>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Phone size={16} className="text-gray-500" />
-            <span className="font-medium text-gray-900">{frequentCustomer.phone}</span>
+            <span className="font-medium text-gray-900">
+              {frequentCustomer.phone}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Visits this week:</span>
-            <span className="text-2xl font-bold text-[#1A73E8]">{frequentCustomer.visits}</span>
+            <span className="text-2xl font-bold text-[#1A73E8]">
+              {frequentCustomer.visits}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Total spent:</span>
-            <span className="font-semibold text-gray-900">₦{(frequentCustomer.totalSpend / 1000).toFixed(0)}K</span>
+            <span className="font-semibold text-gray-900">
+              ₦{(frequentCustomer.totalSpend / 1000).toFixed(0)}K
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Avg per visit:</span>
-            <span className="font-semibold text-gray-900">₦{frequentCustomer.avgPerVisit.toLocaleString()}</span>
+            <span className="font-semibold text-gray-900">
+              ₦{frequentCustomer.avgPerVisit.toLocaleString()}
+            </span>
           </div>
           <button className="w-full mt-4 px-4 py-2 bg-[#1A73E8] text-white rounded-lg hover:bg-[#1557B0] transition-colors text-sm font-medium">
             View Customer Details
@@ -352,55 +476,55 @@ const TopCustomerCard = ({ customer, frequentCustomer }) => {
 const QuickActions = ({ onAction }) => {
   const actions = [
     {
-      id: 'viewAnalytics',
-      title: 'View Analytics',
-      description: 'Detailed business insights & reports',
+      id: "viewAnalytics",
+      title: "View Analytics",
+      description: "Detailed business insights & reports",
       icon: BarChart3,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      borderColor: 'border-gray-200',
-      hoverBg: 'hover:bg-gray-50'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      borderColor: "border-gray-200",
+      hoverBg: "hover:bg-gray-50",
     },
     {
-      id: 'sendBulkMessage',
-      title: 'Send Bulk Message',
-      description: 'Send promotions to customers',
+      id: "sendBulkMessage",
+      title: "Send Bulk Message",
+      description: "Send promotions to customers",
       icon: MessageSquare,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      borderColor: 'border-gray-200',
-      hoverBg: 'hover:bg-gray-50'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      borderColor: "border-gray-200",
+      hoverBg: "hover:bg-gray-50",
     },
     {
-      id: 'viewBranchInfo',
-      title: 'View Branch Info',
-      description: 'Check branch performance & details',
+      id: "viewBranchInfo",
+      title: "View Branch Info",
+      description: "Check branch performance & details",
       icon: Building2,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      borderColor: 'border-gray-200',
-      hoverBg: 'hover:bg-gray-50'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      borderColor: "border-gray-200",
+      hoverBg: "hover:bg-gray-50",
     },
     {
-      id: 'generateQR',
-      title: 'Generate QR Code',
-      description: 'Create new QR for receipts',
+      id: "generateQR",
+      title: "Generate QR Code",
+      description: "Create new QR for receipts",
       icon: QrCode,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      borderColor: 'border-gray-200',
-      hoverBg: 'hover:bg-gray-50'
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      borderColor: "border-gray-200",
+      hoverBg: "hover:bg-gray-50",
     },
     {
-      id: 'exportData',
-      title: 'Export Customer Data',
-      description: 'Download customer reports',
+      id: "exportData",
+      title: "Export Customer Data",
+      description: "Download customer reports",
       icon: FileText,
-      color: 'text-[#1A73E8]',
-      bgColor: 'bg-[#1A73E8]/10',
-      borderColor: 'border-gray-200',
-      hoverBg: 'hover:bg-gray-50'
-    }
+      color: "text-[#1A73E8]",
+      bgColor: "bg-[#1A73E8]/10",
+      borderColor: "border-gray-200",
+      hoverBg: "hover:bg-gray-50",
+    },
   ];
 
   return (
@@ -408,7 +532,7 @@ const QuickActions = ({ onAction }) => {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
       </div>
-      
+
       <div className="space-y-3">
         {actions.map((action) => (
           <button
@@ -416,7 +540,9 @@ const QuickActions = ({ onAction }) => {
             className={`w-full flex items-center gap-4 p-4 border ${action.borderColor} rounded-lg ${action.hoverBg} transition-all duration-200 cursor-pointer group hover:shadow-sm`}
             onClick={() => onAction(action.id)}
           >
-            <div className={`w-12 h-12 ${action.bgColor} rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200`}>
+            <div
+              className={`w-12 h-12 ${action.bgColor} rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200`}
+            >
               <action.icon size={20} className={action.color} />
             </div>
             <div className="flex-1 text-left">
@@ -434,7 +560,9 @@ const QuickActions = ({ onAction }) => {
                 {action.description}
               </p>
             </div>
-            <div className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+            <div
+              className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200`}
+            >
               <ArrowUpRight size={16} className="text-gray-400" />
             </div>
           </button>
@@ -446,36 +574,46 @@ const QuickActions = ({ onAction }) => {
 
 const RecentActivity = ({ activities }) => {
   const formatCurrency = (amount) => `₦${amount.toLocaleString()}`;
-  
+
   const getActivityIcon = (type) => {
     switch (type) {
-      case 'purchase': return <ShoppingBag size={16} className="text-[#1A73E8]" />;
-      case 'customer': return <Users size={16} className="text-[#1A73E8]" />;
-      default: return <Activity size={16} className="text-[#1A73E8]" />;
+      case "purchase":
+        return <ShoppingBag size={16} className="text-[#1A73E8]" />;
+      case "customer":
+        return <Users size={16} className="text-[#1A73E8]" />;
+      default:
+        return <Activity size={16} className="text-[#1A73E8]" />;
     }
   };
 
   const getActivityBg = (type) => {
     switch (type) {
-      case 'purchase': return 'bg-[#1A73E8]/10';
-      case 'customer': return 'bg-[#1A73E8]/10';
-      default: return 'bg-[#1A73E8]/10';
+      case "purchase":
+        return "bg-[#1A73E8]/10";
+      case "customer":
+        return "bg-[#1A73E8]/10";
+      default:
+        return "bg-[#1A73E8]/10";
     }
   };
 
   const getActivityText = (activity) => {
-    if (activity.type === 'purchase') {
+    if (activity.type === "purchase") {
       return (
         <div>
-          <span className="font-medium">{activity.customer}</span> made a purchase of{' '}
-          <span className="font-semibold text-[#1A73E8]">{formatCurrency(activity.amount)}</span>
+          <span className="font-medium">{activity.customer}</span> made a
+          purchase of{" "}
+          <span className="font-semibold text-[#1A73E8]">
+            {formatCurrency(activity.amount)}
+          </span>
           <div className="text-xs text-gray-500 mt-1">at {activity.branch}</div>
         </div>
       );
     } else {
       return (
         <div>
-          <span className="font-medium">{activity.customer}</span> - {activity.action}
+          <span className="font-medium">{activity.customer}</span> -{" "}
+          {activity.action}
           <div className="text-xs text-gray-500 mt-1">at {activity.branch}</div>
         </div>
       );
@@ -490,11 +628,18 @@ const RecentActivity = ({ activities }) => {
           View All Activity
         </button>
       </div>
-      
+
       <div className="space-y-4">
         {activities.map((activity) => (
-          <div key={activity.id} className="flex items-start gap-4 py-3 border-b border-gray-100 last:border-b-0">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getActivityBg(activity.type)}`}>
+          <div
+            key={activity.id}
+            className="flex items-start gap-4 py-3 border-b border-gray-100 last:border-b-0"
+          >
+            <div
+              className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getActivityBg(
+                activity.type
+              )}`}
+            >
               {getActivityIcon(activity.type)}
             </div>
             <div className="flex-1 min-w-0">
@@ -515,26 +660,38 @@ const RecentActivity = ({ activities }) => {
 
 // Main Overview Component
 const VibeasyOverview = () => {
+  const { currentBusiness } = useBusinessStore();
+  const { currentBranch } = useBranchStore();
+
+  const businessId = currentBusiness?.id ?? "cmetplt2b0005hslffd63jqak";
+  const branchId = currentBranch?.id ?? "cmetplt3x000ihslf4mffpf1r";
+
+  const {
+    data: overviewData,
+    isLoading: overviewIsLoading,
+    error: overviewError,
+  } = useBranchOverview(businessId, branchId);
+
   const [data] = useState(mockOverviewData);
 
   const handleQuickAction = (actionId) => {
     console.log(`Quick action: ${actionId}`);
     // Handle different quick actions here
     switch (actionId) {
-      case 'viewAnalytics':
-        alert('Navigating to Analytics dashboard...');
+      case "viewAnalytics":
+        alert("Navigating to Analytics dashboard...");
         break;
-      case 'sendBulkMessage':
-        alert('Opening bulk message composer...');
+      case "sendBulkMessage":
+        alert("Opening bulk message composer...");
         break;
-      case 'viewBranchInfo':
-        alert('Loading branch information...');
+      case "viewBranchInfo":
+        alert("Loading branch information...");
         break;
-      case 'generateQR':
-        alert('Opening QR code generator...');
+      case "generateQR":
+        alert("Opening QR code generator...");
         break;
-      case 'exportData':
-        alert('Preparing customer data export...');
+      case "exportData":
+        alert("Preparing customer data export...");
         break;
       default:
         break;
@@ -545,11 +702,19 @@ const VibeasyOverview = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <OverviewHeader />
-        
-        <OverviewCards data={data} />
-        
-        <TodayStats data={data} />
-        
+
+        <OverviewCards
+          data={overviewData}
+          isLoading={overviewIsLoading}
+          error={overviewError}
+        />
+
+        <TodayStats
+          data={overviewData}
+          isLoading={overviewIsLoading}
+          error={overviewError}
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div>
             <RecentActivity activities={data.recentActivity} />
@@ -558,7 +723,10 @@ const VibeasyOverview = () => {
             <QuickActions onAction={handleQuickAction} />
           </div>
           <div>
-            <TopCustomerCard customer={data.weeklyTopCustomer} frequentCustomer={data.weeklyMostFrequentCustomer} />
+            <TopCustomerCard
+              customer={data.weeklyTopCustomer}
+              frequentCustomer={data.weeklyMostFrequentCustomer}
+            />
           </div>
         </div>
       </div>

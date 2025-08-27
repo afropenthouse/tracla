@@ -8,10 +8,11 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import api from "@/lib/api";
-import { useLoadingStore } from "@/store/loadingStore";
-import { useBusinessStore } from "@/store/businessStore";
-import { useBranchStore } from "@/store/branchStore";
-import { setAuthCookies, setUserCookie } from "@/actions/cookies/cookies";
+
+import { useBranchStore, useBusinessStore } from '@/store/store';
+
+import { useLoadingStore } from '@/store/loadingStore';
+import { setAuthCookies } from '@/actions/cookies/cookies';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -59,7 +60,7 @@ export default function LoginPage() {
       }
 
       // Store user information in cookies
-      const userCookieResult = await setUserCookie(
+      const userCookieResult = await setUserCookies(
         user.name.split(' ')[0], // firstName
         user.name.split(' ').slice(1).join(' ') || '', // lastName
         user.id,
