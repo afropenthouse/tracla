@@ -125,7 +125,7 @@ const QRCodePage = () => {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-16 h-16 bg-[#6d0e2b] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             {isBusinessView ? <Building2 size={28} className="text-white" /> : <Store size={28} className="text-white" />}
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">QR Code</h1>
@@ -138,9 +138,9 @@ const QRCodePage = () => {
         <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl rounded-2xl p-8 mb-6">
           <div className="text-center">
             {/* Context Indicator */}
-            <div className="flex items-center justify-center gap-2 mb-6 px-4 py-2 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border border-red-100">
-              {isBusinessView ? <Building2 size={16} className="text-red-600" /> : <Store size={16} className="text-red-600" />}
-              <span className="text-sm font-medium text-gray-700">
+            <div className="flex items-center justify-center gap-2 mb-6 px-4 py-2 bg-gradient-to-r from-[#6d0e2b] to-rose-600 rounded-xl border border-red-100">
+              {isBusinessView ? <Building2 size={16} className="text-white" /> : <Store size={16} className="text-white" />}
+              <span className="text-sm font-medium text-white">
                 {isBusinessView ? 'Overall Business' : 'Branch View'}: {contextName}
               </span>
             </div>
@@ -180,7 +180,7 @@ const QRCodePage = () => {
               <button
                 onClick={handleDownload}
                 disabled={!qrDataURL}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:from-rose-500 hover:to-red-600 transition-all duration-300 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#6d0e2b] to-rose-600 text-white rounded-xl hover:from-rose-500 hover:to-[#6d0e2b] transition-all duration-300 shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download size={18} />
                 Download QR Code
