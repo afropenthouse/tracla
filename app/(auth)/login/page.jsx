@@ -270,9 +270,9 @@ export default function LoginPage() {
               </motion.div>
             </div>
             <h1 className="text-3xl lg:text-5xl font-bold mb-2">
-              Vib<span className="text-rose-200">Easy</span>
+              Vib<span className="text-rose-200">eazy</span>
             </h1>
-            <p className="text-red-100 text-center">Business Dashboard</p>
+            <p className="text-white text-center">Business Dashboard</p>
           </motion.div>
           
           <motion.h2 
