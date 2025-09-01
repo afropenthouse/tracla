@@ -1,5 +1,8 @@
 "use client";
 import React, { useState } from "react";
+import VibeazyQuickOverviewTable from '@/components/dashboard/QuickOverviewTable';
+import { useOverviewData, useTopCustomersData } from '@/lib/queries/branch';
+import { useBranchStore, useBusinessStore } from '@/store/store';
 import {
   Users,
   DollarSign,
@@ -23,141 +26,29 @@ import {
   QrCode,
   BarChart3,
   Building2,
+  AlertCircle,
+  Gift,
+  Zap,
+  Crown,
+  Sparkles,
+  Store,
 } from "lucide-react";
 import { IoMdInformationCircleOutline } from "react-icons/io";
-import { useBranchOverview, useBranchStats } from "@/lib/queries/branch";
-import { useBranchStore, useBusinessStore } from "@/store/store";
 
-// Mock data for business overview
-const mockOverviewData = {
-  totalSpend: 15420000,
-  spendGrowth: 15.2,
-  totalCustomers: 1234,
-  customerGrowth: 8.3,
-  avgSpendPerCustomer: 12500,
-  avgSpendGrowth: 6.8,
-  totalVisits: 4567,
-  visitsGrowth: 12.1,
-  activeCustomers: 892,
-  activeGrowth: 9.7,
-  monthlyRevenue: 2340000,
-  monthlyGrowth: 18.4,
-  weeklyTopCustomer: {
-    phone: "+234 801 234 5678",
-    spend: 45000,
-    visits: 3,
-  },
-  weeklyMostFrequentCustomer: {
-    phone: "+234 902 345 6789",
-    visits: 8,
-    totalSpend: 28000,
-    avgPerVisit: 3500,
-  },
-  todayStats: {
-    revenue: 125000,
-    customers: 23,
-    transactions: 67,
-    visits: 89,
-    avgTransaction: 1866,
-  },
-  recentActivity: [
-    {
-      id: 1,
-      type: "purchase",
-      customer: "+234 801 234 5678",
-      amount: 15000,
-      time: "2 min ago",
-      branch: "Main Store",
-    },
-    {
-      id: 2,
-      type: "customer",
-      customer: "+234 902 345 6789",
-      action: "New customer registered",
-      time: "5 min ago",
-      branch: "Mall Branch",
-    },
-    {
-      id: 3,
-      type: "purchase",
-      customer: "+234 803 456 7890",
-      amount: 8500,
-      time: "12 min ago",
-      branch: "Downtown",
-    },
-    {
-      id: 4,
-      type: "purchase",
-      customer: "+234 804 567 8901",
-      amount: 22000,
-      time: "18 min ago",
-      branch: "Main Store",
-    },
-  ],
-};
 
-// Header Component
-const OverviewHeader = () => {
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  return (
-    <div className="bg-white p-6 rounded-lg border border-gray-200 mb-6">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">
-            Business Overview
-          </h1>
-          <p className="text-gray-600">
-            Track customer spending, loyalty, and business performance
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Calendar size={16} />
-            <span>{currentDate}</span>
-          </div>
-          <button className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-md text-sm hover:bg-gray-50 transition-colors cursor-pointer">
-            <RefreshCw size={14} />
-            Refresh
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Info Tooltip Component
-const InfoTooltip = ({ text }) => (
-  <div className="group relative">
-    <IoMdInformationCircleOutline
-      className="text-gray-400 hover:text-gray-600 cursor-help"
-      size={16}
-    />
-    <div className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg w-48 z-50">
-      {text}
-      <div className="absolute -bottom-1 right-4 w-2 h-2 bg-gray-900 rotate-45"></div>
-    </div>
-  </div>
-);
-
-// Overview Cards Component
+// Enhanced Overview Cards Component
 const OverviewCards = ({ data, isLoading, error }) => {
   const cards = [
     {
       title: "Total Customer Spend",
-      value: data ? `₦${(data.totalSpend / 1000000).toFixed(1)}M` : "₦0M",
+      value: data ? 
+        (data.totalSpend >= 1000000 ? `₦${(data.totalSpend / 1000000).toFixed(1)}M` : 
+         data.totalSpend >= 1000 ? `₦${(data.totalSpend / 1000).toFixed(1)}K` : 
+         `₦${data.totalSpend?.toFixed(0)}`) : "₦0",
       subtitle: "All-time revenue",
       change: data ? data?.spendGrowth : 0,
       icon: DollarSign,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      info: "Total amount spent by all customers since business started",
+      gradient: "from-red-500 to-rose-600",
     },
     {
       title: "Total Customers",
@@ -165,21 +56,17 @@ const OverviewCards = ({ data, isLoading, error }) => {
       subtitle: "Unique customers",
       change: data ? data?.customerGrowth : 12,
       icon: Users,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      info: "Total number of unique customers who have made purchases",
+      gradient: "from-red-500 to-rose-600",
     },
     {
       title: "Average Spend per Customer",
       value: data
-        ? `₦${(data.avgSpendPerCustomer / 1000).toFixed(0)}K`
-        : "₦20K",
-      subtitle: "Per customer",
+        ? (data.avgSpendPerCustomer >= 1000 ? `₦${(data.avgSpendPerCustomer / 1000).toFixed(1)}K` : `₦${data.avgSpendPerCustomer?.toFixed(0)}`)
+        : "₦0",
+      subtitle: "Per customer lifetime",
       change: data ? data?.avgSpendGrowth : 0,
       icon: TrendingUp,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      info: "Average amount each customer spends over their lifetime",
+      gradient: "from-red-500 to-rose-600",
     },
     {
       title: "Total Visits",
@@ -187,9 +74,7 @@ const OverviewCards = ({ data, isLoading, error }) => {
       subtitle: "All transactions",
       change: data ? data?.visitsGrowth : 0,
       icon: Receipt,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      info: "Total number of purchase transactions across all customers",
+      gradient: "from-red-500 to-rose-600",
     },
     {
       title: "Active Customers",
@@ -197,19 +82,18 @@ const OverviewCards = ({ data, isLoading, error }) => {
       subtitle: "Last 30 days",
       change: data ? data?.activeGrowth : 0,
       icon: Activity,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      info: "Customers who made at least one purchase in the last 30 days",
+      gradient: "from-red-500 to-rose-600",
     },
     {
       title: "Monthly Revenue",
-      value: data ? `₦${(data.monthlyRevenue / 1000000).toFixed(1)}M` : "₦0M",
+      value: data ? 
+        (data.monthlyRevenue >= 1000000 ? `₦${(data.monthlyRevenue / 1000000).toFixed(1)}M` : 
+         data.monthlyRevenue >= 1000 ? `₦${(data.monthlyRevenue / 1000).toFixed(1)}K` : 
+         `₦${data.monthlyRevenue?.toFixed(0)}`) : "₦0",
       subtitle: "This month",
       change: data ? data?.monthlyGrowth : 0,
-      icon: Target,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      info: "Total revenue generated in the current month",
+      icon: Gift,
+      gradient: "from-red-500 to-rose-600",
     },
   ];
 
@@ -219,12 +103,12 @@ const OverviewCards = ({ data, isLoading, error }) => {
         {cards.map((card, index) => (
           <div
             key={index}
-            className="bg-white p-6 rounded-lg border border-gray-200"
+            className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl rounded-2xl p-4"
           >
             <div className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded-xl mb-2"></div>
+              <div className="h-6 bg-gray-200 rounded-xl mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded-xl w-3/4"></div>
             </div>
           </div>
         ))}
@@ -235,8 +119,8 @@ const OverviewCards = ({ data, isLoading, error }) => {
   if (error) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="col-span-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-600">{error?.message}</p>
+        <div className="col-span-full bg-red-50/80 backdrop-blur-xl border border-red-200/50 rounded-2xl p-4 text-center">
+          <p className="text-red-600 font-medium">{error?.message}</p>
         </div>
       </div>
     );
@@ -247,34 +131,40 @@ const OverviewCards = ({ data, isLoading, error }) => {
       {cards.map((card, index) => (
         <div
           key={index}
-          className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+          className="group bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl rounded-2xl p-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div className={`p-3 ${card.bgColor} rounded-lg`}>
-              <card.icon size={20} className={card.color} />
-            </div>
-            <InfoTooltip text={card.info} />
+          {/* Background pattern */}
+          <div className="absolute top-0 right-0 w-20 h-20 opacity-5">
+            <div className={`w-full h-full rounded-full bg-[#6d0e2b]`}></div>
           </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">{card.title}</p>
-            <p className="text-2xl font-semibold text-gray-900 mb-1">
-              {card.value}
-            </p>
-            <p className="text-xs text-gray-500 mb-3">{card.subtitle}</p>
-            <div className="flex items-center gap-1">
-              {card.change > 0 ? (
-                <ArrowUpRight size={14} className="text-green-600" />
-              ) : (
-                <ArrowDownRight size={14} className="text-red-600" />
-              )}
-              <span
-                className={`text-sm font-medium ${
-                  card.change > 0 ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {Math.abs(card.change)}%
-              </span>
-              <span className="text-sm text-gray-500">vs last month</span>
+          
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-3">
+              <div className={`p-2.5 rounded-xl bg-[#6d0e2b] shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                <card.icon size={20} className="text-white" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 font-medium">{card.title}</p>
+              <p className="text-2xl font-bold text-gray-900 mb-1">
+                {card.value}
+              </p>
+              <p className="text-xs text-gray-500 mb-3">{card.subtitle}</p>
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg ${
+                  card.change > 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+                }`}>
+                  {card.change > 0 ? (
+                    <ArrowUpRight size={12} />
+                  ) : (
+                    <ArrowDownRight size={12} />
+                  )}
+                  <span className="text-xs font-semibold">
+                    {Math.abs(card.change)}%
+                  </span>
+                </div>
+                <span className="text-xs text-gray-500 font-medium">vs last month</span>
+              </div>
             </div>
           </div>
         </div>
@@ -283,30 +173,21 @@ const OverviewCards = ({ data, isLoading, error }) => {
   );
 };
 
-// TodayStats component
+// Today Stats Component - Redesigned with sidebar inspiration
 const TodayStats = ({ data, isLoading, error }) => {
   const formatCurrency = (amount) => `₦${amount.toLocaleString()}`;
 
   if (isLoading) {
     return (
-      <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Today's Performance
-          </h3>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Clock size={16} />
-            <span>Real-time data</span>
-          </div>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 mb-8">
+        <div className="flex items-center gap-3 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Today's Performance</h3>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="text-center">
-              <div className="animate-pulse">
-                <div className="h-12 w-12 bg-gray-200 rounded-lg mx-auto mb-3"></div>
-                <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
-              </div>
+            <div key={index} className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded"></div>
             </div>
           ))}
         </div>
@@ -316,9 +197,9 @@ const TodayStats = ({ data, isLoading, error }) => {
 
   if (error) {
     return (
-      <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-600">{error?.message}</p>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 mb-8">
+        <div className="bg-red-50/80 border border-red-200/50 rounded-xl p-6 text-center">
+          <p className="text-red-600 font-medium">{error?.message}</p>
         </div>
       </div>
     );
@@ -328,410 +209,312 @@ const TodayStats = ({ data, isLoading, error }) => {
     {
       title: "Today's Revenue",
       value: data ? formatCurrency(data.todayStats.revenue) : "₦0",
-      icon: DollarSign,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
+      color: "text-[#6d0e2b]",
+      bgColor: "from-[#6d0e2b]/5 to-[#6d0e2b]/10",
+      borderColor: "border-[#6d0e2b]/20"
     },
     {
       title: "New Customers",
       value: data ? data.todayStats.customers.toString() : "0",
-      icon: Users,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
+      color: "text-[#6d0e2b]",
+      bgColor: "from-[#6d0e2b]/5 to-[#6d0e2b]/10",
+      borderColor: "border-[#6d0e2b]/20"
     },
     {
       title: "Transactions",
       value: data ? data.todayStats.transactions.toString() : "0",
-      icon: Receipt,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
+      color: "text-[#6d0e2b]",
+      bgColor: "from-[#6d0e2b]/5 to-[#6d0e2b]/10",
+      borderColor: "border-[#6d0e2b]/20"
     },
     {
       title: "Visits",
       value: data ? data.todayStats.visits.toString() : "0",
-      icon: Eye,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
+      color: "text-[#6d0e2b]",
+      bgColor: "from-[#6d0e2b]/5 to-[#6d0e2b]/10",
+      borderColor: "border-[#6d0e2b]/20"
     },
     {
-      title: "Avg. Transaction",
+      title: "Average Transaction",
       value: data ? formatCurrency(data.todayStats.avgTransaction) : "₦0",
-      icon: TrendingUp,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
+      color: "text-[#6d0e2b]",
+      bgColor: "from-[#6d0e2b]/5 to-[#6d0e2b]/10",
+      borderColor: "border-[#6d0e2b]/20"
     },
   ];
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Today's Performance
-        </h3>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Clock size={16} />
-          <span>Real-time data</span>
+    <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 mb-8 relative overflow-hidden">
+      {/* Background gradient like sidebar */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 opacity-30"></div>
+      
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#6d0e2b] rounded-xl shadow-lg">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Today's Performance</h3>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500 bg-white/50 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="font-medium">Live</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {stats.map((stat, index) => (
+            <div key={index} className={`bg-[#6d0e2b] p-4 rounded-xl border ${stat.borderColor} hover:shadow-md transition-all duration-300`}>
+              <div className="text-sm text-white mb-2 font-medium">{stat.title}</div>
+              <div className={`text-2xl font-bold text-white`}>
+                {stat.value}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
+    </div>
+  );
+};
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="text-center">
-            <div
-              className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center mx-auto mb-3`}
-            >
-              <stat.icon size={20} className={stat.color} />
+// Enhanced Customer Cards Component - All using same brand color scheme
+const CustomerCards = ({ topSpender, frequentCustomer, allTimeCustomer, isLoading, error }) => {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 relative overflow-hidden">
+            <div className="animate-pulse">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
+                <div className="h-4 bg-gray-200 rounded w-32"></div>
+              </div>
+              <div className="space-y-3">
+                <div className="h-16 bg-gray-200 rounded-xl"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
+              </div>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">
-              {stat.value}
-            </div>
-            <div className="text-sm text-gray-600">{stat.title}</div>
           </div>
         ))}
       </div>
-    </div>
-  );
-};
+    );
+  }
 
-// Top Customer Card Component
-const TopCustomerCard = ({ customer, frequentCustomer }) => {
-  return (
-    <div className="space-y-6">
-      {/* Top Spending Customer */}
-      <div className="bg-gradient-to-br from-[#1A73E8]/5 to-[#1A73E8]/10 p-6 rounded-lg border border-[#1A73E8]/20">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-[#1A73E8]/10 rounded-lg">
-            <Star size={20} className="text-[#1A73E8]" />
-          </div>
-          <h3 className="font-semibold text-gray-900">Top Spender This Week</h3>
-        </div>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Phone size={16} className="text-gray-500" />
-            <span className="font-medium text-gray-900">{customer.phone}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Total Spent:</span>
-            <span className="text-2xl font-bold text-[#1A73E8]">
-              ₦{(customer.spend / 1000).toFixed(0)}K
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Visits this week:</span>
-            <span className="font-semibold text-gray-900">
-              {customer.visits}
-            </span>
-          </div>
-          <button className="w-full mt-4 px-4 py-2 bg-[#1A73E8] text-white rounded-lg hover:bg-[#1557B0] transition-colors text-sm font-medium">
-            View Customer Details
-          </button>
+  if (error) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="col-span-full bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 text-center">
+          <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+          <p className="text-gray-600">Failed to load top customers</p>
+          <p className="text-sm text-gray-500">{error.message}</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Most Frequent Customer */}
-      <div className="bg-gradient-to-br from-[#1A73E8]/5 to-[#1A73E8]/10 p-6 rounded-lg border border-[#1A73E8]/20">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-[#1A73E8]/10 rounded-lg">
-            <Activity size={20} className="text-[#1A73E8]" />
-          </div>
-          <h3 className="font-semibold text-gray-900">
-            Most Frequent This Week
-          </h3>
-        </div>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Phone size={16} className="text-gray-500" />
-            <span className="font-medium text-gray-900">
-              {frequentCustomer.phone}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Visits this week:</span>
-            <span className="text-2xl font-bold text-[#1A73E8]">
-              {frequentCustomer.visits}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Total spent:</span>
-            <span className="font-semibold text-gray-900">
-              ₦{(frequentCustomer.totalSpend / 1000).toFixed(0)}K
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Avg per visit:</span>
-            <span className="font-semibold text-gray-900">
-              ₦{frequentCustomer.avgPerVisit.toLocaleString()}
-            </span>
-          </div>
-          <button className="w-full mt-4 px-4 py-2 bg-[#1A73E8] text-white rounded-lg hover:bg-[#1557B0] transition-colors text-sm font-medium">
-            View Customer Details
-          </button>
+  if (!topSpender && !frequentCustomer && !allTimeCustomer) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="col-span-full bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 text-center">
+          <Users size={48} className="text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No customer data available</p>
         </div>
       </div>
-    </div>
-  );
-};
-
-// Updated Quick Actions Component
-const QuickActions = ({ onAction }) => {
-  const actions = [
-    {
-      id: "viewAnalytics",
-      title: "View Analytics",
-      description: "Detailed business insights & reports",
-      icon: BarChart3,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      borderColor: "border-gray-200",
-      hoverBg: "hover:bg-gray-50",
-    },
-    {
-      id: "sendBulkMessage",
-      title: "Send Bulk Message",
-      description: "Send promotions to customers",
-      icon: MessageSquare,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      borderColor: "border-gray-200",
-      hoverBg: "hover:bg-gray-50",
-    },
-    {
-      id: "viewBranchInfo",
-      title: "View Branch Info",
-      description: "Check branch performance & details",
-      icon: Building2,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      borderColor: "border-gray-200",
-      hoverBg: "hover:bg-gray-50",
-    },
-    {
-      id: "generateQR",
-      title: "Generate QR Code",
-      description: "Create new QR for receipts",
-      icon: QrCode,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      borderColor: "border-gray-200",
-      hoverBg: "hover:bg-gray-50",
-    },
-    {
-      id: "exportData",
-      title: "Export Customer Data",
-      description: "Download customer reports",
-      icon: FileText,
-      color: "text-[#1A73E8]",
-      bgColor: "bg-[#1A73E8]/10",
-      borderColor: "border-gray-200",
-      hoverBg: "hover:bg-gray-50",
-    },
-  ];
+    );
+  }
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-gray-200">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-      </div>
-
-      <div className="space-y-3">
-        {actions.map((action) => (
-          <button
-            key={action.id}
-            className={`w-full flex items-center gap-4 p-4 border ${action.borderColor} rounded-lg ${action.hoverBg} transition-all duration-200 cursor-pointer group hover:shadow-sm`}
-            onClick={() => onAction(action.id)}
-          >
-            <div
-              className={`w-12 h-12 ${action.bgColor} rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200`}
-            >
-              <action.icon size={20} className={action.color} />
-            </div>
-            <div className="flex-1 text-left">
-              <div className="flex items-center gap-2">
-                <h4 className="font-medium text-gray-900 group-hover:text-gray-800">
-                  {action.title}
-                </h4>
-                {action.count && (
-                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
-                    {action.count}
-                  </span>
-                )}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      {/* Top Spender This Week */}
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 relative overflow-hidden hover:shadow-xl transition-all duration-300">
+        {topSpender ? (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#6d0e2b]/5 to-[#6d0e2b]/10"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-gradient-to-br from-[#6d0e2b] to-[#6c0f2a] rounded-xl shadow-lg">
+                  <Crown size={20} className="text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900">Top Spender This Week</h3>
               </div>
-              <p className="text-sm text-gray-600 group-hover:text-gray-700">
-                {action.description}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20">
+                  <Phone size={16} className="text-gray-500" />
+                  <div>
+                    <span className="font-medium text-gray-900 block">{topSpender.phone}</span>
+                    <span className="text-sm text-gray-600">Phone Number</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Total Spent:</span>
+                  <span className="text-2xl font-bold text-[#6d0e2b]">
+                    ₦{topSpender.totalSpend >= 1000 ? (topSpender.totalSpend / 1000).toFixed(0) + 'K' : topSpender.totalSpend?.toFixed(0)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Visits this week:</span>
+                  <span className="font-semibold text-gray-900">{topSpender.visits || 0}</span>
+                </div>
+                {/* <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Points earned:</span>
+                  <span className="font-semibold text-[#6c0f2a]">{topSpender.points}</span>
+                </div> */}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <Crown size={32} className="text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600">No customer data available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Most Frequent This Week */}
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 relative overflow-hidden hover:shadow-xl transition-all duration-300">
+        {frequentCustomer ? (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#6c0f2a]/5 to-[#6c0f2a]/10"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-gradient-to-br from-[#6c0f2a] to-[#6d0e2b] rounded-xl shadow-lg">
+                  <Activity size={20} className="text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900">Most Frequent This Week</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20">
+                  <Phone size={16} className="text-gray-500" />
+                  <div>
+                    <span className="font-medium text-gray-900 block">{frequentCustomer.phone}</span>
+                    <span className="text-sm text-gray-600">Phone Number</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Visits this week:</span>
+                  <span className="text-2xl font-bold text-[#6c0f2a]">{frequentCustomer.visits || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Total Spent:</span>
+                  <span className="font-semibold text-gray-900">
+                    ₦{frequentCustomer.totalSpend >= 1000 ? (frequentCustomer.totalSpend / 1000).toFixed(0) + 'K' : frequentCustomer.totalSpend?.toFixed(0)}
+                  </span>
+                </div>
+                {/* <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Points earned:</span>
+                  <span className="font-semibold text-[#6d0e2b]">{frequentCustomer.points}</span>
+                </div> */}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <Activity size={32} className="text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600">No customer data available</p>
+          </div>
+        )}
+      </div>
+
+      {/* All-Time Top Customer */}
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6 relative overflow-hidden hover:shadow-xl transition-all duration-300">
+        {allTimeCustomer ? (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#6d0e2b]/5 via-[#6c0f2a]/5 to-[#6d0e2b]/10"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-gradient-to-br from-[#6d0e2b] to-[#6c0f2a] rounded-xl shadow-lg">
+                  <Star size={20} className="text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900">All-Time Top Customer</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/20">
+                  <Phone size={16} className="text-gray-500" />
+                  <div>
+                    <span className="font-medium text-gray-900 block">{allTimeCustomer.phone}</span>
+                    <span className="text-sm text-gray-600">Joined {allTimeCustomer.joinedDate}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Total Spent:</span>
+                  <span className="text-2xl font-bold text-[#6c0f2a]">
+                    ₦{allTimeCustomer.totalSpend >= 1000 ? (allTimeCustomer.totalSpend / 1000).toFixed(0) + 'K' : allTimeCustomer.totalSpend?.toFixed(0)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Total visits:</span>
+                  <span className="font-semibold text-gray-900">{allTimeCustomer.visits || 0}</span>
+                </div>
+                {/* <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Points earned:</span>
+                  <span className="font-semibold text-[#6d0e2b]">{allTimeCustomer.points}</span>
+                </div> */}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <Star size={32} className="text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600">No all-time customer data</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Main VibEazy Overview Component
+const VibEazyOverview = () => {
+  const { currentBranch } = useBranchStore();
+  const { business } = useBusinessStore();
+  
+  // Use context-aware hooks
+  const { data, isLoading, error } = useOverviewData();
+  const { data: topCustomersData, isLoading: topCustomersLoading, error: topCustomersError } = useTopCustomersData();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Context indicator */}
+        <div className="mb-6 bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#6d0e2b] flex items-center justify-center">
+              {currentBranch ? <Store size={16} className="text-white" /> : <BarChart3 size={16} className="text-white" />}
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Viewing</p>
+              <p className="font-semibold text-gray-900">
+                {currentBranch ? currentBranch.name : business?.name || 'Overall Business'}
               </p>
             </div>
-            <div
-              className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200`}
-            >
-              <ArrowUpRight size={16} className="text-gray-400" />
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const RecentActivity = ({ activities }) => {
-  const formatCurrency = (amount) => `₦${amount.toLocaleString()}`;
-
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case "purchase":
-        return <ShoppingBag size={16} className="text-[#1A73E8]" />;
-      case "customer":
-        return <Users size={16} className="text-[#1A73E8]" />;
-      default:
-        return <Activity size={16} className="text-[#1A73E8]" />;
-    }
-  };
-
-  const getActivityBg = (type) => {
-    switch (type) {
-      case "purchase":
-        return "bg-[#1A73E8]/10";
-      case "customer":
-        return "bg-[#1A73E8]/10";
-      default:
-        return "bg-[#1A73E8]/10";
-    }
-  };
-
-  const getActivityText = (activity) => {
-    if (activity.type === "purchase") {
-      return (
-        <div>
-          <span className="font-medium">{activity.customer}</span> made a
-          purchase of{" "}
-          <span className="font-semibold text-[#1A73E8]">
-            {formatCurrency(activity.amount)}
-          </span>
-          <div className="text-xs text-gray-500 mt-1">at {activity.branch}</div>
-        </div>
-      );
-    } else {
-      return (
-        <div>
-          <span className="font-medium">{activity.customer}</span> -{" "}
-          {activity.action}
-          <div className="text-xs text-gray-500 mt-1">at {activity.branch}</div>
-        </div>
-      );
-    }
-  };
-
-  return (
-    <div className="bg-white p-6 rounded-lg border border-gray-200">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-        <button className="text-sm text-[#1A73E8] hover:underline cursor-pointer font-medium">
-          View All Activity
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        {activities.map((activity) => (
-          <div
-            key={activity.id}
-            className="flex items-start gap-4 py-3 border-b border-gray-100 last:border-b-0"
-          >
-            <div
-              className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getActivityBg(
-                activity.type
-              )}`}
-            >
-              {getActivityIcon(activity.type)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-900">
-                {getActivityText(activity)}
-              </div>
-              <div className="flex items-center gap-1 mt-2">
-                <Clock size={12} className="text-gray-400" />
-                <span className="text-xs text-gray-500">{activity.time}</span>
-              </div>
-            </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Main Overview Component
-const VibeasyOverview = () => {
-  const { currentBusiness } = useBusinessStore();
-  const { currentBranch } = useBranchStore();
-
-  const businessId = currentBusiness?.id ?? "cmetplt2b0005hslffd63jqak";
-  const branchId = currentBranch?.id ?? "cmetplt3x000ihslf4mffpf1r";
-
-  const {
-    data: overviewData,
-    isLoading: overviewIsLoading,
-    error: overviewError,
-  } = useBranchOverview(businessId, branchId);
-
-  const [data] = useState(mockOverviewData);
-
-  const handleQuickAction = (actionId) => {
-    console.log(`Quick action: ${actionId}`);
-    // Handle different quick actions here
-    switch (actionId) {
-      case "viewAnalytics":
-        alert("Navigating to Analytics dashboard...");
-        break;
-      case "sendBulkMessage":
-        alert("Opening bulk message composer...");
-        break;
-      case "viewBranchInfo":
-        alert("Loading branch information...");
-        break;
-      case "generateQR":
-        alert("Opening QR code generator...");
-        break;
-      case "exportData":
-        alert("Preparing customer data export...");
-        break;
-      default:
-        break;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <OverviewHeader />
+        </div>
 
         <OverviewCards
-          data={overviewData}
-          isLoading={overviewIsLoading}
-          error={overviewError}
+          data={data}
+          isLoading={isLoading}
+          error={error}
         />
 
         <TodayStats
-          data={overviewData}
-          isLoading={overviewIsLoading}
-          error={overviewError}
+          data={data}
+          isLoading={isLoading}
+          error={error}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div>
-            <RecentActivity activities={data.recentActivity} />
-          </div>
-          <div>
-            <QuickActions onAction={handleQuickAction} />
-          </div>
-          <div>
-            <TopCustomerCard
-              customer={data.weeklyTopCustomer}
-              frequentCustomer={data.weeklyMostFrequentCustomer}
-            />
-          </div>
-        </div>
+        <CustomerCards
+          topSpender={topCustomersData?.weeklyTopCustomer}
+          frequentCustomer={topCustomersData?.weeklyMostFrequentCustomer}
+          allTimeCustomer={topCustomersData?.allTimeTopCustomer}
+          isLoading={topCustomersLoading}
+          error={topCustomersError}
+        />
+        <VibeazyQuickOverviewTable />
       </div>
     </div>
   );
 };
 
-export default VibeasyOverview;
+export default VibEazyOverview;

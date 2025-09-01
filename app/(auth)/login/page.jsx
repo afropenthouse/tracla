@@ -1,21 +1,23 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Users, Receipt, DollarSign, Star, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Users, Receipt, DollarSign, Star, ArrowRight, Sparkles, Crown, TrendingUp } from 'lucide-react';
 import { motion } from "framer-motion";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import api from "@/lib/api";
+import { businessKeys, branchKeys } from "@/lib/queries/branch";
 
 import { useBranchStore, useBusinessStore } from '@/store/store';
 
 import { useLoadingStore } from '@/store/loadingStore';
-import { setAuthCookies } from '@/actions/cookies/cookies';
+import { setAuthCookies, setUserCookies } from '@/actions/cookies/cookies';
 
 export default function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { showLoader, hideLoader } = useLoadingStore();
   const { setBusiness } = useBusinessStore();
   const { setBranches, setCurrentBranch } = useBranchStore();
@@ -40,14 +42,12 @@ export default function LoginPage() {
     onMutate: () => {
       showLoader({
         text: "Signing you in...",
-        loaderColor: "#1A73E8",
+        loaderColor: "#d32f2f",
         textColor: "#ffffff",
         backgroundColor: "rgba(0, 0, 0, 0.7)",
       });
     },
-    onSuccess: async (data) => {
-      hideLoader();
-      
+    onSuccess: async (data) => {      
       const { isFirstLogin, business, user, tokens, sessionId } = data.data;
       console.log('Login successful:', { isFirstLogin, user, business });
       
@@ -55,6 +55,7 @@ export default function LoginPage() {
       const cookieResult = await setAuthCookies(tokens.accessToken, tokens.refreshToken);
       
       if (!cookieResult.success) {
+        hideLoader();
         toast.error("Failed to save session. Please try again.");
         return;
       }
@@ -77,13 +78,37 @@ export default function LoginPage() {
         const { branches, ...businessData } = business;
         setBusiness(businessData);
 
-        // Store branches array
+        // Clear branches array and store only the first branch as current branch
         if (branches && branches.length > 0) {
-          setBranches(branches);
-          // Set first branch as current branch
-          setCurrentBranch(branches[0]);
+          setBranches([]); // Clear the branches array
+          setCurrentBranch(branches[0]); // Set only first branch as current
+        }
+
+        // Prefetch quick-stats data for sidebar
+        try {
+          const statsResponse = await api.get(`/business/${businessData.id}/quick-stats`);
+          
+          if (statsResponse.data.success) {
+            // Prefill React Query cache with stats data
+            const statsQueryKey = [...businessKeys.detail(businessData.id), "quick-stats"];
+            queryClient.setQueryData(statsQueryKey, statsResponse.data.data);
+            
+            // Also prefill for branch view if user has branches
+            if (branches && branches.length > 0) {
+              const branchStatsResponse = await api.get(`/branches/branch/${branches[0].id}/quick-stats`);
+              if (branchStatsResponse.data.success) {
+                const branchStatsQueryKey = [...branchKeys.detail(businessData.id, branches[0].id), "quick-stats"];
+                queryClient.setQueryData(branchStatsQueryKey, branchStatsResponse.data.data);
+              }
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to prefetch quick stats:", error);
+          // Don't block login flow if stats fetch fails
         }
       }
+      
+      hideLoader();
       
       // Welcome message
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`);
@@ -186,14 +211,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-[#F9FAFC] overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 overflow-hidden">
       {/* Left side with gradient and branding */}
-      <div className="w-full lg:w-1/2 relative overflow-hidden h-[45vh] lg:h-screen bg-gradient-to-br from-[#1A73E8] via-[#1557B0] to-[#0B2E68]">
-        {/* Overlay pattern */}
+      <div className="w-full lg:w-1/2 relative overflow-hidden h-[45vh] lg:h-screen bg-gradient-to-br from-[#d32f2f] via-[#6c0f2a] to-[#d32f2f]/80">
+        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-32 h-32 rounded-full border-2 border-white"></div>
-          <div className="absolute bottom-40 right-16 w-24 h-24 rounded-full border-2 border-white"></div>
-          <div className="absolute top-1/2 right-20 w-16 h-16 rounded-full border-2 border-white"></div>
+          <div className="absolute top-20 left-20 w-32 h-32 rounded-full border-2 border-white animate-pulse"></div>
+          <div className="absolute bottom-40 right-16 w-24 h-24 rounded-full border-2 border-white animate-pulse delay-300"></div>
+          <div className="absolute top-1/2 right-20 w-16 h-16 rounded-full border-2 border-white animate-pulse delay-700"></div>
+          <div className="absolute top-1/3 left-1/2 w-20 h-20 rounded-full border-2 border-white animate-pulse delay-1000"></div>
+        </div>
+        
+        {/* Floating Gradients */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
+          <div className="absolute top-1/4 -left-20 w-40 h-40 bg-white/10 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-1/4 -right-20 w-32 h-32 bg-rose-300/20 rounded-full blur-3xl animate-float-delayed"></div>
+          <div className="absolute top-3/4 left-1/3 w-24 h-24 bg-red-200/20 rounded-full blur-2xl animate-float-slow"></div>
         </div>
         
         {/* Wave-shaped bottom border for mobile */}
@@ -204,7 +237,7 @@ export default function LoginPage() {
             preserveAspectRatio="none"
           >
             <path
-              fill="#F9FAFC"
+              fill="rgb(248 250 252)"
               d="M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,80C672,64,768,64,864,85.3C960,107,1056,149,1152,149.3C1248,149,1344,107,1392,85.3L1440,64L1440,140L1392,140C1344,140,1248,140,1152,140C1056,140,960,140,864,140C768,140,672,140,576,140C480,140,384,140,288,140C192,140,96,140,48,140L0,140Z"
             ></path>
           </svg>
@@ -219,20 +252,27 @@ export default function LoginPage() {
         >
           {/* Logo */}
           <motion.div 
-            className="mb-8"
+            className="mb-8 text-center"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <motion.div 
-              className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4"
-              whileHover={{ scale: 1.05, rotate: 5 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <Receipt size={32} className="text-[#1A73E8]" />
-            </motion.div>
-            <h1 className="text-3xl lg:text-5xl font-bold text-center">Vibeazy</h1>
-            <p className="text-blue-100 text-center mt-2">Business Dashboard</p>
+            <div className="relative inline-block group">
+              <motion.div 
+                className="w-16 h-16 bg-white/90 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-4 shadow-2xl border border-white/20 group-hover:scale-110 transition-all duration-300"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              >
+                <span className="text-[#d32f2f] font-bold text-2xl">V</span>
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-3 h-3 text-white" />
+                </div>
+              </motion.div>
+            </div>
+            <h1 className="text-3xl lg:text-5xl font-bold mb-2">
+              Vib<span className="text-rose-200">Easy</span>
+            </h1>
+            <p className="text-red-100 text-center">Business Dashboard</p>
           </motion.div>
           
           <motion.h2 
@@ -244,7 +284,7 @@ export default function LoginPage() {
             Welcome Back
           </motion.h2>
           <motion.p 
-            className="text-lg lg:text-xl max-w-md text-center text-blue-100 hidden sm:block"
+            className="text-lg lg:text-xl max-w-md text-center text-red-100 hidden sm:block"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
@@ -259,10 +299,16 @@ export default function LoginPage() {
             transition={{ delay: 0.5, duration: 0.5 }}
           >
             <div className="grid grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-              {[Users, DollarSign, Receipt, Star].map((Icon, index) => (
+              {[
+                { Icon: Users, delay: 0 },
+                { Icon: DollarSign, delay: 100 },
+                { Icon: Receipt, delay: 200 },
+                { Icon: TrendingUp, delay: 300 }
+              ].map(({ Icon, delay }, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-center justify-center bg-white bg-opacity-20 rounded-xl p-3 lg:p-4 backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300"
+                  className="flex items-center justify-center bg-white/10 backdrop-blur-xl rounded-xl p-3 lg:p-4 border border-white/20 hover:bg-white/20 hover:scale-110 hover:-translate-y-2 transition-all duration-300 shadow-lg"
+                  style={{ animationDelay: `${delay}ms` }}
                   whileHover={{ scale: 1.1, y: -5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
@@ -270,9 +316,34 @@ export default function LoginPage() {
                 </motion.div>
               ))}
             </div>
-            <p className="text-sm lg:text-base opacity-90 max-w-sm text-center hidden sm:block">
+            <p className="text-sm lg:text-base opacity-90 max-w-sm text-center hidden sm:block text-red-100">
               Customer analytics • Revenue tracking • Loyalty management • Business insights
             </p>
+          </motion.div>
+
+          {/* Live Stats Demo */}
+          <motion.div 
+            className="mt-8 grid grid-cols-2 gap-4 w-full max-w-sm hidden lg:grid"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+          >
+            <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 border border-white/20">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-xs text-red-100">Live</span>
+              </div>
+              <p className="text-2xl font-bold">₦2.4M</p>
+              <p className="text-xs text-red-200">Monthly Revenue</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 border border-white/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="w-3 h-3 text-yellow-400" />
+                <span className="text-xs text-red-100">VIP</span>
+              </div>
+              <p className="text-2xl font-bold">247</p>
+              <p className="text-xs text-red-200">Total Customers</p>
+            </div>
           </motion.div>
         </motion.div>
       </div>
@@ -280,50 +351,45 @@ export default function LoginPage() {
       {/* Right side authentication form */}
       <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center px-6 pb-6 pt-6 lg:pt-20 overflow-y-auto -mt-8 lg:mt-0">
         <motion.div 
-          className="w-full max-w-md bg-white rounded-2xl shadow-xl lg:shadow-none p-8 lg:p-0"
+          className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl p-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="flex flex-col items-center mb-8">
-            <motion.h2 
-              className="text-3xl lg:text-4xl font-bold text-[#222222] text-center mb-2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-            >
+          <motion.div 
+            className="flex flex-col items-center mb-8"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] bg-clip-text text-transparent text-center mb-2">
               Sign In
-            </motion.h2>
-            <motion.p 
-              className="text-[#6B7280] text-center"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: 0.1 }}
-            >
+            </h2>
+            <p className="text-gray-600 text-center">
               Access your business dashboard
-            </motion.p>
-          </div>
+            </p>
+          </motion.div>
 
           {/* General Error Message */}
           {errors.general && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md"
+              className="mb-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200/50 rounded-xl"
             >
               <p className="text-sm text-red-600">{errors.general}</p>
             </motion.div>
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6">
             {/* Email Field */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
             >
-              <label htmlFor="email" className="block text-sm font-medium text-[#374151] mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                 Email Address
               </label>
               <motion.input
@@ -337,13 +403,21 @@ export default function LoginPage() {
                 onChange={handleInputChange}
                 required
                 className={`w-full px-4 py-3 rounded-xl border ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                } focus:outline-none focus:ring-2 focus:ring-[#1A73E8]/20 focus:border-[#1A73E8] transition-all duration-200`}
+                  errors.email 
+                    ? 'border-red-400 bg-red-50/50' 
+                    : 'border-gray-200 bg-white/50'
+                } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d32f2f]/20 focus:border-[#d32f2f] transition-all duration-300 placeholder:text-gray-400`}
                 placeholder="Enter your email address"
                 disabled={loginMutation.isPending}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                <motion.p 
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-red-600"
+                >
+                  {errors.email}
+                </motion.p>
               )}
             </motion.div>
 
@@ -353,7 +427,7 @@ export default function LoginPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.2 }}
             >
-              <label htmlFor="password" className="block text-sm font-medium text-[#374151] mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -368,15 +442,17 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   required
                   className={`w-full px-4 py-3 pr-12 rounded-xl border ${
-                    errors.password ? 'border-red-500' : 'border-gray-300'
-                  } focus:outline-none focus:ring-2 focus:ring-[#1A73E8]/20 focus:border-[#1A73E8] transition-all duration-200`}
+                    errors.password 
+                      ? 'border-red-400 bg-red-50/50' 
+                      : 'border-gray-200 bg-white/50'
+                  } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d32f2f]/20 focus:border-[#d32f2f] transition-all duration-300 placeholder:text-gray-400`}
                   placeholder="Enter your password"
                   disabled={loginMutation.isPending}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-700 cursor-pointer transition-colors"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-[#d32f2f] transition-colors cursor-pointer"
                   disabled={loginMutation.isPending}
                 >
                   {showPassword ? (
@@ -387,7 +463,13 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                <motion.p 
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-red-600"
+                >
+                  {errors.password}
+                </motion.p>
               )}
             </motion.div>
 
@@ -405,15 +487,15 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={formData.rememberMe}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-[#1A73E8] border-gray-300 rounded focus:ring-[#1A73E8] focus:ring-2"
+                  className="h-4 w-4 text-[#d32f2f] border-gray-300 rounded focus:ring-[#d32f2f] focus:ring-2"
                   disabled={loginMutation.isPending}
                 />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-[#6B7280] cursor-pointer">
+                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-600 cursor-pointer">
                   Remember me
                 </label>
               </div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link href="/forgot-password" className="text-sm text-[#1A73E8] hover:text-[#1557B0] font-medium cursor-pointer">
+                <Link href="/forgot-password" className="text-sm text-[#d32f2f] hover:text-[#6c0f2a] font-semibold transition-colors cursor-pointer">
                   Forgot password?
                 </Link>
               </motion.div>
@@ -423,7 +505,8 @@ export default function LoginPage() {
             <motion.button
               type="submit"
               disabled={loginMutation.isPending}
-              whileHover={{ scale: 1.02, boxShadow: "0 5px 15px rgba(26, 115, 232, 0.2)" }}
+              onClick={handleSubmit}
+              whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -433,15 +516,24 @@ export default function LoginPage() {
                 damping: 10,
                 opacity: { duration: 0.3, delay: 0.4 } 
               }}
-              className="w-full bg-gradient-to-r from-[#1A73E8] to-[#1557B0] text-white py-3 px-4 rounded-xl hover:from-[#1557B0] hover:to-[#0B2E68] transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white py-3 px-4 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 group"
             >
-              {loginMutation.isPending ? "Signing In..." : "Sign In"}
-              {!loginMutation.isPending && <ArrowRight size={18} />}
+              {loginMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Signing In...</span>
+                </div>
+              ) : (
+                <>
+                  Sign In
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </motion.button>
 
             {/* Sign Up Link */}
             <motion.div 
-              className="pt-6 text-center text-sm text-[#6B7280]"
+              className="pt-6 text-center text-sm text-gray-600"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.5 }}
@@ -451,19 +543,62 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link href="/signup" className="text-[#1A73E8] hover:text-[#1557B0] font-medium cursor-pointer">
+                <Link href="/signup" className="text-[#d32f2f] hover:text-[#6c0f2a] font-semibold transition-colors cursor-pointer">
                   Create one here
                 </Link>
               </motion.span>
             </motion.div>
-          </form>
+          </div>
+
+          {/* Quick Stats */}
+          <motion.div 
+            className="mt-8 pt-6 border-t border-gray-200/50"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-3 bg-gradient-to-br from-[#d32f2f]/10 to-[#6c0f2a]/10 rounded-xl border border-[#d32f2f]/20">
+                <div className="text-lg font-bold text-[#d32f2f]">500+</div>
+                <div className="text-xs text-gray-600">Businesses</div>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-[#6c0f2a]/10 to-[#d32f2f]/10 rounded-xl border border-[#6c0f2a]/20">
+                <div className="text-lg font-bold text-[#6c0f2a]">10K+</div>
+                <div className="text-xs text-gray-600">Customers</div>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-[#d32f2f]/10 to-[#6c0f2a]/10 rounded-xl border border-[#d32f2f]/20">
+                <div className="text-lg font-bold text-[#d32f2f]">₦50M+</div>
+                <div className="text-xs text-gray-600">Processed</div>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* Floating elements decoration for mobile */}
-      <div className="absolute top-1/3 left-4 w-20 h-20 rounded-full bg-[#1A73E8]/10 -z-10 lg:hidden"></div>
-      <div className="absolute top-2/3 right-6 w-24 h-24 rounded-full bg-[#1A73E8]/10 -z-10 lg:hidden"></div>
-      <div className="absolute bottom-20 left-8 w-16 h-16 rounded-full bg-[#1A73E8]/10 -z-10 lg:hidden"></div>
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        @keyframes float-delayed {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(-3deg); }
+        }
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float-delayed 8s ease-in-out infinite;
+        }
+        .animate-float-slow {
+          animation: float-slow 10s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

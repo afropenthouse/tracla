@@ -1,8 +1,11 @@
+import Landing from '@/components/Landing';
 
 
 const page = () => {
   return (
-    <div>page</div>
+    <div>
+      <Landing />
+    </div>
   )
 }
 

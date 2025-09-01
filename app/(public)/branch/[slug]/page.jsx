@@ -9,7 +9,6 @@ import {
   ArrowRight, Phone, Gift, Star, Zap, Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-toastify';
 import api from '@/lib/api';
 import { useParams } from 'next/navigation';  
 
@@ -27,6 +26,7 @@ const PurchaseReceiptUpload = () => {
   const [error, setError] = useState(null);
   const [isConverting, setIsConverting] = useState(false);
   const [conversionProgress, setConversionProgress] = useState(0);
+  const [successMessage, setSuccessMessage] = useState('');
   const fileInputRef = useRef(null);
 
   // Fetch branch information using React Query
@@ -47,8 +47,9 @@ const PurchaseReceiptUpload = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success('Purchase recorded successfully!');
+      setSuccessMessage('Purchase recorded successfully!');
       setStep(3);
+      setError(null);
     },
     onError: (error) => {
       const errorMessage = error.response?.data?.message || 'Failed to record purchase';
@@ -57,7 +58,6 @@ const PurchaseReceiptUpload = () => {
       } else {
         setError(errorMessage);
       }
-      toast.error(errorMessage);
     }
   });
 
@@ -173,24 +173,25 @@ const PurchaseReceiptUpload = () => {
 
     setError(null);
     setExtractedData(null);
+    setSuccessMessage('');
 
     try {
       let processedFile = file;
       if (isHEIC(file)) {
-        toast.info('Converting iPhone image format...');
+        setSuccessMessage('Converting iPhone image format...');
         processedFile = await convertHEIC(file);
-        toast.success('Image converted successfully!');
+        setSuccessMessage('Image converted successfully!');
       }
 
       setUploadedFile(processedFile);
       const reader = new FileReader();
       reader.onload = (e) => setPreviewUrl(e.target.result);
       reader.readAsDataURL(processedFile);
-      toast.success('Receipt uploaded successfully!');
+      setSuccessMessage('Receipt uploaded successfully!');
     } catch (error) {
       console.error('File processing error:', error);
       setError(error.message || 'Failed to process image file');
-      toast.error('Failed to process image');
+      setSuccessMessage('');
     }
   };
 
@@ -199,6 +200,7 @@ const PurchaseReceiptUpload = () => {
 
     setProcessingProgress(0);
     setError(null);
+    setSuccessMessage('');
 
     try {
       const reader = new FileReader();
@@ -218,12 +220,11 @@ const PurchaseReceiptUpload = () => {
           setTimeout(() => {
             setStep(2);
             setProcessingProgress(0);
+            setSuccessMessage('Receipt processed successfully!');
           }, 1000);
-          toast.success('Receipt processed successfully!');
         } catch (err) {
           console.error('Processing Error:', err);
           setError('Could not read your receipt. Please try again or take a clearer photo.');
-          toast.error('Failed to process receipt');
           setProcessingProgress(0);
         }
       };
@@ -264,6 +265,7 @@ const PurchaseReceiptUpload = () => {
     setExtractedData(null);
     setPhoneNumber('');
     setError(null);
+    setSuccessMessage('');
     setProcessingProgress(0);
     setIsConverting(false);
     setConversionProgress(0);
@@ -326,6 +328,18 @@ const PurchaseReceiptUpload = () => {
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         
+        {/* Success Message */}
+        {successMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="mb-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg flex items-center gap-3"
+          >
+            <CheckCircle size={20} className="text-[#d32f2f] flex-shrink-0" />
+            <span className="text-sm text-[#6c0f2a] font-medium">{successMessage}</span>
+          </motion.div>
+        )}
+
         {/* Step 1: Upload Receipt */}
         {step === 1 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -335,7 +349,7 @@ const PurchaseReceiptUpload = () => {
                   <Receipt className="text-white" size={24} />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Your Receipt</h2>
-                <p className="text-gray-600">Take a photo or upload your receipt to earn points</p>
+                <p className="text-gray-600">Take a photo or upload your receipt to get discounts</p>
               </div>
 
               {!uploadedFile ? (
@@ -448,7 +462,7 @@ const PurchaseReceiptUpload = () => {
               <div className="text-center mb-6">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Receipt Processed!</h2>
-                <p className="text-gray-600">Enter your phone number to earn points</p>
+                <p className="text-gray-600">Enter your phone number to get discounts</p>
               </div>
 
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
@@ -507,7 +521,7 @@ const PurchaseReceiptUpload = () => {
                   ) : (
                     <>
                       <Gift size={20} />
-                      Claim My Points
+                      Claim My Discounts
                     </>
                   )}
                 </button>
@@ -536,19 +550,10 @@ const PurchaseReceiptUpload = () => {
               </h2>
               <p className="text-gray-600 mb-6">
                 {recordPurchaseMutation.data.data.customer.isNewCustomer 
-                  ? `Welcome to ${businessInfo.name}! Your purchase has been recorded.`
+                  ? `Thank you for visiting ${businessInfo.branchName}! Your purchase has been recorded.`
                   : `You've earned points with ${businessInfo.name}`
                 }
               </p>
-
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6 mb-6">
-                <div className="text-4xl font-bold text-[#d32f2f] mb-2">
-                  +{Math.floor((recordPurchaseMutation.data.data.purchase.amount || 0) / 1000)} Points
-                </div>
-                <div className="text-sm text-gray-600">
-                  From your ₦{recordPurchaseMutation.data.data.purchase.amount?.toLocaleString()} purchase
-                </div>
-              </div>
 
               {!recordPurchaseMutation.data.data.customer.isNewCustomer && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -572,7 +577,7 @@ const PurchaseReceiptUpload = () => {
                   </div>
                   <div>
                     <div className="font-medium text-gray-900">Purchase Recorded!</div>
-                    <div className="text-sm text-gray-600">Your points have been added to {phoneNumber}</div>
+                    <div className="text-sm text-gray-600">Your discounts have been added to {phoneNumber}</div>
                   </div>
                 </div>
                 
@@ -582,7 +587,7 @@ const PurchaseReceiptUpload = () => {
                   </div>
                   <div>
                     <div className="font-medium text-gray-900">Keep visiting!</div>
-                    <div className="text-sm text-gray-600">Collect more points for rewards and discounts</div>
+                    <div className="text-sm text-gray-600">Collect more discounts for rewards and discounts</div>
                   </div>
                 </div>
               </div>

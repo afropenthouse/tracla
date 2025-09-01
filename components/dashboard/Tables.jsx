@@ -337,7 +337,7 @@ const ActionDropdown = ({ item, onAction, viewMode }) => {
 };
 
 // Main Table Component
-const VibeasyTable = () => {
+const VibeazyTable = () => {
   const [viewMode, setViewMode] = useState('customers'); // 'customers' or 'purchases'
   const [customers] = useState(mockCustomers);
   const [purchases] = useState(mockPurchases);
@@ -985,4 +985,4 @@ const VibeasyTable = () => {
   );
 };
 
-export default VibeasyTable;
+export default VibeazyTable;

@@ -543,7 +543,7 @@ const TopCustomers = ({ data }) => {
 };
 
 // Main Analytics Component
-const VibeasyAnalytics = () => {
+const VibeazyAnalytics = () => {
   const [data] = useState(mockAnalyticsData);
   const [revenueViewType, setRevenueViewType] = useState('monthly');
   const [customerGrowthViewType, setCustomerGrowthViewType] = useState('monthly');
@@ -590,4 +590,4 @@ const VibeasyAnalytics = () => {
   );
 };
 
-export default VibeasyAnalytics;
+export default VibeazyAnalytics;

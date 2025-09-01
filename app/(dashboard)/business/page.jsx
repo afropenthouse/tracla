@@ -263,7 +263,7 @@ const BusinessBranchesView = ({ businessId }) => {
       const response = await api.get(`/businesses/${businessId}/branches`);
       return response.data.data.business;
     },
-    enabled: !!businessId,
+    // enabled: !!businessId,  
   });
 
   const openBranchModal = (branch) => {

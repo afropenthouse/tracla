@@ -1,12 +1,10 @@
 import React from 'react'
-import VibeasyOverview from '@/components/dashboard/Overview'
-import VibeasyTable from '@/components/dashboard/Tables'
+import VibeazyOverview from '@/components/dashboard/Overview'
 
 export default function page() {
   return (
     <div>
-      <VibeasyOverview />
-      <VibeasyTable />
+      <VibeazyOverview />
     </div>
   )
 }
