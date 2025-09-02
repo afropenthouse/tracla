@@ -94,7 +94,7 @@ const QRCodePage = () => {
       // Add "Scan to visit" text
       ctx.font = '16px Arial';
       ctx.fillStyle = '#666666';
-      ctx.fillText('Scan to visit', size / 2, size + 70);
+      ctx.fillText('Scan to earn discounts', size / 2, size + 70);
 
       // Download the image
       const link = document.createElement('a');
