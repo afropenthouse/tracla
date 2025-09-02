@@ -44,4 +44,10 @@ export const useInviteAdminModalStore = create((set) => ({
   onClose: () => set({ isOpen: false }),
 }));
 
+export const useCreateBranchModalStore = create((set) => ({
+  isOpen: false,
+  onOpen: () => set({ isOpen: true }),
+  onClose: () => set({ isOpen: false }),
+}));
+
 

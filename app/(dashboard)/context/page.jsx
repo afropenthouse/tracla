@@ -8,7 +8,9 @@ import {
 } from 'lucide-react';
 import { useBusinessesAndBranches } from '@/lib/queries/branch';
 import { useBranchStore, useBusinessStore } from '@/store/store';
+import { useCreateBranchModalStore } from '@/store/modalStore';
 import { useRouter } from 'next/navigation';
+import CreateBranchModal from '@/components/modals/CreateBranchModal';
 
 
 
@@ -19,6 +21,7 @@ const BusinessOverviewPage = () => {
   // Get store state and actions
   const { currentBranch, setCurrentBranch, setBranches } = useBranchStore();
   const { business, setBusiness } = useBusinessStore();
+  const { onOpen } = useCreateBranchModalStore();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -197,7 +200,10 @@ const BusinessOverviewPage = () => {
               <p className="text-sm text-gray-600">Select a view and manage your locations</p>
             </div>
             {isOwner && (
-              <button className="flex items-center gap-2 px-4 py-2 bg-[#6c0f2a] text-white rounded-xl hover:from-rose-500 hover:to-red-600 transition-all duration-300 font-medium shadow-lg">
+              <button 
+                onClick={onOpen}
+                className="flex items-center gap-2 px-4 py-2 bg-[#6c0f2a] text-white rounded-xl cursor-pointer transition-all duration-300 font-medium shadow-lg"
+              >
                 <Plus size={16} />
                 Add Branch
               </button>
@@ -220,17 +226,17 @@ const BusinessOverviewPage = () => {
                     ? 'bg-[#6c0f2a]' 
                     : 'bg-[#6c0f2a]'
                 }`}>
-                  <Building2 size={20} className="text-white" />
+                  <Building2 size={20} className={`${isBusinessView ? 'text-white' : 'white'}`} />
                 </div>
                 <div className="text-left">
-                  <h4 className="font-semibold text-white">{currentBusiness.name}</h4>
-                  <p className="text-sm text-white font-medium">Overall business view • {currentBusiness.branchCount} branches</p>
+                  <h4 className={`font-semibold ${isBusinessView ? 'text-white' : 'white'}`}>{currentBusiness.name}</h4>
+                  <p className={`text-s font-medium ${isBusinessView ? 'text-white' : 'white'}`}>Overall business view • {currentBusiness.branchCount} branches</p>
                   <div className="flex items-center gap-4 mt-2">
-                    <div className="flex items-center gap-1 text-xs text-white">
+                    <div className={`flex items-center gap-1 text-xs ${isBusinessView ? 'text-white' : 'white'}`}>
                       <Mail size={12} />
                       {currentBusiness.email}
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-white">
+                    <div className={`flex items-center gap-1 text-xs ${isBusinessView ? 'text-white' : 'white'}`}>
                       <Phone size={12} />
                       {currentBusiness.phone}
                     </div>
@@ -238,7 +244,7 @@ const BusinessOverviewPage = () => {
                 </div>
               </div>
               {isBusinessView && (
-                <div className="flex items-center gap-2 text-sm text-[#6c0f2a] font-medium">
+                <div className="flex items-center gap-2 text-sm text-white font-medium">
                   <CheckCircle size={16} />
                   Selected
                 </div>
@@ -256,7 +262,7 @@ const BusinessOverviewPage = () => {
                   onClick={() => handleBranchSelect(branch)}
                   className={`flex flex-col items-start p-4 rounded-xl border-2 transition-all duration-300 text-left cursor-pointer ${
                     currentBranch?.id === branch.id 
-                      ? 'border-[#6c0f2a] bg-[#6c0f2a]' 
+                      ? 'border-[#6c0f2a]' 
                       : 'border-gray-200 bg-white/50 hover:border-gray-300 hover:bg-white/70'
                   }`}
                 >
@@ -324,6 +330,9 @@ const BusinessOverviewPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Create Branch Modal */}
+      <CreateBranchModal />
     </div>
   );
 };

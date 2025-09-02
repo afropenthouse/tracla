@@ -350,7 +350,7 @@ const CustomerCards = ({ topSpender, frequentCustomer, allTimeCustomer, isLoadin
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Total Spent:</span>
                   <span className="text-2xl font-bold text-[#6d0e2b]">
-                    ₦{topSpender.totalSpend >= 1000 ? (topSpender.totalSpend / 1000).toFixed(0) + 'K' : topSpender.totalSpend?.toFixed(0)}
+                    ₦{topSpender.spend >= 1000 ? (topSpender.spend / 1000).toFixed(0) + 'K' : topSpender.spend?.toFixed(0)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
