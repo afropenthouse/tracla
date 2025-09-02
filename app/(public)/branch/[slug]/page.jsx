@@ -577,7 +577,7 @@ const PurchaseReceiptUpload = () => {
                   </div>
                   <div>
                     <div className="font-medium text-gray-900">Purchase Recorded!</div>
-                    <div className="text-sm text-gray-600">Your discounts have been added to {phoneNumber}</div>
+                    <div className="text-sm text-gray-600">Your purchase has been added to {phoneNumber} for {businessInfo.branchName}</div>
                   </div>
                 </div>
                 
@@ -586,7 +586,7 @@ const PurchaseReceiptUpload = () => {
                     <Gift size={16} className="text-white" />
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">Keep visiting!</div>
+                    <div className="font-medium text-gray-900">Keep visiting {businessInfo.branchName}!</div>
                     <div className="text-sm text-gray-600">Collect more discounts for rewards and discounts</div>
                   </div>
                 </div>
