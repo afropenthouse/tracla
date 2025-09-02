@@ -17,8 +17,8 @@ const QRCodePage = () => {
   const currentContext = isBusinessView ? business : currentBranch;
   const contextName = currentContext?.name || 'Loading...';
   const qrCodeValue = isBusinessView 
-    ? `https://vibeazy.com/business/${business?.id}` 
-    : `https://vibeazy.com/branch/${currentBranch?.slug || currentBranch?.id}`;
+    ? `https://www.vibeazy.com/business/${business?.id}` 
+    : `https://www.vibeazy.com/branch/${currentBranch?.slug || currentBranch?.id}`;
 
   // Generate QR code when component mounts or context changes
   useEffect(() => {
