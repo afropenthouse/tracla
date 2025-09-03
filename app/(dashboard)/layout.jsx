@@ -5,7 +5,7 @@ import VibEazyBusinessSidebar from '@/components/Sidebar';
 // The AdminLayout component wraps all administrator-facing pages
 export default function VibeazyLayout({ children }) {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen">
       <VibEazyBusinessSidebar />
       
       {/* Main content */}

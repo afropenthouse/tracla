@@ -67,7 +67,7 @@ const VibEazyBusinessSidebar = ({
   notificationCount = 5, 
   messageCount = 12
 }) => {
-  const { currentBranch } = useBranchStore();
+  const { currentBranch, branches, setCurrentBranch } = useBranchStore();
   const { business } = useBusinessStore();
   
   // Fetch sidebar stats with aggressive caching
@@ -75,6 +75,7 @@ const VibEazyBusinessSidebar = ({
   const pathname = usePathname();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showBranchesDropdown, setShowBranchesDropdown] = useState(true);
   
   // Format currency for display
   const formatCurrency = (amount) => {
@@ -85,73 +86,34 @@ const VibEazyBusinessSidebar = ({
 
   // Use real business data only - context-aware naming
   const displayName = currentBranch?.name || business?.name || "Loading...";
-  const displayLocation = currentBranch?.address || business?.address || "Loading...";
-  const displayTotalCustomers = sidebarStats?.totalCustomers || 0;
+  const businessName = business?.name || "Loading...";
+  const totalBranches = branches?.length || 0;
   const displayMonthlyRevenue = sidebarStats?.totalRevenueThisMonth ? formatCurrency(sidebarStats.totalRevenueThisMonth) : "₦0";
 
-  // Navigation items - business dashboard specific
-  const navItems = [
+  // Navigation sections
+  const analyticsItems = [
     { 
       label: 'Dashboard', 
       icon: LayoutDashboard, 
-      path: '/dashboard',
-      gradient: 'from-red-500 to-red-600'
+      path: '/dashboard'
     },
     { 
       label: 'Customers', 
       icon: Users, 
-      path: '/customers',
-      gradient: 'from-red-500 to-rose-600'
+      path: '/customers'
     },
     { 
       label: 'Purchases', 
       icon: ShoppingBag, 
-      path: '/purchases',
-      gradient: 'from-rose-500 to-red-600'
+      path: '/purchases'
     },
-    // { 
-    //   label: 'Points & Rewards', 
-    //   icon: Gift, 
-    //   path: '/rewards',
-    //   gradient: 'from-rose-500 to-pink-600'
-    // },
-    // { 
-    //   label: 'Promotions', 
-    //   icon: Megaphone, 
-    //   path: '/promotions',
-    //   badge: 0,
-    //   gradient: 'from-pink-500 to-red-500'
-    // },
-    // { 
-    //   label: 'Receipts', 
-    //   icon: Receipt, 
-    //   path: '/receipts',
-    //   gradient: 'from-red-600 to-rose-700'
-    // },
-    // { 
-    //   label: 'Messaging', 
-    //   icon: MessageSquare, 
-    //   path: '/messaging', 
-    //   badge: messageCount,
-    //   gradient: 'from-rose-600 to-red-700'
-    // },
-    // { 
-    //   label: 'Analytics', 
-    //   icon: TrendingUp, 
-    //   path: '/analytics',
-    //   gradient: 'from-red-500 to-pink-500'
-    // },
-    // { 
-    //   label: 'Settings', 
-    //   icon: Settings, 
-    //   path: '/settings',
-    //   gradient: 'from-rose-500 to-red-600'
-    // },
+  ];
+
+  const businessItems = [
     { 
-      label: 'My Business', 
+      label: 'Business Overview', 
       icon: Building2, 
-      path: '/context',
-      gradient: 'from-red-600 to-rose-700'
+      path: '/context'
     },
   ];
   
@@ -166,13 +128,22 @@ const VibEazyBusinessSidebar = ({
     setShowUserDropdown(!showUserDropdown);
     setShowMobileMenu(false);
   };
+
+  const handleBranchSwitch = (branch) => {
+    setCurrentBranch(branch);
+    // setShowBranchesDropdown(false);
+  };
+
+  const toggleBranchesDropdown = () => {
+    setShowBranchesDropdown(!showBranchesDropdown);
+  };
   
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50">
+    <div className="flex h-screen">
       {/* Sidebar for Desktop */}
-      <div className="hidden md:flex flex-col bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl w-72 relative overflow-hidden">
+      <div className="hidden md:flex flex-col backdrop-blur-xl border-r border-white/20 shadow-2xl w-72 relative overflow-hidden">
         {/* Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-red-50 to-rose-50"></div>
+        <div className="absolute inset-0 "></div>
         
         {/* Logo Section */}
         <div className="relative z-10 flex items-center justify-between p-6 border-b border-white/10">
@@ -195,14 +166,14 @@ const VibEazyBusinessSidebar = ({
         </div>
         
         {/* Business Info Section - Compact */}
-        <div className="relative z-10 px-4 py-3 bg-gradient-to-r from-red-50 to-rose-50 border-b border-white/10">
+        <div className="relative z-10 px-4 py-3  border-b border-white/10">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-lg bg-[#6d0e2b] flex items-center justify-center shadow-md flex-shrink-0">
               <Store className="h-4 w-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 text-sm truncate">{displayName}</h3>
-              <p className="text-xs text-gray-600">{displayTotalCustomers} Customers • {displayLocation}</p>
+              <h3 className="font-semibold text-gray-900 text-sm truncate">{businessName}</h3>
+              <p className="text-xs text-gray-600">{totalBranches} Branch{totalBranches !== 1 ? 'es' : ''}</p>
             </div>
           </div>
         </div>
@@ -222,42 +193,111 @@ const VibEazyBusinessSidebar = ({
         
         {/* Navigation Items */}
         <div className="relative z-10 flex-1 py-4 overflow-y-auto">
-          <nav className="px-4 space-y-1">
-            {navItems.map((item) => (
-              <Link key={item.path} href={item.path}>
-                <div className={`w-full flex items-center justify-start px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden cursor-pointer ${
-                  isActive(item.path) 
-                    ? 'text-white shadow-lg' 
-                    : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
-                }`}>
-                  {/* Active background gradient */}
-                  {isActive(item.path) && (
-                    <div className={`absolute inset-0 bg-[#6d0e2b] rounded-xl`} />
-                  )}
-                  
-                  <div className="relative z-10 flex items-center w-full">
-                    <div className="relative">
-                      <item.icon size={20} className={isActive(item.path) ? 'text-white' : 'text-gray-600'} />
-                      {item.badge > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shadow-lg">
-                          {item.badge}
-                        </span>
+          <nav className="px-4 space-y-4">
+            {/* Analytics Section */}
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Analytics</h4>
+              <div className="space-y-1">
+                {analyticsItems.map((item) => (
+                  <Link key={item.path} href={item.path}>
+                    <div className={`w-full flex items-center justify-start px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden cursor-pointer ${
+                      isActive(item.path) 
+                        ? 'text-white shadow-lg' 
+                        : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
+                    }`}>
+                      {/* Active background gradient */}
+                      {isActive(item.path) && (
+                        <div className={`absolute inset-0 bg-[#6d0e2b] rounded-xl`} />
                       )}
+                      
+                      <div className="relative z-10 flex items-center w-full">
+                        <item.icon size={18} className={isActive(item.path) ? 'text-white' : 'text-gray-600'} />
+                        <span className={`ml-3 ${isActive(item.path) ? 'text-white' : 'text-gray-700'}`}>
+                          {item.label}
+                        </span>
+                      </div>
                     </div>
-                    
-                    <span className={`ml-4 ${isActive(item.path) ? 'text-white' : 'text-gray-700'}`}>
-                      {item.label}
-                    </span>
-                  </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Business Section */}
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Business</h4>
+              <div className="space-y-1">
+                {businessItems.map((item) => (
+                  <Link key={item.path} href={item.path}>
+                    <div className={`w-full flex items-center justify-start px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden cursor-pointer ${
+                      isActive(item.path) 
+                        ? 'text-white shadow-lg' 
+                        : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
+                    }`}>
+                      {/* Active background gradient */}
+                      {isActive(item.path) && (
+                        <div className={`absolute inset-0 bg-[#6d0e2b] rounded-xl`} />
+                      )}
+                      
+                      <div className="relative z-10 flex items-center w-full">
+                        <item.icon size={18} className={isActive(item.path) ? 'text-white' : 'text-gray-600'} />
+                        <span className={`ml-3 ${isActive(item.path) ? 'text-white' : 'text-gray-700'}`}>
+                          {item.label}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Branches Dropdown */}
+            <div>
+              <button
+                onClick={toggleBranchesDropdown}
+                className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700 transition-colors"
+              >
+                <span>Branches</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${showBranchesDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showBranchesDropdown && (
+                <div className="space-y-1 mt-2">
+                  {branches?.map((branch) => (
+                    <button
+                      key={branch.id}
+                      onClick={() => handleBranchSwitch(branch)}
+                      className={`w-full flex items-center justify-start px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden cursor-pointer ${
+                        currentBranch?.id === branch.id
+                          ? 'text-white shadow-lg' 
+                          : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
+                      }`}
+                    >
+                      {/* Active background gradient */}
+                      {currentBranch?.id === branch.id && (
+                        <div className={`absolute inset-0 bg-[#6d0e2b] rounded-xl`} />
+                      )}
+                      
+                      <div className="relative z-10 flex items-center w-full">
+                        <Store size={16} className={currentBranch?.id === branch.id ? 'text-white' : 'text-gray-600'} />
+                        <span className={`ml-3 ${currentBranch?.id === branch.id ? 'text-white' : 'text-gray-700'}`}>
+                          {branch.name}
+                        </span>
+                      </div>
+                    </button>
+                  )) || (
+                    <div className="px-4 py-2 text-sm text-gray-500">
+                      No branches available
+                    </div>
+                  )}
                 </div>
-              </Link>
-            ))}
+              )}
+            </div>
           </nav>
         </div>
         
         {/* Quick Stats Section */}
         <div className="relative z-10 px-4 py-3 border-t border-white/10">
-          <div className="bg-gradient-to-r from-red-50/50 to-rose-50/50 rounded-xl p-3 border border-red-100/50">
+          <div className=" rounded-xl p-3 border border-red-100/50">
             <h4 className="text-xs font-semibold text-gray-600 mb-2">This Month</h4>
             <div className="flex justify-between items-center">
               <div>
@@ -297,7 +337,7 @@ const VibEazyBusinessSidebar = ({
                 <div className="w-5 h-5 rounded-lg bg-[#6d0e2b] flex items-center justify-center mr-2">
                   <Store className="h-3 w-3 text-white" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">{displayTotalCustomers} Customers</span>
+                <span className="text-sm font-medium text-gray-700">{totalBranches} Branch{totalBranches !== 1 ? 'es' : ''}</span>
               </div>
               
               <Link href="/notifications">
@@ -351,8 +391,8 @@ const VibEazyBusinessSidebar = ({
                       <Store className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-sm">{displayName}</h3>
-                      <p className="text-xs text-gray-600">{displayTotalCustomers} Customers</p>
+                      <h3 className="font-bold text-gray-900 text-sm">{businessName}</h3>
+                      <p className="text-xs text-gray-600">{totalBranches} Branch{totalBranches !== 1 ? 'es' : ''}</p>
                     </div>
                   </div>
                 </div>
@@ -367,28 +407,77 @@ const VibEazyBusinessSidebar = ({
                   </div>
                 </Link>
 
-                {navItems.map((item) => (
-                  <Link key={item.path} href={item.path}>
-                    <div 
+                {/* Analytics Section */}
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Analytics</h4>
+                  {analyticsItems.map((item) => (
+                    <Link key={item.path} href={item.path}>
+                      <div 
+                        className={`block w-full text-left px-4 py-3 rounded-xl text-base font-medium transition-all cursor-pointer ${
+                          isActive(item.path) 
+                            ? 'text-white bg-[#6d0e2b] shadow-lg' 
+                            : 'text-gray-700 hover:bg-white/50'
+                        }`}
+                        onClick={() => setShowMobileMenu(false)}
+                      >
+                        <div className="flex items-center">
+                          <item.icon size={20} className="mr-4" />
+                          <span className="flex-1">{item.label}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Business Section */}
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Business</h4>
+                  {businessItems.map((item) => (
+                    <Link key={item.path} href={item.path}>
+                      <div 
+                        className={`block w-full text-left px-4 py-3 rounded-xl text-base font-medium transition-all cursor-pointer ${
+                          isActive(item.path) 
+                            ? 'text-white bg-[#6d0e2b] shadow-lg' 
+                            : 'text-gray-700 hover:bg-white/50'
+                        }`}
+                        onClick={() => setShowMobileMenu(false)}
+                      >
+                        <div className="flex items-center">
+                          <item.icon size={20} className="mr-4" />
+                          <span className="flex-1">{item.label}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Branches Section */}
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Branches</h4>
+                  {branches?.map((branch) => (
+                    <button
+                      key={branch.id}
+                      onClick={() => {
+                        handleBranchSwitch(branch);
+                        setShowMobileMenu(false);
+                      }}
                       className={`block w-full text-left px-4 py-3 rounded-xl text-base font-medium transition-all cursor-pointer ${
-                        isActive(item.path) 
+                        currentBranch?.id === branch.id
                           ? 'text-white bg-[#6d0e2b] shadow-lg' 
                           : 'text-gray-700 hover:bg-white/50'
                       }`}
-                      onClick={() => setShowMobileMenu(false)}
                     >
                       <div className="flex items-center">
-                        <item.icon size={20} className="mr-4" />
-                        <span className="flex-1">{item.label}</span>
-                        {item.badge > 0 && (
-                          <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shadow-lg">
-                            {item.badge}
-                          </span>
-                        )}
+                        <Store size={20} className="mr-4" />
+                        <span className="flex-1">{branch.name}</span>
                       </div>
+                    </button>
+                  )) || (
+                    <div className="px-4 py-2 text-sm text-gray-500">
+                      No branches available
                     </div>
-                  </Link>
-                ))}
+                  )}
+                </div>
                 
                 <div className="pt-4 border-t border-gray-100/50">
                   <div className="px-3 py-3 flex items-center bg-gradient-to-r from-red-50/50 to-rose-50/50 rounded-xl border border-white/20">

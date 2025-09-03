@@ -6,6 +6,7 @@ import {
   Activity, Gift, Receipt, Loader2, AlertCircle
 } from 'lucide-react';
 import { useRecentActivityData } from '@/lib/queries/branch';
+import Link from 'next/link';
 
 
 const VibeazyQuickOverviewTable = () => {
@@ -141,10 +142,10 @@ const VibeazyQuickOverviewTable = () => {
 
           {/* View All Button */}
           <button className="w-full mt-4 px-4 py-3 bg-[#6d0e2b] text-white rounded-xl hover:from-rose-500 hover:to-red-600 transition-all duration-300 font-medium shadow-lg hover:shadow-xl group">
-            <div className="flex items-center justify-center gap-2">
+            <Link href="/customers" className="flex items-center justify-center gap-2">
               <span>View All Customers</span>
               <ArrowUpRight size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-            </div>
+            </Link>
           </button>
         </div>
       </div>
@@ -241,10 +242,10 @@ const VibeazyQuickOverviewTable = () => {
 
           {/* View All Button */}
           <button className="w-full mt-4 px-4 py-3 bg-[#6d0e2b] text-white rounded-xl hover:from-red-500 hover:to-rose-600 transition-all duration-300 font-medium shadow-lg hover:shadow-xl group">
-            <div className="flex items-center justify-center gap-2">
+            <Link href="/purchases" className="flex items-center justify-center gap-2">
               <span>View All Purchases</span>
               <ArrowUpRight size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-            </div>
+            </Link>
           </button>
         </div>
       </div>

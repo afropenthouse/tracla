@@ -229,7 +229,7 @@ const CreateBranchModal = () => {
                       name="phone"
                       value={branchData.phone}
                       onChange={handleInputChange}
-                      placeholder="+234 xxx xxx xxxx"
+                      placeholder="Enter branch phone number"
                       className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
                         errors.phone ? 'border-red-400 bg-red-50/50' : 'border-gray-200 bg-white/50'
                       } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#6c0f2a]/20 focus:border-[#6c0f2a] transition-all duration-300`}

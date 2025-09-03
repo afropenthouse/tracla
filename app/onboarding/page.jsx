@@ -78,7 +78,7 @@ const WelcomeStep = ({ nextStep }) => (
 
     <button
       onClick={nextStep}
-      className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white px-8 py-4 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform flex items-center gap-2 mx-auto"
+      className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white px-8 py-4 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform flex items-center gap-2 mx-auto cursor-pointer"
     >
       Get Started
       <ArrowRight size={18} />
@@ -162,7 +162,7 @@ const BusinessSetupStep = ({ prevStep, handleBusinessSubmit, businessData, handl
               name="phone"
               value={businessData.phone}
               onChange={handleBusinessInputChange}
-              placeholder="+234 xxx xxx xxxx"
+              placeholder="Enter your business phone number"
               className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
                 errors.phone ? 'border-red-400 bg-red-50/50' : 'border-gray-200 bg-white/50'
               } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d32f2f]/20 focus:border-[#d32f2f] transition-all duration-300`}
@@ -212,7 +212,7 @@ const BusinessSetupStep = ({ prevStep, handleBusinessSubmit, businessData, handl
         <button
           onClick={handleBusinessSubmit}
           disabled={createBusinessMutation.isPending || !businessData.name || !businessData.email || !businessData.phone || !businessData.address}
-          className="flex-1 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white px-4 py-3 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+          className="flex-1 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white px-4 py-3 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
         >
           {createBusinessMutation.isPending ? (
             <div className="flex items-center gap-2">
@@ -312,7 +312,7 @@ const BranchSetupStep = ({ prevStep, handleBranchSubmit, branchData, handleBranc
               name="phone"
               value={branchData.phone}
               onChange={handleBranchInputChange}
-              placeholder="+234 xxx xxx xxxx"
+              placeholder="Enter branch phone number"
               className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
                 errors.phone ? 'border-red-400 bg-red-50/50' : 'border-gray-200 bg-white/50'
               } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d32f2f]/20 focus:border-[#d32f2f] transition-all duration-300`}
@@ -349,7 +349,7 @@ const BranchSetupStep = ({ prevStep, handleBranchSubmit, branchData, handleBranc
         <button
           onClick={handleBranchSubmit}
           disabled={createBranchMutation.isPending || !branchData.name || !branchData.address || !branchData.phone}
-          className="flex-1 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white px-4 py-3 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+          className="flex-1 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white px-4 py-3 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
         >
           {createBranchMutation.isPending ? (
             <div className="flex items-center gap-2">
@@ -434,14 +434,14 @@ const SuccessStep = ({ createdBusiness, businessData, createdBranch, branchData,
     <div className="flex flex-col sm:flex-row gap-4 justify-center">
       <button 
         onClick={downloadQRCode}
-        className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
+        className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2 cursor-pointer"
       >
         <Download size={18} />
         Download QR Code
       </button>
       <button
         onClick={handleGetStarted}
-        className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white px-8 py-3 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform flex items-center justify-center gap-2"
+        className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white px-8 py-3 rounded-xl hover:from-[#6c0f2a] hover:to-[#d32f2f] transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform flex items-center justify-center gap-2 cursor-pointer"
       >
         Go to Dashboard
         <ArrowRight size={18} />
@@ -758,14 +758,11 @@ const VibeazyOnboarding = () => {
       ctx.fillStyle = '#d32f2f';
       ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(createdBusiness?.name || businessData.name, canvas.width / 2, size + 25);
+      ctx.fillText(createdBusiness?.name + ' - ' + createdBranch?.name || businessData.name + ' - ' + branchData.name, canvas.width / 2, size + 25);
       
-      ctx.fillStyle = '#666666';
-      ctx.font = '14px Arial';
-      ctx.fillText(createdBranch?.name || branchData.name, canvas.width / 2, size + 45);
       
       ctx.font = '12px Arial';
-      ctx.fillText('Scan to submit receipts and earn points', canvas.width / 2, size + 65);
+      ctx.fillText('Scan to submit receipts and earn points', canvas.width / 2, size + 45,);
   
       // Convert canvas to blob
       canvas.toBlob((blob) => {

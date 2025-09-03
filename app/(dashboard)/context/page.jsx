@@ -136,7 +136,7 @@ const BusinessOverviewPage = () => {
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-2xl font-bold text-gray-900">{currentBusiness.name}</h1>
-                  <div className={`flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r ${getTierColor(currentBusiness.currentTier)} text-white text-sm font-medium`}>
+                  <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${getTierColor(currentBusiness.currentTier)} text-white text-sm font-medium`}>
                     {React.createElement(getTierIcon(currentBusiness.currentTier), { size: 14 })}
                     {currentBusiness.currentTier.charAt(0).toUpperCase() + currentBusiness.currentTier.slice(1)}
                   </div>
@@ -161,7 +161,7 @@ const BusinessOverviewPage = () => {
             <div className="flex items-center gap-3">
               <div className={`px-4 py-2 rounded-lg text-sm font-medium ${
                 isOwner 
-                  ? 'bg-gradient-to-r from-[#6c0f2a] to-rose-600 text-white' 
+                  ? 'bg-[#6c0f2a] text-white' 
                   : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
               }`}>
                 {isOwner ? 'Business Owner' : 'Branch Manager'}
@@ -226,7 +226,7 @@ const BusinessOverviewPage = () => {
                     ? 'bg-[#6c0f2a]' 
                     : 'bg-[#6c0f2a]'
                 }`}>
-                  <Building2 size={20} className={`${isBusinessView ? 'text-white' : 'white'}`} />
+                  <Building2 size={20} color={`${isBusinessView ? 'white' : 'white'}`} />
                 </div>
                 <div className="text-left">
                   <h4 className={`font-semibold ${isBusinessView ? 'text-white' : 'white'}`}>{currentBusiness.name}</h4>
@@ -270,8 +270,8 @@ const BusinessOverviewPage = () => {
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-lg ${
                         currentBranch?.id === branch.id 
-                          ? 'bg-gradient-to-br from-[#6c0f2a] to-rose-600' 
-                          : 'bg-gradient-to-br from-[#6c0f2a] to-rose-600'
+                          ? 'bg-[#6c0f2a]' 
+                          : 'bg-[#6c0f2a]'
                       }`}>
                         <Store size={16} className="text-white" />
                       </div>
@@ -310,7 +310,7 @@ const BusinessOverviewPage = () => {
 
                   {isOwner && (
                     <div className="flex items-center gap-2 w-full">
-                      <div className="flex-1 px-3 py-1.5 bg-gradient-to-r from-[#6c0f2a] to-rose-600 text-white rounded-lg text-xs font-medium text-center">
+                      <div className="flex-1 px-3 py-1.5 bg-[#6c0f2a] text-white rounded-lg text-xs font-medium text-center">
                         View Dashboard
                       </div>
                       <button 

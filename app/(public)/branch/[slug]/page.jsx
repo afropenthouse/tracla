@@ -15,7 +15,7 @@ import { useParams } from 'next/navigation';
 const PurchaseReceiptUpload = () => {
   const params = useParams();
   const branchSlug = params.slug;
-  console.log(JSON.stringify('this is the branch slug', branchSlug));
+  // console.log(JSON.stringify('this is the branch slug', branchSlug));
   
   const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -27,7 +27,8 @@ const PurchaseReceiptUpload = () => {
   const [isConverting, setIsConverting] = useState(false);
   const [conversionProgress, setConversionProgress] = useState(0);
   const [successMessage, setSuccessMessage] = useState('');
-  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
   // Fetch branch information using React Query
   const { data: branchData, isLoading: isLoadingBranch, error: branchError } = useQuery({
@@ -73,18 +74,41 @@ const PurchaseReceiptUpload = () => {
 
   const parseReceiptWithGemini = async (imageBase64) => {
     try {
+      console.log('🔄 Starting Gemini API call...');
+      console.log('📸 Image size:', Math.round(imageBase64.length / 1024), 'KB');
+      
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: imageBase64 }),
       });
 
-      if (!response.ok) throw new Error(`Processing failed: ${response.status}`);
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Response not OK:', response.status, errorText);
+        throw new Error(`Processing failed: ${response.status} - ${errorText}`);
+      }
+
       const result = await response.json();
-      if (!result.success) throw new Error(result.error || 'Failed to process receipt');
+      console.log('📋 API Response:', result);
+      
+      if (!result.success) {
+        console.error('❌ API returned error:', result.error, result.details);
+        throw new Error(result.error || 'Failed to process receipt');
+      }
+      
+      console.log('✅ Gemini processing successful:', result.data);
       return result.data;
     } catch (error) {
-      console.error('Receipt processing error:', error);
+      console.error('💥 Receipt processing error:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   };
@@ -160,17 +184,27 @@ const PurchaseReceiptUpload = () => {
   const handleFileSelect = async (file) => {
     if (!file) return;
 
+    console.log('📁 File selected:', {
+      name: file.name,
+      size: Math.round(file.size / 1024) + ' KB',
+      type: file.type,
+      lastModified: new Date(file.lastModified).toISOString()
+    });
+
     const isImageFile = file.type.startsWith('image/') || isHEIC(file);
     if (!isImageFile) {
+      console.error('❌ Invalid file type:', file.type);
       setError('Please select an image file');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
+      console.error('❌ File too large:', Math.round(file.size / 1024 / 1024) + 'MB');
       setError('File size must be less than 10MB');
       return;
     }
 
+    console.log('✅ File validation passed');
     setError(null);
     setExtractedData(null);
     setSuccessMessage('');
@@ -205,6 +239,7 @@ const PurchaseReceiptUpload = () => {
     try {
       const reader = new FileReader();
       reader.onload = async (e) => {
+        console.log('reader.onload', e);
         try {
           const progressInterval = setInterval(() => {
             setProcessingProgress(prev => Math.min(prev + 8, 85));
@@ -247,14 +282,26 @@ const PurchaseReceiptUpload = () => {
       return;
     }
 
+    if (!extractedData?.dateTime?.date) {
+      setError('No purchase date detected from receipt');
+      return;
+    }
+
+    if (!extractedData?.merchant?.name) {
+      setError('No merchant name detected from receipt');
+      return;
+    }
+
     const purchaseData = {
       phoneNumber: phoneNumber.replace(/\s/g, ''),
       amount: extractedData.amount,
       purchaseDate: extractedData.dateTime ? 
         new Date(extractedData.dateTime.date + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '')).toISOString() : 
-        new Date().toISOString()
+        new Date().toISOString(),
+      merchantName: extractedData.merchant.name
     };
 
+    console.log('📤 Submitting purchase data:', purchaseData);
     recordPurchaseMutation.mutate(purchaseData);
   };
 
@@ -269,7 +316,8 @@ const PurchaseReceiptUpload = () => {
     setProcessingProgress(0);
     setIsConverting(false);
     setConversionProgress(0);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
   };
 
   const formatPhoneNumber = (value) => {
@@ -356,26 +404,61 @@ const PurchaseReceiptUpload = () => {
                 <div
                   onDrop={(e) => { e.preventDefault(); handleFileSelect(e.dataTransfer.files[0]); }}
                   onDragOver={(e) => e.preventDefault()}
-                  className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#d32f2f] transition-colors cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#d32f2f] transition-colors"
                 >
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center mb-6">
                     <div className="w-16 h-16 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] rounded-full flex items-center justify-center mb-4">
-                      <Camera size={24} className="text-white" />
+                      <Receipt size={24} className="text-white" />
                     </div>
-                    <p className="text-lg font-medium text-gray-900 mb-2">Take a photo or upload</p>
-                    <p className="text-sm text-gray-500 mb-4">Tap here to add your receipt</p>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <Image size={16} />
-                      <span>Works with any image format</span>
-                    </div>
+                    <p className="text-lg font-medium text-gray-900 mb-2">Upload Your Receipt</p>
+                    <p className="text-sm text-gray-500 mb-4">Choose how you want to add your receipt</p>
+                  </div>
+
+                  {/* Camera and Gallery Options */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex flex-col items-center p-4 border-2 border-gray-200 rounded-xl hover:border-[#d32f2f] hover:bg-red-50 transition-all duration-200"
+                    >
+                      <div className="w-12 h-12 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] rounded-full flex items-center justify-center mb-3">
+                        <Camera size={20} className="text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Take Photo</span>
+                      <span className="text-xs text-gray-500">Use Camera</span>
+                    </button>
+
+                    <button
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="flex flex-col items-center p-4 border-2 border-gray-200 rounded-xl hover:border-[#d32f2f] hover:bg-red-50 transition-all duration-200"
+                    >
+                      <div className="w-12 h-12 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] rounded-full flex items-center justify-center mb-3">
+                        <Upload size={20} className="text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Upload</span>
+                      <span className="text-xs text-gray-500">From Gallery</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
+                    <Image size={16} />
+                    <span>Supports JPG, PNG, HEIC formats</span>
                   </div>
                   
+                  {/* Camera Input */}
                   <input
-                    ref={fileInputRef}
+                    ref={cameraInputRef}
                     type="file"
                     accept="image/*,.heic,.heif"
                     capture="environment"
+                    onChange={(e) => handleFileSelect(e.target.files[0])}
+                    className="hidden"
+                  />
+
+                  {/* Gallery Input */}
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*,.heic,.heif"
                     onChange={(e) => handleFileSelect(e.target.files[0])}
                     className="hidden"
                   />

@@ -129,12 +129,9 @@ export default function SignupPage() {
     // Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = "Password must contain at least one uppercase letter, one lowercase letter, and one number";
-    }
-
+    } else if (formData.password.length < 9) {
+      newErrors.password = "Password must be at least 9 characters";
+    } 
     // Terms validation
     if (!formData.terms) {
       newErrors.terms = "You must agree to the Terms of Service and Privacy Policy";
@@ -452,7 +449,7 @@ export default function SignupPage() {
                     ? 'border-red-400 bg-red-50/50' 
                     : 'border-gray-200 bg-white/50'
                 } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d32f2f]/20 focus:border-[#d32f2f] transition-all duration-300 placeholder:text-gray-400`}
-                placeholder="+234 xxx xxx xxxx"
+                placeholder="Enter your phone number"
                 disabled={signupMutation.isPending}
               />
               {errors.phone && (
