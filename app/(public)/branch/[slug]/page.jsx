@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Upload, Camera, FileImage, X, CheckCircle, AlertCircle, 
-  Loader2, Receipt, Clock, DollarSign, Calendar, Image,
+  Loader2, Receipt, Clock, DollarSign, Calendar, Image as ImageIcon,
   Sparkles, Building2, ShoppingCart, CreditCard, Tag, MapPin,
   ArrowRight, Phone, Gift, Star, Zap, Heart
 } from 'lucide-react';
@@ -144,6 +144,51 @@ const PurchaseReceiptUpload = () => {
            file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
   };
 
+  // Image compression function
+  const compressImage = (file, maxWidth = 1200, maxHeight = 1600, quality = 0.8) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        // Set canvas size
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          console.log('📷 Image compressed:', {
+            originalSize: Math.round(file.size / 1024) + ' KB',
+            compressedSize: Math.round(blob.size / 1024) + ' KB',
+            compression: Math.round((1 - blob.size / file.size) * 100) + '%',
+            dimensions: `${width}x${height}`
+          });
+          resolve(blob);
+        }, 'image/jpeg', quality);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const convertHEIC = async (file) => {
     setIsConverting(true);
     setConversionProgress(0);
@@ -200,7 +245,7 @@ const PurchaseReceiptUpload = () => {
 
     if (file.size > 10 * 1024 * 1024) {
       console.error('❌ File too large:', Math.round(file.size / 1024 / 1024) + 'MB');
-      setError('File size must be less than 10MB');
+      setError(`Image too large (${Math.round(file.size / 1024 / 1024)}MB). Please use a smaller image or take a new photo.`);
       return;
     }
 
@@ -211,19 +256,42 @@ const PurchaseReceiptUpload = () => {
 
     try {
       let processedFile = file;
+      
+      // Convert HEIC files first
       if (isHEIC(file)) {
+        console.log('🔄 Converting HEIC file...');
         setSuccessMessage('Converting iPhone image format...');
         processedFile = await convertHEIC(file);
         setSuccessMessage('Image converted successfully!');
       }
 
+      // Compress large images (>2MB or >3MB base64 equivalent)
+      const shouldCompress = processedFile.size > 2 * 1024 * 1024; // 2MB
+      
+      if (shouldCompress) {
+        console.log('🗜️ Compressing large image...');
+        setSuccessMessage('Optimizing image for processing...');
+        
+        // Create a File object from the blob if it's not already a File
+        if (processedFile instanceof Blob && !(processedFile instanceof File)) {
+          processedFile = new File([processedFile], file.name, { type: processedFile.type || file.type });
+        }
+        
+        const compressedBlob = await compressImage(processedFile);
+        processedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
+        setSuccessMessage('Image optimized successfully!');
+      }
+
       setUploadedFile(processedFile);
       const reader = new FileReader();
-      reader.onload = (e) => setPreviewUrl(e.target.result);
+      reader.onload = (e) => {
+        console.log('📸 Preview generated, final size:', Math.round(e.target.result.length / 1024), 'KB');
+        setPreviewUrl(e.target.result);
+      };
       reader.readAsDataURL(processedFile);
       setSuccessMessage('Receipt uploaded successfully!');
     } catch (error) {
-      console.error('File processing error:', error);
+      console.error('❌ File processing error:', error);
       setError(error.message || 'Failed to process image file');
       setSuccessMessage('');
     }
@@ -440,7 +508,7 @@ const PurchaseReceiptUpload = () => {
                   </div>
 
                   <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
-                    <Image size={16} />
+                    <ImageIcon size={16} />
                     <span>Supports JPG, PNG, HEIC formats</span>
                   </div>
                   
