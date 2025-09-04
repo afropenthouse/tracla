@@ -1,7 +1,7 @@
 "use client"
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useSidebarStats } from '@/lib/queries/branch';
 import { useBranchStore, useBusinessStore } from '@/store/store';
+import { logout } from '@/lib/api';
 
 // Generate a consistent gradient from a business name
 const generateGradientFromName = (name) => {
@@ -69,6 +70,7 @@ const VibEazyBusinessSidebar = ({
 }) => {
   const { currentBranch, branches, setCurrentBranch } = useBranchStore();
   const { business } = useBusinessStore();
+  const router = useRouter();
   
   // Fetch sidebar stats with aggressive caching
   const { data: sidebarStats } = useSidebarStats();
@@ -76,6 +78,7 @@ const VibEazyBusinessSidebar = ({
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showBranchesDropdown, setShowBranchesDropdown] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // Format currency for display
   const formatCurrency = (amount) => {
@@ -136,6 +139,25 @@ const VibEazyBusinessSidebar = ({
 
   const toggleBranchesDropdown = () => {
     setShowBranchesDropdown(!showBranchesDropdown);
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const result = await logout();
+      if (result.success) {
+        router.push('/login');
+      } else {
+        console.error('Logout failed:', result.error);
+        // Still redirect even if API call fails since cookies are cleared
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      router.push('/login');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
   
   return (
@@ -313,7 +335,16 @@ const VibEazyBusinessSidebar = ({
         </div>
         
         {/* User Section */}
-       
+        <div className="relative z-10 px-4 py-3 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="w-full flex items-center justify-start px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden cursor-pointer text-red-600 hover:bg-red-50/50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <LogOut size={18} className={`text-red-600 ${isLoggingOut ? 'animate-pulse' : ''}`} />
+            <span className="ml-3">{isLoggingOut ? 'Signing Out...' : 'Sign Out'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation */}
@@ -508,14 +539,16 @@ const VibEazyBusinessSidebar = ({
                     </div>
                   </Link>
                   
-                  <Link href="/logout">
-                    <div className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50/50 rounded-xl transition-colors cursor-pointer">
-                      <div className="flex items-center">
-                        <LogOut size={18} className="mr-3" />
-                        Sign Out
-                      </div>
+                  <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50/50 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="flex items-center">
+                      <LogOut size={18} className={`mr-3 ${isLoggingOut ? 'animate-pulse' : ''}`} />
+                      {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                     </div>
-                  </Link>
+                  </button>
                 </div>
               </div>
             </motion.div>

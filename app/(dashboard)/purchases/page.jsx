@@ -4,7 +4,6 @@ import {
   Receipt, Search, MoreVertical, Eye, Users, ChevronDown, Check, FileText, 
   FileSpreadsheet, Filter, RefreshCw, Calendar, ShoppingBag, Loader2, AlertCircle, Store, BarChart3
 } from 'lucide-react';
-import { IoMdInformationCircleOutline } from 'react-icons/io';
 import { RxCaretDown, RxCaretSort, RxCaretUp } from 'react-icons/rx';
 import { FaAngleLeft, FaAngleRight } from 'react-icons/fa';
 import { usePurchasesData } from '@/lib/queries/branch';
@@ -12,27 +11,16 @@ import { useBranchStore, useBusinessStore } from '@/store/store';
 
 
 
-// Info Popover Component
-const InfoPopover = ({ text }) => (
-  <div className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-3 bg-gray-900 text-white text-sm rounded-lg w-48 z-50">
-    {text}
-    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-  </div>
-);
 
 // Header Cell Component
-const HeaderCell = ({ text, info, hasSort = false, onSort, sortBy, order }) => {
+const HeaderCell = ({ text, hasSort = false, onSort, sortBy, order }) => {
   const normalizedText = text.toLowerCase().replace(/\s+/g, '');
 
   return (
     <div
-      className={`flex items-center gap-1 justify-center ${hasSort ? "cursor-pointer hover:bg-gray-100 rounded px-2 py-1" : ""}`}
+      className={`flex items-center gap-2 justify-center ${hasSort ? "cursor-pointer hover:bg-gray-100 rounded px-2 py-1" : ""}`}
       onClick={hasSort ? () => onSort(normalizedText) : undefined}
     >
-      <div className="group relative">
-        <IoMdInformationCircleOutline className="flex-shrink-0 text-gray-500 hover:text-gray-700 cursor-help" />
-        <InfoPopover text={info} />
-      </div>
       <span>{text}</span>
       {hasSort && (
         <div className="flex-shrink-0">
@@ -110,13 +98,11 @@ const PurchasesPage = () => {
   
   // UI state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isExportOpen, setIsExportOpen] = useState(false);
-  const [searchBy, setSearchBy] = useState('');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [order, setOrder] = useState('DESC');
   const [page, setPage] = useState(1);
-  const [isSearchFieldOpen, setIsSearchFieldOpen] = useState(false);
+  const filterRef = useRef(null);
   
   const [filterValues, setFilterValues] = useState({
     minAmount: "",
@@ -149,7 +135,7 @@ const PurchasesPage = () => {
   };
 
   // Fetch purchases data using context-aware hook
-  const { data: purchasesResponse, isLoading, error, refetch } = usePurchasesData(filters);
+  const { data: purchasesResponse, isLoading, error, refetch, isFetching } = usePurchasesData(filters);
   
   // Extract purchases and pagination from response
   const purchases = purchasesResponse?.purchases || [];
@@ -157,20 +143,17 @@ const PurchasesPage = () => {
   
   const isBusinessView = !currentBranch;
 
-  const searchFields = [
-    "Customer Phone",
-    "Amount",
-    "Purchase Date",
-    "Branch"
-  ];
+  // Close filters on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setIsFilterOpen(false);
+      }
+    };
 
-  const columnInfo = {
-    customerPhone: "Phone number of the customer who made this purchase",
-    amount: "Amount spent in this specific transaction", 
-    time: "Time when this purchase was made",
-    purchaseDate: "Date when this purchase was made",
-    branch: "Store branch where this purchase occurred"
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const formatCurrency = (amount) => {
     return `₦${amount.toLocaleString()}`;
@@ -206,11 +189,6 @@ const PurchasesPage = () => {
     alert(`Action: ${action} for purchase by ${item.customerPhone}`);
   };
 
-  const handleSearchFieldSelect = (field) => {
-    setSearchBy(field);
-    setIsSearchFieldOpen(false);
-  };
-
   const handleFilterChange = (name, value) => {
     setFilterValues((prev) => ({
       ...prev,
@@ -226,14 +204,19 @@ const PurchasesPage = () => {
       dateTo: "",
     });
     setSearch('');
-    setSearchBy('');
     setSortBy('');
     setOrder('DESC');
     setPage(1);
   };
 
-  const handleRefresh = () => {
-    refetch();
+  const handleRefresh = async () => {
+    console.log('Refresh clicked - purchases page');
+    try {
+      await refetch({ throwOnError: false, cancelRefetch: true });
+      console.log('Purchases data refreshed successfully');
+    } catch (error) {
+      console.error('Failed to refresh purchases:', error);
+    }
   };
 
   const handlePageChange = (newPage) => {
@@ -298,18 +281,18 @@ const PurchasesPage = () => {
             
             <button 
               onClick={handleRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-xl text-sm hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+              disabled={isLoading || isFetching}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-xl text-sm hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-              Refresh
+              <RefreshCw size={14} className={(isLoading || isFetching) ? "animate-spin" : ""} />
+              {(isLoading || isFetching) ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
         </div>
 
         {/* Filter Controls */}
         <div className="flex flex-wrap gap-3 justify-end">
-          <div className="relative">
+          <div className="relative" ref={filterRef}>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-xl text-sm hover:bg-gray-50 transition-colors cursor-pointer"
@@ -365,17 +348,16 @@ const PurchasesPage = () => {
                     </div>
                   </div>
 
-
                   <div className="flex justify-end gap-2 mt-4">
                     <button
                       onClick={clearFilters}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
                     >
                       Clear
                     </button>
                     <button
                       onClick={applyFilters}
-                      className="px-4 py-2 text-sm font-medium text-white bg-[#6c0f2a] border border-transparent rounded-lg hover:from-rose-500 hover:to-red-600"
+                      className="px-4 py-2 text-sm font-medium text-white bg-[#6c0f2a] border border-transparent rounded-lg hover:from-rose-500 hover:to-red-600 cursor-pointer"
                     >
                       Apply
                     </button>
@@ -385,81 +367,31 @@ const PurchasesPage = () => {
             )}
           </div>
 
-          {/* Search Controls */}
-          <div className="inline-flex items-center relative">
-            <div className="relative">
-              <button
-                onClick={() => setIsSearchFieldOpen(!isSearchFieldOpen)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-l-xl text-sm hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
-              >
-                {searchBy || "Search field"}
-                <ChevronDown size={16} />
-              </button>
-
-              {isSearchFieldOpen && (
-                <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 border">
-                  {searchFields.map((field) => (
-                    <button
-                      key={field}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
-                      onClick={() => handleSearchFieldSelect(field)}
-                    >
-                      {field}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-80 px-4 py-2 pl-10 border border-l-0 border-gray-300 rounded-r-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Search purchases..."
-              />
-              <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            </div>
+          {/* Search Controls - Customer Phone Only */}
+          <div className="relative">
+            <input
+              type="tel"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-80 px-4 py-2 pl-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              placeholder="Search by customer phone..."
+            />
+            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
 
         {/* Table */}
         <div className="flex flex-col bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20">
           <div className="px-6 py-4 border-b border-gray-200/50">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Purchases ({pagination.total})
-              </h3>
-              <div className="relative">
-                <button
-                  onClick={() => setIsExportOpen(!isExportOpen)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <MoreVertical size={18} />
-                </button>
-
-                {isExportOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 border">
-                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 first:rounded-t-lg border-b border-gray-100 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-blue-500" />
-                      <span>Download as CSV</span>
-                    </button>
-                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 last:rounded-b-lg flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4 text-green-600" />
-                      <span>Download as Excel</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Purchases ({pagination.total})
+            </h3>
           </div>
 
           {/* Table Header */}
           <div className={`grid gap-4 py-3 px-6 text-sm font-semibold text-gray-700 bg-gray-50/50 border-b border-gray-200/50 ${isBusinessView ? 'grid-cols-6' : 'grid-cols-5'}`}>
             <HeaderCell 
               text="Customer Phone" 
-              info={columnInfo.customerPhone}
               hasSort
               onSort={handleSort}
               sortBy={sortBy}
@@ -467,7 +399,6 @@ const PurchasesPage = () => {
             />
             <HeaderCell 
               text="Amount" 
-              info={columnInfo.amount}
               hasSort
               onSort={handleSort}
               sortBy={sortBy}
@@ -475,7 +406,6 @@ const PurchasesPage = () => {
             />
             <HeaderCell 
               text="Time" 
-              info={columnInfo.time}
               hasSort
               onSort={handleSort}
               sortBy={sortBy}
@@ -483,7 +413,6 @@ const PurchasesPage = () => {
             />
             <HeaderCell 
               text="Purchase Date" 
-              info={columnInfo.purchaseDate}
               hasSort
               onSort={handleSort}
               sortBy={sortBy}
@@ -492,7 +421,6 @@ const PurchasesPage = () => {
             {isBusinessView && (
               <HeaderCell 
                 text="Branch" 
-                info={columnInfo.branch}
                 hasSort
                 onSort={handleSort}
                 sortBy={sortBy}
@@ -515,7 +443,7 @@ const PurchasesPage = () => {
                 <p className="text-gray-600 mb-4">{error.message}</p>
                 <button 
                   onClick={handleRefresh}
-                  className="px-4 py-2 bg-[#6c0f2a] text-white rounded-lg hover:bg-red-600 transition-colors"
+                  className="px-4 py-2 bg-[#6c0f2a] text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
                 >
                   Try Again
                 </button>
@@ -604,7 +532,7 @@ const PurchasesPage = () => {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                        className={`px-3 py-2 text-sm font-medium rounded-lg cursor-pointer ${
                           pagination.page === pageNum
                             ? "text-white bg-gradient-to-r from-red-500 to-rose-600"
                             : "text-gray-700 hover:bg-gray-50"
@@ -619,7 +547,7 @@ const PurchasesPage = () => {
                       <span className="px-2 text-gray-500">...</span>
                       <button 
                         onClick={() => handlePageChange(pagination.totalPages)}
-                        className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
+                        className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg cursor-pointer"
                       >
                         {pagination.totalPages}
                       </button>

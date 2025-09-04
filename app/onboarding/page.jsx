@@ -92,6 +92,11 @@ const BusinessSetupStep = ({ prevStep, handleBusinessSubmit, businessData, handl
     <div className="text-center mb-8">
       <h2 className="text-2xl font-bold bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] bg-clip-text text-transparent mb-2">Create Your Business</h2>
       <p className="text-gray-600">Let's start by setting up your business profile</p>
+      <div className="bg-red-50/80 border border-red-200/50 rounded-xl p-4 mt-4">
+        <p className="text-sm text-red-800">
+          <strong>Important:</strong> Enter your business name exactly as it appears on your receipts. This helps us ensure only receipts that belong to your business are recorded.
+        </p>
+      </div>
     </div>
 
     {/* General Error Message */}
