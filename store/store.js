@@ -51,6 +51,38 @@ export const useBusinessStore = create()(
   )
 );
 
+// Utility function to ensure www prefix in URLs
+const ensureWwwPrefix = (url) => {
+  if (!url || typeof url !== 'string') return url;
+  
+  try {
+    const urlObj = new URL(url);
+    
+    // Skip if already has www or is localhost/IP
+    if (urlObj.hostname.startsWith('www.') || 
+        urlObj.hostname === 'localhost' ||
+        /^\d+\.\d+\.\d+\.\d+$/.test(urlObj.hostname)) {
+      return url;
+    }
+    
+    // Add www prefix
+    urlObj.hostname = `www.${urlObj.hostname}`;
+    return urlObj.toString();
+  } catch (error) {
+    console.warn('Failed to process URL for www prefix:', url, error);
+    return url;
+  }
+};
+
+// Process branch data to ensure www in qrCodeUrl
+const processBranchData = (branch) => {
+  if (!branch) return branch;
+  return {
+    ...branch,
+    qrCodeUrl: branch.qrCodeUrl ? ensureWwwPrefix(branch.qrCodeUrl) : branch.qrCodeUrl
+  };
+};
+
 // Branch Store
 export const useBranchStore = create()(
   persist(
@@ -59,27 +91,30 @@ export const useBranchStore = create()(
       currentBranch: null,
 
       // Set all branches
-      setBranches: (branches) => set({ branches }),
+      setBranches: (branches) => set({ branches: branches.map(processBranchData) }),
 
       // Add a branch
       addBranch: (branch) =>
         set((state) => ({
-          branches: [...state.branches, branch],
+          branches: [...state.branches, processBranchData(branch)],
         })),
 
       // Update a branch
       updateBranch: (updatedBranch) =>
-        set((state) => ({
-          branches: state.branches.map((branch) =>
-            branch.id === updatedBranch.id
-              ? { ...branch, ...updatedBranch }
-              : branch
-          ),
-          currentBranch:
-            state.currentBranch?.id === updatedBranch.id
-              ? updatedBranch
-              : state.currentBranch,
-        })),
+        set((state) => {
+          const processedBranch = processBranchData(updatedBranch);
+          return {
+            branches: state.branches.map((branch) =>
+              branch.id === processedBranch.id
+                ? { ...branch, ...processedBranch }
+                : branch
+            ),
+            currentBranch:
+              state.currentBranch?.id === processedBranch.id
+                ? processedBranch
+                : state.currentBranch,
+          };
+        }),
 
       // Remove a branch
       removeBranch: (branchId) =>
@@ -90,7 +125,7 @@ export const useBranchStore = create()(
         })),
 
       // Set current branch
-      setCurrentBranch: (branch) => set({ currentBranch: branch }),
+      setCurrentBranch: (branch) => set({ currentBranch: processBranchData(branch) }),
 
       // Clear all branches
       clearBranches: () =>
