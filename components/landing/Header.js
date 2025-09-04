@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -39,12 +38,12 @@ const Header = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="flex space-x-3" // Reduced space between buttons
         >
-          <Link href="/login" className="px-3 py-1.5 rounded-md text-[#6c0f2a] font-medium hover:bg-gray-100 transition-colors text-sm md:text-base">
+          <button className="px-3 py-1.5 rounded-md text-[#6c0f2a] font-medium hover:bg-gray-100 transition-colors text-sm md:text-base">
             Sign In
-          </Link>
-          <Link href="/signup" className="px-3 py-1.5 rounded-md bg-[#6c0f2a] text-white font-medium hover:bg-[#5a0d23] transition-colors text-sm md:text-base">
+          </button>
+          <button className="px-3 py-1.5 rounded-md bg-[#6c0f2a] text-white font-medium hover:bg-[#5a0d23] transition-colors text-sm md:text-base">
             Sign Up
-          </Link>
+          </button>
         </motion.div>
       </div>
     </header>
