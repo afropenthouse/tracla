@@ -19,7 +19,7 @@ const Pricing = () => {
   };
 
   const parsePrice = (priceStr) => {
-    return parseInt(priceStr.replace('NGN', '').replace(/,/g, ''));
+    return parseInt(priceStr.replace('₦', '').replace(/,/g, ''));
   };
 
   const formatPrice = (priceNum) => {
@@ -58,14 +58,14 @@ const Pricing = () => {
       id: 'starter',
       name: 'Starter',
       price: {
-        monthly: 'NGN39,999',
-        quarterly: 'NGN34,999',
-        yearly: 'NGN29,999'
+        monthly: '₦39,999',
+        quarterly: '₦34,999',
+        yearly: '₦29,999'
       },
       oldPrice: {
-        monthly: 'NGN59,999',
-        quarterly: 'NGN49,999',
-        yearly: 'NGN39,999'
+        monthly: '₦59,999',
+        quarterly: '₦49,999',
+        yearly: '₦39,999'
       },
       description: 'Perfect for small businesses',
       features: [
@@ -83,14 +83,14 @@ const Pricing = () => {
       id: 'growth',
       name: 'Growth',
       price: {
-        monthly: 'NGN79,999',
-        quarterly: 'NGN69,999',
-        yearly: 'NGN59,999'
+        monthly: '₦79,999',
+        quarterly: '₦69,999',
+        yearly: '₦59,999'
       },
       oldPrice: {
-        monthly: 'NGN99,999',
-        quarterly: 'NGN89,999',
-        yearly: 'NGN79,999'
+        monthly: '₦99,999',
+        quarterly: '₦89,999',
+        yearly: '₦79,999'
       },
       description: 'Great for growing businesses',
       features: [
@@ -107,14 +107,14 @@ const Pricing = () => {
       id: 'business',
       name: 'Business',
       price: {
-        monthly: 'NGN199,999',
-        quarterly: 'NGN189,999',
-        yearly: 'NGN179,999'
+        monthly: '₦199,999',
+        quarterly: '₦189,999',
+        yearly: '₦179,999'
       },
       oldPrice: {
-        monthly: 'NGN219,999',
-        quarterly: 'NGN209,999',
-        yearly: 'NGN199,999'
+        monthly: '₦219,999',
+        quarterly: '₦209,999',
+        yearly: '₦199,999'
       },
       description: 'For large businesses and enterprises',
       features: [
@@ -233,16 +233,11 @@ const Pricing = () => {
                   </div>
                 </div>
                 <div className="my-4">
-                  <span className={`font-bold ${plan.id === 'business' ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'}`}>
+                  <span className="text-xl md:text-2xl font-bold">
                     {getOldPrice(plan, billingPeriods[plan.id]) && <s className="text-lg md:text-xl text-gray-400 mr-2 line-through decoration-2 decoration-gray-500">{getOldPrice(plan, billingPeriods[plan.id])}</s>} {getPrice(plan, billingPeriods[plan.id])} <span className={`text-base ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriod(billingPeriods[plan.id])}</span>
                   </span>
                   <div className={`text-sm mt-1 ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriodText(billingPeriods[plan.id])}</div>
                 </div>
-                {billingPeriods[plan.id] !== 'monthly' && calculateSavings(plan, billingPeriods[plan.id]) && (
-                  <span className="block text-sm text-green-600 font-semibold mt-1">
-                    Saves {calculateSavings(plan, billingPeriods[plan.id])} annually
-                  </span>
-                )}
               </div>
 
               {/* Content area with no extra space */}
