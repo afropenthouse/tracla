@@ -5,8 +5,8 @@ const Hero = () => {
   const businessTypes = [
     'Restaurants & Bars',
     'Supermarkets',
-    'Salons',
-    'Spas',
+    'Salons & Spas',
+    'Cinemas',
   ];
 
   return (
@@ -36,14 +36,14 @@ const Hero = () => {
             Track spending. Reward customers. Sell more.
           </motion.h2>
           
-          <motion.div 
+          <motion.div
             className="flex flex-wrap gap-2 mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
             {businessTypes.map((item, index) => (
-              <motion.span 
+              <motion.span
                 key={index}
                 className="px-3 py-1.5 bg-[#f8e5ea] text-[#6c0f2a] rounded-full text-sm font-medium"
                 whileHover={{ scale: 1.05 }}
@@ -113,7 +113,7 @@ const Hero = () => {
               style={{ zIndex: 3 }}
             >
               <img 
-                src="/Salons.webp" 
+                src="/cinema.webp" 
                 alt="Lounge"
                 className="w-full h-full object-cover rounded-2xl"
               />

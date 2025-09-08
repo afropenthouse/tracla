@@ -13,10 +13,35 @@ const Pricing = () => {
     return plan.price[period];
   };
 
+  const getOldPrice = (plan, period) => {
+    if (!plan.oldPrice) return '';
+    return plan.oldPrice[period];
+  };
+
+  const parsePrice = (priceStr) => {
+    return parseInt(priceStr.replace('NGN', '').replace(/,/g, ''));
+  };
+
+  const formatPrice = (priceNum) => {
+    return 'NGN' + priceNum.toLocaleString();
+  };
+
+  const calculateSavings = (plan, period) => {
+    if (!plan.oldPrice || period === 'monthly') return '';
+    const monthlyAnnual = parsePrice(plan.oldPrice.monthly) * 12;
+    const periodAnnual = parsePrice(plan.oldPrice[period]) * 12;
+    const savings = monthlyAnnual - periodAnnual;
+    return formatPrice(savings);
+  };
+
   const getPeriod = (period) => {
-    if (period === 'quarterly') return '/monthly';
-    if (period === 'yearly') return '/monthly';
-    return '/month';
+    return '/mo';
+  };
+
+  const getPeriodText = (period) => {
+    if (period === 'quarterly') return 'for 3 months';
+    if (period === 'yearly') return 'for 12 months';
+    return 'for 1 month';
   };
 
   const calculateDiscount = (plan, period) => {
@@ -31,11 +56,16 @@ const Pricing = () => {
   const plans = [
     {
       id: 'starter',
-      name: 'Starter Plan',
+      name: 'Starter',
       price: {
-        monthly: '₦59,999',
-        quarterly: '₦49,999',
-        yearly: '₦39,999'
+        monthly: 'NGN39,999',
+        quarterly: 'NGN34,999',
+        yearly: 'NGN29,999'
+      },
+      oldPrice: {
+        monthly: 'NGN59,999',
+        quarterly: 'NGN49,999',
+        yearly: 'NGN39,999'
       },
       description: 'Perfect for small businesses',
       features: [
@@ -51,11 +81,16 @@ const Pricing = () => {
     },
     {
       id: 'growth',
-      name: 'Growth Plan',
+      name: 'Growth',
       price: {
-        monthly: '₦99,999',
-        quarterly: '₦89,999',
-        yearly: '₦79,999'
+        monthly: 'NGN79,999',
+        quarterly: 'NGN69,999',
+        yearly: 'NGN59,999'
+      },
+      oldPrice: {
+        monthly: 'NGN99,999',
+        quarterly: 'NGN89,999',
+        yearly: 'NGN79,999'
       },
       description: 'Great for growing businesses',
       features: [
@@ -70,11 +105,16 @@ const Pricing = () => {
     },
     {
       id: 'business',
-      name: 'Business Plan',
+      name: 'Business',
       price: {
-        monthly: '₦199,999',
-        quarterly: '₦189,999',
-        yearly: '₦179,999'
+        monthly: 'NGN199,999',
+        quarterly: 'NGN189,999',
+        yearly: 'NGN179,999'
+      },
+      oldPrice: {
+        monthly: 'NGN219,999',
+        quarterly: 'NGN209,999',
+        yearly: 'NGN199,999'
       },
       description: 'For large businesses and enterprises',
       features: [
@@ -155,6 +195,9 @@ const Pricing = () => {
             >
               <div className={`p-6 text-center ${plan.highlight ? 'bg-[#6c0f2a] text-white' : 'bg-white'} relative`}>
                 <h3 className={`text-xl md:text-2xl font-bold ${plan.highlight ? 'text-white' : 'text-[#6c0f2a]'}`}>{plan.name}</h3>
+                <p className="text-base mb-4">
+                  {plan.description}
+                </p>
                 <div className="block lg:hidden my-4">
                   <div className="flex justify-center space-x-1 mb-2">
                     <button
@@ -190,22 +233,37 @@ const Pricing = () => {
                   </div>
                 </div>
                 <div className="my-4">
-                  <span className="text-3xl md:text-4xl font-bold">{getPrice(plan, billingPeriods[plan.id])}</span>
-                  <span className={`text-lg ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriod(billingPeriods[plan.id])}</span>
+                  <span className={`font-bold ${plan.id === 'business' ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'}`}>
+                    {getOldPrice(plan, billingPeriods[plan.id]) && <s className="text-lg md:text-xl text-gray-400 mr-2 line-through decoration-2 decoration-gray-500">{getOldPrice(plan, billingPeriods[plan.id])}</s>} {getPrice(plan, billingPeriods[plan.id])} <span className={`text-base ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriod(billingPeriods[plan.id])}</span>
+                  </span>
+                  <div className={`text-sm mt-1 ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriodText(billingPeriods[plan.id])}</div>
                 </div>
-                <p className="text-base">
-                  {plan.description}
-                  {billingPeriods[plan.id] !== 'monthly' && (
-                    <span className="block text-sm text-green-600 font-semibold mt-1">
-                      {billingPeriods[plan.id] === 'quarterly' ? 'Saves ₦120,000 annually' : 'Saves ₦240,000 annually'}
-                    </span>
-                  )}
-                </p>
+                {billingPeriods[plan.id] !== 'monthly' && calculateSavings(plan, billingPeriods[plan.id]) && (
+                  <span className="block text-sm text-green-600 font-semibold mt-1">
+                    Saves {calculateSavings(plan, billingPeriods[plan.id])} annually
+                  </span>
+                )}
               </div>
 
               {/* Content area with no extra space */}
               <div className="flex flex-col flex-grow">
                 <div className="bg-white p-6 flex-grow">
+                  {/* Button placed before features list */}
+                  <div className="mb-6">
+                    <button
+                      className={`w-full py-3 rounded-lg font-medium text-base ${
+                        selectedPlan === plan.id
+                          ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23] border-2 border-[#6c0f2a]'
+                          : plan.highlight
+                            ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
+                            : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
+                      }`}
+                      onClick={() => setSelectedPlan(plan.id)}
+                    >
+                      {selectedPlan === plan.id ? 'Selected' : 'Select Plan'}
+                    </button>
+                  </div>
+
                   <ul className="space-y-3">
                     {plan.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start">
@@ -224,22 +282,6 @@ const Pricing = () => {
                       </li>
                     ))}
                   </ul>
-                </div>
-
-                {/* Button placed directly under content */}
-                <div className="bg-white p-6 pt-0">
-                  <button
-                    className={`w-full py-3 rounded-lg font-medium text-base ${
-                      selectedPlan === plan.id
-                        ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23] border-2 border-[#6c0f2a]'
-                        : plan.highlight
-                          ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
-                          : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
-                    }`}
-                    onClick={() => setSelectedPlan(plan.id)}
-                  >
-                    {selectedPlan === plan.id ? 'Selected' : 'Select Plan'}
-                  </button>
                 </div>
               </div>
             </motion.div>
