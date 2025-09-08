@@ -18,13 +18,13 @@ const Example = () => {
             <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-[#6c0f2a] rounded-full opacity-10"></div>
             
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold mb-8 text-[#6c0f2a] text-center">See Vibeazy in Action</h2>
+              <h2 className="text-3xl font-bold mb-8 text-[#6c0f2a] text-center">See Tracla in Action</h2>
               <div className="space-y-6 text-gray-600 bg-white p-6 md:p-8 rounded-xl shadow-lg">
                 <p className="text-lg">
                   Sarah visits your supermarket 10 times a month and spends over <strong className="text-[#6c0f2a]">₦100,000</strong>. But you don’t know Sarah and you’re missing the chance to keep her coming back.
                 </p>
                 <p className="text-lg">
-                  With Vibeazy, every time Sarah shops, she simply scans your QR code and uploads her receipt. Instantly, her visits and spending show up on your dashboard, along with every other customer’s.
+                  With Tracla, every time Sarah shops, she simply scans your QR code and uploads her receipt. Instantly, her visits and spending show up on your dashboard, along with every other customer’s.
                 </p>
                 <p className="text-lg">
                   Now, you can:
@@ -35,7 +35,7 @@ const Example = () => {
                   </ul>
                 </p>
                 <p className="text-lg">
-                  Vibeazy makes it simple to turn hidden shoppers like Sarah into repeat customers who fuel <span className="text-[#6c0f2a]">your growth</span>.
+                  Tracla makes it simple to turn hidden shoppers like Sarah into repeat customers who fuel <span className="text-[#6c0f2a]">your growth</span>.
                 </p>
               </div>
             </div>

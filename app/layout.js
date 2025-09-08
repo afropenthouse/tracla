@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Vibeazy | Make your top customers spend more",
+  title: "Tracla | Make your top customers spend more",
   description: "Make your top customers spend more",
 };
 

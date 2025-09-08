@@ -12,7 +12,7 @@ const Cta = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Start Growing with Vibeazy Today</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Start Growing with Tracla Today</h2>
           <p className="text-xl text-white/90 mb-10">
             Keep track of your top spenders. Use loyalty to increase foot traffic, boost repeat sales, and build a direct customer channel.
           </p>

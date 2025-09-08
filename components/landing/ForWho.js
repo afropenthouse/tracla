@@ -40,9 +40,9 @@ const ForWho = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-[#6c0f2a] mb-4">Who is Vibeazy For?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#6c0f2a] mb-4">Who is Tracla For?</h2>
           <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-            Vibeazy works for any in-person business that wants to know their customers, identify their top spenders & make them spend more.
+            Tracla works for any in-person business that wants to know their customers, identify their top spenders & make them spend more.
           </p>
         </motion.div>
         
@@ -76,7 +76,7 @@ const ForWho = () => {
         >
           <h3 className="text-2xl font-bold mb-4">Perfect for any in-person business</h3>
           <p className="max-w-2xl mx-auto">
-            If your business collects payments in person, issues receipts, and wants more returning customers — Vibeazy is built for you.
+            If your business collects payments in person, issues receipts, and wants more returning customers — Tracla is built for you.
           </p>
         </motion.div>
       </div>

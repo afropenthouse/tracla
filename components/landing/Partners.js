@@ -21,7 +21,7 @@ const Partners = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl font-bold text-[#6c0f2a] mb-4">Trusted by Businesses</h2>
-          <p className="text-gray-700">Join hundreds of businesses using Vibeazy to drive customer loyalty</p>
+          <p className="text-gray-700">Join hundreds of businesses using Tracla to drive customer loyalty</p>
         </motion.div>
         
         <div className="flex flex-wrap justify-center gap-8 md:gap-16">

@@ -29,7 +29,7 @@ const WelcomeStep = ({ nextStep }) => (
         </div> */}
         <div>
           <h1 className="text-4xl lg:text-5xl font-bold text-gray-900">
-            Welcome to <span className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] bg-clip-text text-transparent">Vibeazy</span>
+            Welcome to <span className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] bg-clip-text text-transparent">Tracla</span>
           </h1>
           <p className="text-lg text-gray-500 mt-2">Business Dashboard</p>
         </div>
@@ -384,7 +384,7 @@ const SuccessStep = ({ createdBusiness, businessData, createdBranch, branchData,
         You're All Set!
       </h1>
       <p className="text-lg text-gray-600">
-        Welcome to Vibeazy! Your business and first branch have been successfully created.
+        Welcome to Tracla! Your business and first branch have been successfully created.
       </p>
     </div>
 

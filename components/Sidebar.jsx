@@ -172,7 +172,7 @@ const VibEazyBusinessSidebar = ({
           <div className="flex items-center">
             <div className="relative">
               <div className="w-10 h-10 rounded-xl bg-[#6d0e2b] flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">V</span>
+                <span className="text-white font-bold text-lg">T</span>
               </div>
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
                 <Sparkles className="w-2 h-2 text-white" />
@@ -180,7 +180,7 @@ const VibEazyBusinessSidebar = ({
             </div>
             <div className="ml-3">
               <h2 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                Vib<span className="text-black">eazy</span>
+                Tra<span className="text-black">cla</span>
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">Business Dashboard</p>
             </div>
@@ -353,11 +353,11 @@ const VibEazyBusinessSidebar = ({
           <div className="px-4 py-3 flex justify-between items-center">
             <div className="flex items-center">
               <div className="w-8 h-8 rounded-lg bg-[#6d0e2b] flex items-center justify-center mr-3 shadow-md">
-                <span className="text-white font-bold text-sm">V</span>
+                <span className="text-white font-bold text-sm">T</span>
               </div>
               <div>
                 <h2 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                  Vib<span className="text-red-600">Easy</span>
+                  Tra<span className="text-red-600">cla</span>
                 </h2>
                 <p className="text-xs text-gray-500">Business Dashboard</p>
               </div>

@@ -263,14 +263,14 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
-                <span className="text-[#d32f2f] font-bold text-2xl">V</span>
+                <span className="text-[#d32f2f] font-bold text-2xl">T</span>
                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
                   <Sparkles className="w-3 h-3 text-white" />
                 </div>
               </motion.div>
             </div>
             <h1 className="text-3xl lg:text-5xl font-bold mb-2">
-              Vib<span className="text-rose-200">eazy</span>
+              Tra<span className="text-rose-200">cla</span>
             </h1>
             <p className="text-white text-center">Business Dashboard</p>
           </motion.div>

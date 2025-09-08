@@ -13,7 +13,7 @@ const About = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            What is Vibeazy
+            What is Tracla
           </motion.h2>
           
           <motion.p 
@@ -23,7 +23,7 @@ const About = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Vibeazy helps you track how much your customers are spending, reward your top customers, and make more sales — all without changing your payment system or asking customers to download an app.
+            Tracla helps you track how much your customers are spending, reward your top customers, and make more sales — all without changing your payment system or asking customers to download an app.
           </motion.p>
           
           <motion.p 
@@ -33,7 +33,7 @@ const About = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            Whether you run a restaurant, spa, supermarket, or cinema, Vibeazy helps you understand your customers and keep them coming back
+            Whether you run a restaurant, spa, supermarket, or cinema, Tracla helps you understand your customers and keep them coming back
           </motion.p>
         </div>
       </div>

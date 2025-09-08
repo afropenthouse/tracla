@@ -25,11 +25,11 @@ const Header = () => {
           <div className="flex items-center">
             
             
-            <img 
-              src="/logo.png" 
-              alt="Vibeazy" 
-              className="h-16 w-16 md:h-16 md:w-16 object-contain filter drop-shadow-md" 
-            />
+            <div>
+              <h2 className="text-2xl font-bold bg-red-600 bg-clip-text text-transparent">
+                Tra<span className="text-[black]">cla</span>
+              </h2>
+            </div>
           </div>
         </motion.div>
         

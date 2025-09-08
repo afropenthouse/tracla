@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Brand & Tagline */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold">Vibeazy</h3>
+            <h3 className="text-2xl font-bold">Tracla</h3>
             <p className="text-lg font-medium text-[#f9a8d4]">
               Make your customers spend more
             </p>
@@ -17,26 +17,26 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* What is Vibeazy */}
+          {/* What is Tracla */}
           <div>
             <h4 className="text-lg font-semibold mb-4 pb-2 border-b border-[#2c151b]">
-              What is Vibeazy
+              What is Tracla
             </h4>
             <p className="text-gray-300 mb-3">
-              Vibeazy helps you track customer spending, reward your top customers, 
+              Tracla helps you track customer spending, reward your top customers, 
               and drive repeat visits — without changing your payment system or 
               requiring customers to download an app.
             </p>
             <p className="text-gray-300">
               Whether you run a restaurant, spa, supermarket, or cinema, 
-              Vibeazy helps you understand customers and keep them coming back.
+              Tracla helps you understand customers and keep them coming back.
             </p>
           </div>
 
-          {/* Who is Vibeazy For */}
+          {/* Who is Tracla For */}
           <div>
             <h4 className="text-lg font-semibold mb-4 pb-2 border-b border-[#2c151b]">
-              Who is Vibeazy For
+              Who is Tracla For
             </h4>
             <ul className="space-y-5">
               {[
@@ -71,7 +71,7 @@ const Footer = () => {
 
       {/* Copyright section */}
       <div className="border-t border-[#2c151b] py-4 text-center text-white">
-        <p>© {currentYear} Vibeazy. All rights reserved.</p>
+        <p>© {currentYear} Tracla. All rights reserved.</p>
       </div>
     </footer>
   );
