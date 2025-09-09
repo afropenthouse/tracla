@@ -14,13 +14,6 @@ const Pricing = () => {
   };
 
 
-  const parsePrice = (priceStr) => {
-    return parseInt(priceStr.replace('₦', '').replace(/,/g, ''));
-  };
-
-  const formatPrice = (priceNum) => {
-    return 'NGN' + priceNum.toLocaleString();
-  };
 
 
   const getPeriod = (period) => {
@@ -59,7 +52,6 @@ const Pricing = () => {
         {text: '1 branch only', included: true},
         // {text: 'Send up to 300 whatsapp promo messages per month', included: true},
         {text: 'Segment customers better using dashboard filters', included: true},
-
       ],
       highlight: false
     },
@@ -84,11 +76,11 @@ const Pricing = () => {
     },
     {
       id: 'business',
-      name: 'Business',
+      name: 'Enterprise',
       price: {
-        monthly: '₦199,999',
-        quarterly: '₦189,999',
-        yearly: '₦179,999'
+        monthly: '₦199,000',
+        quarterly: '₦189,000',
+        yearly: '₦179,000'
       },
       description: 'For large businesses and enterprises',
       features: [
@@ -102,9 +94,8 @@ const Pricing = () => {
         {text: 'Dedicated account manager', included: true},
       ],
       highlight: false
-    }
+    },
   ];
-
   return (
     <section className="py-20 bg-[#f9f2f4]">
       <div className="container mx-auto px-4 md:px-8">
