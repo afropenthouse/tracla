@@ -13,10 +13,6 @@ const Pricing = () => {
     return plan.price[period];
   };
 
-  const getOldPrice = (plan, period) => {
-    if (!plan.oldPrice) return '';
-    return plan.oldPrice[period];
-  };
 
   const parsePrice = (priceStr) => {
     return parseInt(priceStr.replace('₦', '').replace(/,/g, ''));
@@ -26,13 +22,6 @@ const Pricing = () => {
     return 'NGN' + priceNum.toLocaleString();
   };
 
-  const calculateSavings = (plan, period) => {
-    if (!plan.oldPrice || period === 'monthly') return '';
-    const monthlyAnnual = parsePrice(plan.oldPrice.monthly) * 12;
-    const periodAnnual = parsePrice(plan.oldPrice[period]) * 12;
-    const savings = monthlyAnnual - periodAnnual;
-    return formatPrice(savings);
-  };
 
   const getPeriod = (period) => {
     return '/mo';
@@ -58,14 +47,9 @@ const Pricing = () => {
       id: 'starter',
       name: 'Starter',
       price: {
-        monthly: '₦39,999',
-        quarterly: '₦34,999',
-        yearly: '₦29,999'
-      },
-      oldPrice: {
-        monthly: '₦59,999',
-        quarterly: '₦49,999',
-        yearly: '₦39,999'
+        monthly: '₦35,000',
+        quarterly: '₦29,000',
+        yearly: '₦25,000'
       },
       description: 'Perfect for small businesses',
       features: [
@@ -83,14 +67,9 @@ const Pricing = () => {
       id: 'growth',
       name: 'Growth',
       price: {
-        monthly: '₦79,999',
-        quarterly: '₦69,999',
-        yearly: '₦59,999'
-      },
-      oldPrice: {
-        monthly: '₦99,999',
-        quarterly: '₦89,999',
-        yearly: '₦79,999'
+        monthly: '₦45,000',
+        quarterly: '₦39,000',
+        yearly: '₦35,000'
       },
       description: 'Great for growing businesses',
       features: [
@@ -110,11 +89,6 @@ const Pricing = () => {
         monthly: '₦199,999',
         quarterly: '₦189,999',
         yearly: '₦179,999'
-      },
-      oldPrice: {
-        monthly: '₦219,999',
-        quarterly: '₦209,999',
-        yearly: '₦199,999'
       },
       description: 'For large businesses and enterprises',
       features: [
@@ -233,8 +207,8 @@ const Pricing = () => {
                   </div>
                 </div>
                 <div className="my-4">
-                  <span className="text-xl md:text-2xl font-bold">
-                    {getOldPrice(plan, billingPeriods[plan.id]) && <s className="text-lg md:text-xl text-gray-400 mr-2 line-through decoration-2 decoration-gray-500">{getOldPrice(plan, billingPeriods[plan.id])}</s>} {getPrice(plan, billingPeriods[plan.id])} <span className={`text-base ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriod(billingPeriods[plan.id])}</span>
+                  <span className="text-2xl md:text-3xl font-bold">
+                    {getPrice(plan, billingPeriods[plan.id])} <span className={`text-base ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriod(billingPeriods[plan.id])}</span>
                   </span>
                   <div className={`text-sm mt-1 ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriodText(billingPeriods[plan.id])}</div>
                 </div>
