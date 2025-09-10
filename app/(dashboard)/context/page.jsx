@@ -4,19 +4,24 @@ import {
   Building2, Users, MapPin, Phone, Mail, Crown, Shield, 
   ChevronDown, BarChart3, TrendingUp, Store, QrCode,
   Plus, Settings, Eye, MoreVertical, ArrowRight, Sparkles,
-  Activity, Globe, Calendar, CheckCircle, Clock, Star, Loader2, AlertCircle
+  Activity, Globe, Calendar, CheckCircle, Clock, Star, Loader2, AlertCircle,
+  Edit2, X, Check
 } from 'lucide-react';
-import { useBusinessesAndBranches } from '@/lib/queries/branch';
+import { useBusinessesAndBranches, businessKeys } from '@/lib/queries/branch';
+import { useQueryClient } from '@tanstack/react-query';
 import { useBranchStore, useBusinessStore } from '@/store/store';
 import { useCreateBranchModalStore } from '@/store/modalStore';
 import { useRouter } from 'next/navigation';
 import CreateBranchModal from '@/components/modals/CreateBranchModal';
+import api from '@/lib/api';
+import { toast } from 'react-toastify';
 
 
 
 const BusinessOverviewPage = () => {
   // Fetch businesses and branches from backend
   const { data: businessesData, isLoading, error } = useBusinessesAndBranches();
+  const queryClient = useQueryClient();
   
   // Get store state and actions
   const { currentBranch, setCurrentBranch, setBranches } = useBranchStore();
@@ -24,6 +29,10 @@ const BusinessOverviewPage = () => {
   const { onOpen } = useCreateBranchModalStore();
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   // Initialize stores when data is fetched
   useEffect(() => {
@@ -106,6 +115,91 @@ const BusinessOverviewPage = () => {
 
   const router = useRouter();
 
+  // Business name editing functions
+  const handleEditName = () => {
+    setEditedName(currentBusiness.name);
+    setIsEditingName(true);
+    setNameError('');
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditedName('');
+    setNameError('');
+  };
+
+  const validateName = (name) => {
+    if (!name || name.trim().length === 0) {
+      return 'Business name is required';
+    }
+    if (name.trim().length < 2) {
+      return 'Business name must be at least 2 characters';
+    }
+    if (name.trim().length > 200) {
+      return 'Business name must be less than 200 characters';
+    }
+    return '';
+  };
+
+  const handleSaveName = async () => {
+    const trimmedName = editedName.trim();
+    const validationError = validateName(trimmedName);
+    
+    if (validationError) {
+      setNameError(validationError);
+      return;
+    }
+
+    if (trimmedName === currentBusiness.name) {
+      setIsEditingName(false);
+      setNameError('');
+      return;
+    }
+
+    setIsUpdating(true);
+    setNameError('');
+
+    try {
+      const response = await api.patch(`/business/${currentBusiness.id}/name`, {
+        name: trimmedName
+      });
+
+      // Update the business in the store
+      setBusiness({ ...business, name: trimmedName });
+      
+      // Invalidate and refetch the businesses and branches query
+      await queryClient.invalidateQueries({
+        queryKey: businessKeys.businessesAndBranches()
+      });
+      
+      toast.success('Business name updated successfully!');
+      
+      setIsEditingName(false);
+      setEditedName('');
+    } catch (err) {
+      console.error('Error updating business name:', err);
+      if (err.response?.status === 400) {
+        const errorMessage = 'Invalid name provided';
+        setNameError(errorMessage);
+        toast.error(errorMessage);
+      } else if (err.response?.status === 403) {
+        const errorMessage = 'You do not have permission to edit this business';
+        setNameError(errorMessage);
+        toast.error(errorMessage);
+      } else if (err.response?.status === 404) {
+        const errorMessage = 'Business not found';
+        setNameError(errorMessage);
+        toast.error(errorMessage);
+      } else {
+        const errorMessage = 'Failed to update business name. Please try again.';
+        setNameError(errorMessage);
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleBusinessViewSelect = () => {
     setCurrentBranch(null); // Clear current branch to show business view
     router.push('/dashboard');
@@ -135,12 +229,61 @@ const BusinessOverviewPage = () => {
               </div>
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-bold text-gray-900">{currentBusiness.name}</h1>
+                  {isEditingName ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveName();
+                          if (e.key === 'Escape') handleCancelEdit();
+                        }}
+                        className="text-2xl font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#6c0f2a] focus:border-transparent"
+                        placeholder="Enter business name"
+                        autoFocus
+                        disabled={isUpdating}
+                      />
+                      <button
+                        onClick={handleSaveName}
+                        disabled={isUpdating}
+                        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={isUpdating}
+                        className="p-1.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-2xl font-bold text-gray-900">{currentBusiness.name}</h1>
+                      {isOwner && (
+                        <button
+                          onClick={handleEditName}
+                          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                          title="Edit business name"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${getTierColor(currentBusiness.currentTier)} text-white text-sm font-medium`}>
                     {React.createElement(getTierIcon(currentBusiness.currentTier), { size: 14 })}
                     {currentBusiness.currentTier.charAt(0).toUpperCase() + currentBusiness.currentTier.slice(1)}
                   </div>
                 </div>
+                {nameError && (
+                  <div className="flex items-center gap-2 text-sm text-red-600 mb-2">
+                    <AlertCircle size={14} />
+                    {nameError}
+                  </div>
+                )}
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <Mail size={14} />
@@ -229,7 +372,7 @@ const BusinessOverviewPage = () => {
                   <Building2 size={20} color={`${isBusinessView ? 'white' : 'white'}`} />
                 </div>
                 <div className="text-left">
-                  <h4 className={`font-semibold ${isBusinessView ? 'text-white' : 'white'}`}>{currentBusiness.name}</h4>
+                  <h4 className={`font-semibold ${isBusinessView ? 'text-white' : 'white'}`}>{business?.name || currentBusiness.name}</h4>
                   <p className={`text-s font-medium ${isBusinessView ? 'text-white' : 'white'}`}>Overall business view • {currentBusiness.branchCount} branches</p>
                   <div className="flex items-center gap-4 mt-2">
                     <div className={`flex items-center gap-1 text-xs ${isBusinessView ? 'text-white' : 'white'}`}>
