@@ -78,9 +78,9 @@ const Pricing = () => {
       id: 'business',
       name: 'Enterprise',
       price: {
-        monthly: '₦199,000',
-        quarterly: '₦189,000',
-        yearly: '₦179,000'
+        monthly: '₦140,000',
+        quarterly: '₦120,000',
+        yearly: '₦100,000'
       },
       description: 'For large businesses and enterprises',
       features: [
