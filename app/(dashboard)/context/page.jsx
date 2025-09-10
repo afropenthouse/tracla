@@ -14,7 +14,7 @@ import { useCreateBranchModalStore } from '@/store/modalStore';
 import { useRouter } from 'next/navigation';
 import CreateBranchModal from '@/components/modals/CreateBranchModal';
 import api from '@/lib/api';
-import { toast } from 'react-toastify';
+import { useToastStore } from '@/store/toastStore';
 
 
 
@@ -22,6 +22,7 @@ const BusinessOverviewPage = () => {
   // Fetch businesses and branches from backend
   const { data: businessesData, isLoading, error } = useBusinessesAndBranches();
   const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToastStore();
   
   // Get store state and actions
   const { currentBranch, setCurrentBranch, setBranches } = useBranchStore();
@@ -172,29 +173,19 @@ const BusinessOverviewPage = () => {
         queryKey: businessKeys.businessesAndBranches()
       });
       
-      toast.success('Business name updated successfully!');
+      showSuccess('Business name updated successfully!');
       
       setIsEditingName(false);
       setEditedName('');
     } catch (err) {
       console.error('Error updating business name:', err);
-      if (err.response?.status === 400) {
-        const errorMessage = 'Invalid name provided';
-        setNameError(errorMessage);
-        toast.error(errorMessage);
-      } else if (err.response?.status === 403) {
-        const errorMessage = 'You do not have permission to edit this business';
-        setNameError(errorMessage);
-        toast.error(errorMessage);
-      } else if (err.response?.status === 404) {
-        const errorMessage = 'Business not found';
-        setNameError(errorMessage);
-        toast.error(errorMessage);
-      } else {
-        const errorMessage = 'Failed to update business name. Please try again.';
-        setNameError(errorMessage);
-        toast.error(errorMessage);
-      }
+      
+      // Extract the actual backend error message
+      const errorData = err.response?.data;
+      const backendMessage = errorData?.message || errorData?.error || 'Failed to update business name. Please try again.';
+      
+      setNameError(backendMessage);
+      showError(backendMessage);
     } finally {
       setIsUpdating(false);
     }

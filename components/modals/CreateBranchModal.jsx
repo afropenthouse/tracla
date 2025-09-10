@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, MapPin, Phone, X, ArrowRight } from 'lucide-react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import { useToastStore } from "@/store/toastStore";
 import api from "@/lib/api";
 import { useLoadingStore } from "@/store/loadingStore";
 import { useBranchStore, useBusinessStore } from "@/store/store";
@@ -16,6 +16,7 @@ const CreateBranchModal = () => {
   const { business } = useBusinessStore();
   const { addBranch } = useBranchStore();
   const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToastStore();
   const [branchData, setBranchData] = useState({
     name: '',
     address: '',
@@ -46,21 +47,25 @@ const CreateBranchModal = () => {
     onSuccess: (data) => {
       hideLoader();
       addBranch(data.data.branch);
-      toast.success("Branch created successfully!");
+      showSuccess("Branch created successfully!");
       queryClient.invalidateQueries({ queryKey: ["businesses"] });
       handleClose();
     },
     onError: (error) => {
       hideLoader();
       const errorData = error.response?.data;
-      const errorMessage = errorData?.message || "Failed to create branch. Please try again.";
+      const backendMessage = errorData?.message || errorData?.error || "Failed to create branch. Please try again.";
       
+      // Show toast with backend message for all errors
+      showError(backendMessage);
+      
+      // Set form errors for display
       if (error.response?.status === 403) {
-        setErrors({ general: "Branch limit reached for your current tier." });
+        setErrors({ general: backendMessage });
       } else if (error.response?.status === 400) {
-        setErrors({ general: errorMessage });
+        setErrors({ general: backendMessage });
       } else {
-        toast.error(errorMessage);
+        setErrors({ general: backendMessage });
       }
     },
   });

@@ -5,7 +5,7 @@ import { Eye, EyeOff, Users, Receipt, DollarSign, Star, ArrowRight, Sparkles, Cr
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+import { useToastStore } from "@/store/toastStore";
 import Link from "next/link";
 import api from "@/lib/api";
 import { useLoadingStore } from "@/store/loadingStore";
@@ -15,6 +15,7 @@ export default function SignupPage() {
   const router = useRouter();
   const { showLoader, hideLoader } = useLoadingStore();
   const { setEmail } = useSignUpEmailStore();
+  const { showSuccess, showError } = useToastStore();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -53,7 +54,7 @@ export default function SignupPage() {
       // Store email for verification page
       setEmail(email);
       
-      toast.success("Account created successfully! Please check your email to verify your account.");
+      showSuccess("Account created successfully! Please check your email to verify your account.");
       
       // Navigate to email verification page
       router.push("/email-verification");
@@ -62,14 +63,17 @@ export default function SignupPage() {
       hideLoader();
       
       const errorData = error.response?.data;
-      const errorMessage = errorData?.message || "Registration failed. Please try again.";
+      const backendMessage = errorData?.message || errorData?.error || "Registration failed. Please try again.";
       
-      // Handle different error scenarios
+      // Show toast with backend message for all errors
+      showError(backendMessage);
+      
+      // Handle different error scenarios for form display
       if (error.response?.status === 409) {
-        // User already exists
+        // User already exists - use backend message
         setErrors({ 
-          email: "An account with this email already exists",
-          general: "Please use a different email address or try logging in instead."
+          email: backendMessage,
+          general: backendMessage
         });
       } else if (error.response?.status === 400) {
         // Validation errors
@@ -86,16 +90,16 @@ export default function SignupPage() {
         
         // If no specific field errors, show general validation message
         if (Object.keys(validationErrors).length === 0) {
-          validationErrors.general = errorMessage;
+          validationErrors.general = backendMessage;
         }
         
         setErrors(validationErrors);
       } else if (error.response?.status === 422) {
         // Business logic errors (like invalid phone format, etc.)
-        setErrors({ general: errorMessage });
+        setErrors({ general: backendMessage });
       } else {
-        // Network or other errors
-        toast.error(errorMessage);
+        // Network or other errors - form errors already handled by toast
+        setErrors({ general: backendMessage });
       }
     },
   });

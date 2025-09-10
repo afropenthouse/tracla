@@ -5,7 +5,7 @@ import { Eye, EyeOff, Users, Receipt, DollarSign, Star, ArrowRight, Sparkles, Cr
 import { motion } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+import { useToastStore } from "@/store/toastStore";
 import Link from "next/link";
 import api from "@/lib/api";
 import { businessKeys, branchKeys } from "@/lib/queries/branch";
@@ -21,6 +21,7 @@ export default function LoginPage() {
   const { showLoader, hideLoader } = useLoadingStore();
   const { setBusiness } = useBusinessStore();
   const { setBranches, setCurrentBranch } = useBranchStore();
+  const { showSuccess, showError } = useToastStore();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -56,7 +57,7 @@ export default function LoginPage() {
       
       if (!cookieResult.success) {
         hideLoader();
-        toast.error("Failed to save session. Please try again.");
+        showError("Failed to save session. Please try again.");
         return;
       }
 
@@ -111,7 +112,7 @@ export default function LoginPage() {
       hideLoader();
       
       // Welcome message
-      toast.success(`Welcome back, ${user.name.split(' ')[0]}!`);
+      showSuccess(`Welcome back, ${user.name.split(' ')[0]}!`);
       
       // Route based on first login status
       if (isFirstLogin) {
@@ -126,32 +127,32 @@ export default function LoginPage() {
       hideLoader();
       
       const errorData = error.response?.data;
-      const errorMessage = errorData?.message || "Login failed. Please try again.";
+      const backendMessage = errorData?.message || errorData?.error || "Login failed. Please try again.";
       
       // Handle special cases
       if (errorData?.status_code === "LOGIN_REDIRECT") {
         // Email not verified - redirect to email verification
-        toast.error("Please verify your email before logging in.");
+        showError("Please verify your email before logging in.");
         router.push("/email-verification");
         return;
       }
       
-      // Handle validation errors
+      // Show toast with backend message for all errors
+      showError(backendMessage);
+      
+      // Handle validation errors for form display
       if (error.response?.status === 400) {
         // Could be field validation errors
-        setErrors({ general: errorMessage });
+        setErrors({ general: backendMessage });
       } else if (error.response?.status === 401) {
-        // Invalid credentials
+        // Invalid credentials - use backend message for form too
         setErrors({ 
-          email: "Invalid email or password",
-          password: "Invalid email or password"
+          email: backendMessage,
+          password: backendMessage
         });
       } else if (error.response?.status === 403) {
         // Account issues (deactivated, etc.)
-        setErrors({ general: errorMessage });
-      } else {
-        // Network or other errors
-        toast.error(errorMessage);
+        setErrors({ general: backendMessage });
       }
     },
   });
