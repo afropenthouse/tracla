@@ -474,13 +474,13 @@ const PurchaseReceiptUpload = () => {
                   onDragOver={(e) => e.preventDefault()}
                   className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#d32f2f] transition-colors"
                 >
-                  <div className="flex flex-col items-center mb-6">
+                  {/* <div className="flex flex-col items-center mb-6">
                     <div className="w-16 h-16 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] rounded-full flex items-center justify-center mb-4">
                       <Receipt size={24} className="text-white" />
                     </div>
                     <p className="text-lg font-medium text-gray-900 mb-2">Upload Your Receipt</p>
                     <p className="text-sm text-gray-500 mb-4">Choose how you want to add your receipt</p>
-                  </div>
+                  </div> */}
 
                   {/* Camera and Gallery Options */}
                   <div className="grid grid-cols-2 gap-4">
