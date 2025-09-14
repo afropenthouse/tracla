@@ -1,5 +1,5 @@
 import React from 'react'
-import ResetPassword from '@/components/auth/ResetPassword'
+import ResetPassword from './Main'
 import { Suspense } from 'react'
 
 const ResetPasswordPage = () => {
