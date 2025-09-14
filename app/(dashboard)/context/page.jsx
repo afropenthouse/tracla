@@ -16,8 +16,6 @@ import CreateBranchModal from '@/components/modals/CreateBranchModal';
 import api from '@/lib/api';
 import { useToastStore } from '@/store/toastStore';
 
-
-
 const BusinessOverviewPage = () => {
   // Fetch businesses and branches from backend
   const { data: businessesData, isLoading, error } = useBusinessesAndBranches();
@@ -34,7 +32,7 @@ const BusinessOverviewPage = () => {
   const [editedName, setEditedName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [nameError, setNameError] = useState('');
-
+  
   // Initialize stores when data is fetched
   useEffect(() => {
     if (businessesData?.businesses?.length > 0) {
@@ -51,11 +49,11 @@ const BusinessOverviewPage = () => {
       // Let them choose between business view or branch view
     }
   }, [businessesData, setBusiness, setBranches]);
-
+  
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 flex items-center justify-center p-4">
         <div className="text-center">
           <Loader2 size={48} className="animate-spin text-[#6c0f2a] mx-auto mb-4" />
           <p className="text-gray-600">Loading your business data...</p>
@@ -63,11 +61,11 @@ const BusinessOverviewPage = () => {
       </div>
     );
   }
-
+  
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 flex items-center justify-center p-4">
         <div className="text-center bg-white rounded-xl shadow-lg p-8 max-w-md mx-4">
           <AlertCircle size={48} className="text-[#6c0f2a] mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">Failed to Load</h2>
@@ -76,17 +74,17 @@ const BusinessOverviewPage = () => {
       </div>
     );
   }
-
+  
   if (!business || !businessesData?.businesses?.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-gray-600">No business data available</p>
         </div>
       </div>
     );
   }
-
+  
   const currentBusiness = businessesData.businesses[0];
   const isOwner = currentBusiness.userRole === 'OWNER';
   const allBranches = currentBusiness.branches || [];
@@ -99,11 +97,11 @@ const BusinessOverviewPage = () => {
     };
     return colors[tier] || 'from-gray-400 to-gray-600';
   };
-
+  
   const getTierIcon = (tier) => {
     return tier === 'premium' ? Crown : tier === 'standard' ? Shield : Star;
   };
-
+  
   const formatCurrency = (amount) => `$${amount.toLocaleString()}`;
   
   const formatDate = (dateString) => {
@@ -113,22 +111,22 @@ const BusinessOverviewPage = () => {
       day: 'numeric'
     });
   };
-
+  
   const router = useRouter();
-
+  
   // Business name editing functions
   const handleEditName = () => {
     setEditedName(currentBusiness.name);
     setIsEditingName(true);
     setNameError('');
   };
-
+  
   const handleCancelEdit = () => {
     setIsEditingName(false);
     setEditedName('');
     setNameError('');
   };
-
+  
   const validateName = (name) => {
     if (!name || name.trim().length === 0) {
       return 'Business name is required';
@@ -141,7 +139,7 @@ const BusinessOverviewPage = () => {
     }
     return '';
   };
-
+  
   const handleSaveName = async () => {
     const trimmedName = editedName.trim();
     const validationError = validateName(trimmedName);
@@ -150,21 +148,21 @@ const BusinessOverviewPage = () => {
       setNameError(validationError);
       return;
     }
-
+    
     if (trimmedName === currentBusiness.name) {
       setIsEditingName(false);
       setNameError('');
       return;
     }
-
+    
     setIsUpdating(true);
     setNameError('');
-
+    
     try {
       const response = await api.patch(`/business/${currentBusiness.id}/name`, {
         name: trimmedName
       });
-
+      
       // Update the business in the store
       setBusiness({ ...business, name: trimmedName });
       
@@ -190,123 +188,121 @@ const BusinessOverviewPage = () => {
       setIsUpdating(false);
     }
   };
-
+  
   const handleBusinessViewSelect = () => {
     setCurrentBranch(null); // Clear current branch to show business view
     router.push('/dashboard');
   };
-
+  
   const handleBranchSelect = (branch) => {
     setCurrentBranch(branch); // Set selected branch
     router.push('/dashboard');
   };
-
+  
   const getSelectedBranch = () => {
     return currentBranch;
   };
-
+  
   const isBusinessView = !currentBranch;
-
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 p-3 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         
         {/* Header Section */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl rounded-2xl p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#6c0f2a] flex items-center justify-center shadow-lg">
-                <Building2 size={28} className="text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  {isEditingName ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={editedName}
-                        onChange={(e) => setEditedName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveName();
-                          if (e.key === 'Escape') handleCancelEdit();
-                        }}
-                        className="text-2xl font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#6c0f2a] focus:border-transparent"
-                        placeholder="Enter business name"
-                        autoFocus
-                        disabled={isUpdating}
-                      />
-                      <button
-                        onClick={handleSaveName}
-                        disabled={isUpdating}
-                        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-                      >
-                        {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={isUpdating}
-                        className="p-1.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-2xl font-bold text-gray-900">{currentBusiness.name}</h1>
-                      {isOwner && (
-                        <button
-                          onClick={handleEditName}
-                          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                          title="Edit business name"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${getTierColor(currentBusiness.currentTier)} text-white text-sm font-medium`}>
-                    {React.createElement(getTierIcon(currentBusiness.currentTier), { size: 14 })}
-                    {currentBusiness.currentTier.charAt(0).toUpperCase() + currentBusiness.currentTier.slice(1)}
-                  </div>
-                </div>
-                {nameError && (
-                  <div className="flex items-center gap-2 text-sm text-red-600 mb-2">
-                    <AlertCircle size={14} />
-                    {nameError}
-                  </div>
-                )}
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <Mail size={14} />
-                    {currentBusiness.email}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Phone size={14} />
-                    {currentBusiness.phone}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Store size={14} />
-                    {currentBusiness.branchCount} branches
-                  </div>
-                </div>
-              </div>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl rounded-2xl p-4 sm:p-6">
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="flex items-center gap-3 sm:gap-4">
+      {/* Icon container - hidden on mobile, visible on sm and up */}
+      <div className="hidden sm:flex w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-[#6c0f2a] items-center justify-center shadow-lg">
+        <Building2 size={20} className="text-white" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+          {isEditingName ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName();
+                  if (e.key === 'Escape') handleCancelEdit();
+                }}
+                className="text-xl sm:text-2xl font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#6c0f2a] focus:border-transparent w-full max-w-xs"
+                placeholder="Enter business name"
+                autoFocus
+                disabled={isUpdating}
+              />
+              <button
+                onClick={handleSaveName}
+                disabled={isUpdating}
+                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {isUpdating ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                disabled={isUpdating}
+                className="p-1.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <div className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                isOwner 
-                  ? 'bg-[#6c0f2a] text-white' 
-                  : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
-              }`}>
-                {isOwner ? 'Business Owner' : 'Branch Manager'}
-              </div>
-              {/* <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Settings size={18} className="text-gray-600" />
-              </button> */}
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{currentBusiness.name}</h1>
+              {isOwner && (
+                <button
+                  onClick={handleEditName}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                  title="Edit business name"
+                >
+                  <Edit2 size={16} />
+                </button>
+              )}
             </div>
+          )}
+          <div className={`flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full ${getTierColor(currentBusiness.currentTier)} text-white text-xs sm:text-sm font-medium flex-shrink-0`}>
+            {React.createElement(getTierIcon(currentBusiness.currentTier), { size: 12 })}
+            {currentBusiness.currentTier.charAt(0).toUpperCase() + currentBusiness.currentTier.slice(1)}
           </div>
         </div>
-
+        {nameError && (
+          <div className="flex items-center gap-2 text-sm text-red-600 mb-1 sm:mb-2">
+            <AlertCircle size={14} />
+            {nameError}
+          </div>
+        )}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-1 truncate">
+            <Mail size={14} />
+            <span className="truncate">{currentBusiness.email}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Phone size={14} />
+            {currentBusiness.phone}
+          </div>
+          <div className="flex items-center gap-1">
+            <Store size={14} />
+            {currentBusiness.branchCount} branches
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="flex items-center gap-3">
+      <div className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium ${
+        isOwner 
+          ? 'bg-[#6c0f2a] text-white' 
+          : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+      }`}>
+        {isOwner ? 'Business Owner' : 'Branch Manager'}
+      </div>
+    </div>
+  </div>
+</div>
+        
         {/* Currently Selected View */}
         <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-4">
           <div className="flex items-center gap-3">
@@ -319,16 +315,16 @@ const BusinessOverviewPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Currently Viewing</p>
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold text-gray-900 truncate">
                 {isBusinessView ? 'Overall Business' : getSelectedBranch()?.name}
               </p>
             </div>
           </div>
         </div>
-
+        
         {/* Business & Branch Management Section */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Business & Branch Management</h3>
               <p className="text-sm text-gray-600">Select a view and manage your locations</p>
@@ -336,19 +332,19 @@ const BusinessOverviewPage = () => {
             {isOwner && (
               <button 
                 onClick={onOpen}
-                className="flex items-center gap-2 px-4 py-2 bg-[#6c0f2a] text-white rounded-xl cursor-pointer transition-all duration-300 font-medium shadow-lg"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#6c0f2a] text-white rounded-xl cursor-pointer transition-all duration-300 font-medium shadow-lg w-full sm:w-auto"
               >
                 <Plus size={16} />
                 Add Branch
               </button>
             )}
           </div>
-
+          
           {/* Overall Business Option */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <button
               onClick={handleBusinessViewSelect}
-              className={`w-full flex items-start justify-between p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer ${
+              className={`w-full flex flex-col sm:flex-row sm:items-start justify-between p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer ${
                 isBusinessView 
                   ? 'border-[#6c0f2a] bg-[#6c0f2a]' 
                   : 'border-gray-200 bg-white/50 hover:border-gray-300 hover:bg-white/70'
@@ -362,15 +358,19 @@ const BusinessOverviewPage = () => {
                 }`}>
                   <Building2 size={20} color={`${isBusinessView ? 'white' : 'white'}`} />
                 </div>
-                <div className="text-left">
-                  <h4 className={`font-semibold ${isBusinessView ? 'text-white' : 'white'}`}>{business?.name || currentBusiness.name}</h4>
-                  <p className={`text-s font-medium ${isBusinessView ? 'text-white' : 'white'}`}>Overall business view • {currentBusiness.branchCount} branches</p>
-                  <div className="flex items-center gap-4 mt-2">
-                    <div className={`flex items-center gap-1 text-xs ${isBusinessView ? 'text-white' : 'white'}`}>
+                <div className="text-left flex-1 min-w-0">
+                  <h4 className={`font-semibold ${isBusinessView ? 'text-white' : 'text-gray-900'} truncate`}>
+                    {business?.name || currentBusiness.name}
+                  </h4>
+                  <p className={`text-sm font-medium ${isBusinessView ? 'text-white' : 'text-gray-600'}`}>
+                    Overall business view • {currentBusiness.branchCount} branches
+                  </p>
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 mt-2">
+                    <div className={`flex items-center gap-1 text-xs ${isBusinessView ? 'text-white' : 'text-gray-600'} truncate`}>
                       <Mail size={12} />
-                      {currentBusiness.email}
+                      <span className="truncate">{currentBusiness.email}</span>
                     </div>
-                    <div className={`flex items-center gap-1 text-xs ${isBusinessView ? 'text-white' : 'white'}`}>
+                    <div className={`flex items-center gap-1 text-xs ${isBusinessView ? 'text-white' : 'text-gray-600'}`}>
                       <Phone size={12} />
                       {currentBusiness.phone}
                     </div>
@@ -378,14 +378,14 @@ const BusinessOverviewPage = () => {
                 </div>
               </div>
               {isBusinessView && (
-                <div className="flex items-center gap-2 text-sm text-white font-medium">
+                <div className="flex items-center gap-2 text-sm text-white font-medium mt-3 sm:mt-0">
                   <CheckCircle size={16} />
                   Selected
                 </div>
               )}
             </button>
           </div>
-
+          
           {/* Individual Branches */}
           <div>
             <h4 className="text-md font-medium text-gray-700 mb-4">Individual Branches</h4>
@@ -409,8 +409,8 @@ const BusinessOverviewPage = () => {
                       }`}>
                         <Store size={16} className="text-white" />
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{branch.name}</h4>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 truncate">{branch.name}</h4>
                         <div className="flex items-center gap-2 mt-1">
                           <div className={`w-2 h-2 rounded-full ${branch.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
                           <span className={`text-xs font-medium ${branch.isActive ? 'text-green-600' : 'text-[#6c0f2a]'}`}>
@@ -420,13 +420,12 @@ const BusinessOverviewPage = () => {
                       </div>
                     </div>
                     {currentBranch?.id === branch.id && (
-                      <div className="flex items-center gap-1 text-xs text-[#6c0f2a] font-medium">
+                      <div className="flex items-center gap-1 text-xs text-[#6c0f2a] font-medium flex-shrink-0">
                         <CheckCircle size={14} />
                         Selected
                       </div>
                     )}
                   </div>
-
                   <div className="space-y-2 mb-4 w-full">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <MapPin size={12} />
@@ -441,7 +440,6 @@ const BusinessOverviewPage = () => {
                       <span>Since {formatDate(branch.createdAt)}</span>
                     </div>
                   </div>
-
                   {isOwner && (
                     <div className="flex items-center gap-2 w-full">
                       <div className="flex-1 px-3 py-1.5 bg-[#6c0f2a] text-white rounded-lg text-xs font-medium text-center">
@@ -464,7 +462,7 @@ const BusinessOverviewPage = () => {
           </div>
         </div>
       </div>
-
+      
       {/* Create Branch Modal */}
       <CreateBranchModal />
     </div>

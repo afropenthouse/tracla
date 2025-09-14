@@ -371,7 +371,7 @@ const VibEazyBusinessSidebar = ({
                 <span className="text-sm font-medium text-gray-700">{totalBranches} Branch{totalBranches !== 1 ? 'es' : ''}</span>
               </div>
               
-              <Link href="/notifications">
+              {/* <Link href="/notifications">
                 <div className="p-2 relative bg-white/50 rounded-lg backdrop-blur-sm cursor-pointer">
                   <Bell size={20} className="text-gray-600" />
                   {notificationCount > 0 && (
@@ -380,7 +380,7 @@ const VibEazyBusinessSidebar = ({
                     </span>
                   )}
                 </div>
-              </Link>
+              </Link> */}
               
               <button
                 className="p-2 bg-white/50 rounded-lg backdrop-blur-sm cursor-pointer"
@@ -422,8 +422,8 @@ const VibEazyBusinessSidebar = ({
                       <Store className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-sm">{businessName}</h3>
-                      <p className="text-xs text-gray-600">{totalBranches} Branch{totalBranches !== 1 ? 'es' : ''}</p>
+                      <h3 className="font-bold text-white text-sm">{businessName}</h3>
+                      <p className="text-xs text-white">{totalBranches} Branch{totalBranches !== 1 ? 'es' : ''}</p>
                     </div>
                   </div>
                 </div>
@@ -509,47 +509,19 @@ const VibEazyBusinessSidebar = ({
                     </div>
                   )}
                 </div>
-                
-                <div className="pt-4 border-t border-gray-100/50">
-                  <div className="px-3 py-3 flex items-center bg-gradient-to-r from-red-50/50 to-rose-50/50 rounded-xl border border-white/20">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${generateGradientFromName(displayName)} flex items-center justify-center text-white font-bold shadow-lg mr-3`}>
-                      {getInitials(displayName)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{displayName}</p>
-                      <p className="text-xs text-gray-500">Business Owner</p>
-                    </div>
-                  </div>
-                  
-                  <Link href="/profile">
-                    <div className="block w-full text-left px-4 py-3 mt-2 text-sm text-gray-700 hover:bg-red-50/50 rounded-xl transition-colors cursor-pointer">
-                      <div className="flex items-center">
-                        <UserCheck size={18} className="mr-3 text-red-600" />
-                        Business Profile
-                      </div>
-                    </div>
-                  </Link>
-                  
-                  <Link href="/help">
-                    <div className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50/50 rounded-xl transition-colors cursor-pointer">
-                      <div className="flex items-center">
-                        <HelpCircle size={18} className="mr-3 text-blue-600" />
-                        Help & Support
-                      </div>
-                    </div>
-                  </Link>
-                  
+
+                {/* Logout Button */}
+                <div className="mb-4">
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50/50 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-start px-4 py-3 rounded-xl text-base font-medium transition-all cursor-pointer text-red-600 hover:bg-red-50/50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <div className="flex items-center">
-                      <LogOut size={18} className={`mr-3 ${isLoggingOut ? 'animate-pulse' : ''}`} />
-                      {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
-                    </div>
+                    <LogOut size={20} className={`mr-4 ${isLoggingOut ? 'animate-pulse' : ''}`} />
+                    {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                   </button>
                 </div>
+                
               </div>
             </motion.div>
           </motion.div>

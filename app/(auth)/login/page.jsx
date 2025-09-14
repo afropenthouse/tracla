@@ -11,8 +11,8 @@ import api from "@/lib/api";
 import { businessKeys, branchKeys } from "@/lib/queries/branch";
 
 import { useBranchStore, useBusinessStore } from '@/store/store';
-
 import { useLoadingStore } from '@/store/loadingStore';
+import { useForgotPasswordModalStore } from '@/store/modalStore';
 import { setAuthCookies, setUserCookies } from '@/actions/cookies/cookies';
 
 export default function LoginPage() {
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const { setBusiness } = useBusinessStore();
   const { setBranches, setCurrentBranch } = useBranchStore();
   const { showSuccess, showError } = useToastStore();
+  const { onOpen: openForgotPassword } = useForgotPasswordModalStore();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -496,9 +497,12 @@ export default function LoginPage() {
                 </label>
               </div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link href="/forgot-password" className="text-sm text-[#d32f2f] hover:text-[#6c0f2a] font-semibold transition-colors cursor-pointer">
+                <button 
+                  onClick={openForgotPassword}
+                  className="text-sm text-[#d32f2f] hover:text-[#6c0f2a] font-semibold transition-colors cursor-pointer"
+                >
                   Forgot password?
-                </Link>
+                </button>
               </motion.div>
             </motion.div>
 

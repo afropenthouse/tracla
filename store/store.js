@@ -139,3 +139,71 @@ export const useBranchStore = create()(
     }
   )
 );
+
+// Subscription Store
+export const useSubscriptionStore = create()(
+  persist(
+    (set, get) => ({
+      subscription: null,
+      isSubscribed: false,
+      plan: null,
+      expiresAt: null,
+      lastPaymentModalShown: null,
+      dismissedUntil: null,
+
+      // Set subscription data
+      setSubscription: (subscription) => set({ 
+        subscription,
+        isSubscribed: !!subscription,
+        plan: subscription?.plan || null,
+        expiresAt: subscription?.expiresAt || null
+      }),
+
+      // Check if user is subscribed (for now, always false to show modal)
+      checkSubscription: () => {
+        const state = get();
+        return state.isSubscribed;
+      },
+
+      // Update last modal shown timestamp
+      updateLastPaymentModalShown: () => set({ 
+        lastPaymentModalShown: Date.now() 
+      }),
+
+      // Dismiss modal for a longer period (1 hour)
+      dismissPaymentModalLonger: () => set({
+        lastPaymentModalShown: Date.now(),
+        dismissedUntil: Date.now() + (60 * 60 * 1000) // 1 hour from now
+      }),
+
+      // Check if enough time has passed to show modal again
+      shouldShowPaymentModal: () => {
+        const state = get();
+        if (state.isSubscribed) return false;
+        
+        const now = Date.now();
+        const lastShown = state.lastPaymentModalShown;
+        const dismissedUntil = state.dismissedUntil;
+        
+        // Don't show if dismissed until a future time
+        if (dismissedUntil && now < dismissedUntil) return false;
+        
+        // Show modal if never shown or if 5 seconds have passed
+        return !lastShown || (now - lastShown) >= 5000;
+      },
+
+      // Clear subscription data
+      clearSubscription: () => set({ 
+        subscription: null,
+        isSubscribed: false,
+        plan: null,
+        expiresAt: null,
+        lastPaymentModalShown: null,
+        dismissedUntil: null
+      }),
+    }),
+    {
+      name: "subscriptionStore",
+    }
+  )
+);

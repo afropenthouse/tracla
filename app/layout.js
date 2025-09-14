@@ -2,7 +2,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/components/QueryProvider";
 import GlobalLoader from "@/components/common/GlobalLoader";
-import Toast from "@/components/common/Toast";  
+import Toast from "@/components/common/Toast";
+import PaymentModal from "@/components/modals/PaymentModal";
+import PaymentModalTrigger from "@/components/PaymentModalTrigger";
+import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
+import SubscriptionDebugPanel from "@/components/dev/SubscriptionDebugPanel";  
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +32,10 @@ export default function RootLayout({ children }) {
         <QueryProvider>
           <GlobalLoader />
           <Toast />
+          <PaymentModal />
+          <PaymentModalTrigger />
+          <ForgotPasswordModal />
+          <SubscriptionDebugPanel />
           {children}
         </QueryProvider>
       </body>
