@@ -206,7 +206,7 @@ const BusinessOverviewPage = () => {
   const isBusinessView = !currentBranch;
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 p-3 sm:p-4 md:p-6">
+    <div className="min-h-screen p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         
         {/* Header Section */}
