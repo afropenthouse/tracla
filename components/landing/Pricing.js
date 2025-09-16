@@ -1,49 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 const Pricing = () => {
-  const [selectedPlan, setSelectedPlan] = useState('growth');
-  const [billingPeriods, setBillingPeriods] = useState({
-    starter: 'monthly',
-    growth: 'monthly',
-    business: 'monthly'
-  });
-
-  const getPrice = (plan, period) => {
-    return plan.price[period];
-  };
-
-
-
-
-  const getPeriod = (period) => {
-    return '/mo';
-  };
-
-  const getPeriodText = (period) => {
-    if (period === 'quarterly') return 'for 3 months';
-    if (period === 'yearly') return 'for 12 months';
-    return 'for 1 month';
-  };
-
-  const calculateDiscount = (plan, period) => {
-    if (plan.id === 'starter' || period === 'monthly') return null;
-    if (plan.id === 'growth' && period === 'quarterly') return 7;
-    if (plan.id === 'business' && period === 'quarterly') return 3;
-    if (plan.id === 'growth' && period === 'yearly') return 20;
-    if (plan.id === 'business' && period === 'yearly') return 10;
-    return null;
-  };
+  const router = useRouter();
 
   const plans = [
     {
       id: 'starter',
       name: 'Starter',
-      price: {
-        monthly: '₦35,000',
-        quarterly: '₦29,000',
-        yearly: '₦25,000'
-      },
+      price: '₦20,000',
       description: 'Perfect for small businesses',
       features: [
         {text: 'Access to customer dashboard with spending data', included: true},
@@ -58,11 +24,7 @@ const Pricing = () => {
     {
       id: 'growth',
       name: 'Growth',
-      price: {
-        monthly: '₦45,000',
-        quarterly: '₦39,000',
-        yearly: '₦35,000'
-      },
+      price: '₦35,000',
       description: 'Great for growing businesses',
       features: [
         {text: 'Access to customer dashboard with spending data', included: true},
@@ -77,11 +39,7 @@ const Pricing = () => {
     {
       id: 'business',
       name: 'Enterprise',
-      price: {
-        monthly: '₦140,000',
-        quarterly: '₦120,000',
-        yearly: '₦100,000'
-      },
+      price: '₦50,000',
       description: 'For large businesses and enterprises',
       features: [
         {text: 'Access to customer dashboard with spending data', included: true},
@@ -112,40 +70,6 @@ const Pricing = () => {
           </p>
         </motion.div>
 
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg p-1 shadow-md">
-            <button
-              onClick={() => setBillingPeriods({starter: 'monthly', growth: 'monthly', business: 'monthly'})}
-              className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${
-                billingPeriods.starter === 'monthly' && billingPeriods.growth === 'monthly' && billingPeriods.business === 'monthly'
-                  ? 'bg-[#6c0f2a] text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingPeriods({starter: 'quarterly', growth: 'quarterly', business: 'quarterly'})}
-              className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${
-                billingPeriods.starter === 'quarterly' && billingPeriods.growth === 'quarterly' && billingPeriods.business === 'quarterly'
-                  ? 'bg-[#6c0f2a] text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Quarterly
-            </button>
-            <button
-              onClick={() => setBillingPeriods({starter: 'yearly', growth: 'yearly', business: 'yearly'})}
-              className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${
-                billingPeriods.starter === 'yearly' && billingPeriods.growth === 'yearly' && billingPeriods.business === 'yearly'
-                  ? 'bg-[#6c0f2a] text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Yearly
-            </button>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
           {plans.map((plan, index) => (
@@ -163,45 +87,10 @@ const Pricing = () => {
                 <p className="text-base mb-4">
                   {plan.description}
                 </p>
-                <div className="block lg:hidden my-4">
-                  <div className="flex justify-center space-x-1 mb-2">
-                    <button
-                      onClick={() => setBillingPeriods({...billingPeriods, [plan.id]: 'monthly'})}
-                      className={`px-3 py-1 rounded text-xs font-medium ${
-                        billingPeriods[plan.id] === 'monthly'
-                          ? 'bg-[#6c0f2a] text-white'
-                          : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      Monthly
-                    </button>
-                    <button
-                      onClick={() => setBillingPeriods({...billingPeriods, [plan.id]: 'quarterly'})}
-                      className={`px-3 py-1 rounded text-xs font-medium ${
-                        billingPeriods[plan.id] === 'quarterly'
-                          ? 'bg-[#6c0f2a] text-white'
-                          : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      Quarterly
-                    </button>
-                    <button
-                      onClick={() => setBillingPeriods({...billingPeriods, [plan.id]: 'yearly'})}
-                      className={`px-3 py-1 rounded text-xs font-medium ${
-                        billingPeriods[plan.id] === 'yearly'
-                          ? 'bg-[#6c0f2a] text-white'
-                          : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      Yearly
-                    </button>
-                  </div>
-                </div>
                 <div className="my-4">
                   <span className="text-2xl md:text-3xl font-bold">
-                    {getPrice(plan, billingPeriods[plan.id])} <span className={`text-base ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriod(billingPeriods[plan.id])}</span>
+                    {plan.price} <span className={`text-base ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>/month</span>
                   </span>
-                  <div className={`text-sm mt-1 ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{getPeriodText(billingPeriods[plan.id])}</div>
                 </div>
               </div>
 
@@ -212,15 +101,13 @@ const Pricing = () => {
                   <div className="mb-6">
                     <button
                       className={`w-full py-3 rounded-lg font-medium text-base ${
-                        selectedPlan === plan.id
-                          ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23] border-2 border-[#6c0f2a]'
-                          : plan.highlight
-                            ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
-                            : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
+                        plan.highlight
+                          ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
+                          : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
                       }`}
-                      onClick={() => setSelectedPlan(plan.id)}
+                      onClick={() => router.push('/signup')}
                     >
-                      {selectedPlan === plan.id ? 'Selected' : 'Select Plan'}
+                      Select Plan
                     </button>
                   </div>
 
