@@ -181,9 +181,9 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 overflow-hidden">
+  <div className="flex flex-col lg:flex-row min-h-screen w-full bg-gradient-to-br from-slate-50 via-red-50 to-rose-50 overflow-hidden">
       {/* Left side with gradient and branding */}
-      <div className="w-full lg:w-1/2 relative overflow-hidden h-[45vh] lg:h-screen bg-gradient-to-br from-[#d32f2f] via-[#6c0f2a] to-[#d32f2f]/80">
+  <div className="w-full lg:w-1/2 relative overflow-hidden h-full bg-gradient-to-br from-[#d32f2f] via-[#6c0f2a] to-[#d32f2f]/80">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-32 h-32 rounded-full border-2 border-white animate-pulse"></div>
@@ -319,7 +319,7 @@ export default function SignupPage() {
       </div>
 
       {/* Right side authentication form */}
-      <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center px-6 pb-6 pt-6 lg:pt-20 overflow-y-auto -mt-8 lg:mt-0">
+  <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center px-6 pb-6 pt-6 lg:pt-20 overflow-y-auto lg:mt-0">
         <motion.div 
           className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl p-8"
           initial={{ opacity: 0, y: 20 }}

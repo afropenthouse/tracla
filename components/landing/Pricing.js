@@ -7,24 +7,9 @@ const Pricing = () => {
 
   const plans = [
     {
-      id: 'starter',
-      name: 'Starter',
-      price: '₦20,000',
-      description: 'Perfect for small businesses',
-      features: [
-        {text: 'Access to customer dashboard with spending data', included: true},
-        {text: 'Identify and reward top spenders', included: true},
-        {text: 'View customer insights: number of visits, total spend, etc.', included: true},
-        {text: '1 branch only', included: true},
-        // {text: 'Send up to 300 whatsapp promo messages per month', included: true},
-        {text: 'Segment customers better using dashboard filters', included: true},
-      ],
-      highlight: false
-    },
-    {
       id: 'growth',
-      name: 'Growth',
-      price: '₦35,000',
+      name: 'Tier 1',
+      price: '₦20,000',
       description: 'Great for growing businesses',
       features: [
         {text: 'Access to customer dashboard with spending data', included: true},
@@ -37,9 +22,9 @@ const Pricing = () => {
       highlight: true
     },
     {
-      id: 'business',
-      name: 'Enterprise',
-      price: '₦50,000',
+      id: 'enterprise',
+      name: 'Tier 2',
+      price: '₦35,000',
       description: 'For large businesses and enterprises',
       features: [
         {text: 'Access to customer dashboard with spending data', included: true},
@@ -71,7 +56,7 @@ const Pricing = () => {
         </motion.div>
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto items-start">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.id}
