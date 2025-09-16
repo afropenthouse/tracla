@@ -117,24 +117,26 @@ const PurchaseReceiptUpload = () => {
     if (!dateTimeObj || !dateTimeObj.date) {
       const now = new Date();
       return {
-        day: now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        day: now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
       };
     }
 
     try {
-      const dateStr = dateTimeObj.date + (dateTimeObj.time ? ' ' + dateTimeObj.time : '');
+      // Parse date in DD/MM/YYYY format
+      const [day, month, year] = dateTimeObj.date.split('/');
+      const dateStr = `${year}-${month}-${day}` + (dateTimeObj.time ? ' ' + dateTimeObj.time : '');
       const date = new Date(dateStr);
       
       return {
-        day: date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        day: date.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        time: date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
       };
     } catch (error) {
       const now = new Date();
       return {
-        day: now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        day: now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
       };
     }
   };
@@ -320,6 +322,7 @@ const PurchaseReceiptUpload = () => {
           setProcessingProgress(100);
 
           setExtractedData(result);
+          console.log('this is extracted data', result);
           setTimeout(() => {
             setStep(2);
             setProcessingProgress(0);
@@ -364,7 +367,11 @@ const PurchaseReceiptUpload = () => {
       phoneNumber: phoneNumber.replace(/\s/g, ''),
       amount: extractedData.amount,
       purchaseDate: extractedData.dateTime ? 
-        new Date(extractedData.dateTime.date + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '')).toISOString() : 
+        (() => {
+          const [day, month, year] = extractedData.dateTime.date.split('/');
+          const dateStr = `${year}-${month}-${day}` + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '');
+          return new Date(dateStr).toISOString();
+        })() : 
         new Date().toISOString(),
       merchantName: extractedData.merchant.name
     };
