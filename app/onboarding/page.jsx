@@ -703,7 +703,7 @@ const VibeazyOnboarding = () => {
   };
 
   const handleGetStarted = () => {
-    router.push("/dashboard");
+    router.push("/login");
   };
 
   const downloadQRCode = async () => {
