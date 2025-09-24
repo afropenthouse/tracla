@@ -10,7 +10,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { businessKeys, branchKeys } from "@/lib/queries/branch";
 
-import { useBranchStore, useBusinessStore } from '@/store/store';
+import { useBranchStore, useBusinessStore, useCurrentPlanStore } from '@/store/store';
 import { useLoadingStore } from '@/store/loadingStore';
 import { useForgotPasswordModalStore } from '@/store/modalStore';
 import { setAuthCookies, setUserCookies } from '@/actions/cookies/cookies';
@@ -21,6 +21,7 @@ export default function LoginPage() {
   const { showLoader, hideLoader } = useLoadingStore();
   const { setBusiness } = useBusinessStore();
   const { setBranches, setCurrentBranch } = useBranchStore();
+  const { setCurrentPlan } = useCurrentPlanStore();
   const { showSuccess, showError } = useToastStore();
   const { onOpen: openForgotPassword } = useForgotPasswordModalStore();
 
@@ -50,8 +51,8 @@ export default function LoginPage() {
       });
     },
     onSuccess: async (data) => {      
-      const { isFirstLogin, business, user, tokens, sessionId } = data.data;
-      console.log('Login successful:', { isFirstLogin, user, business });
+      const { isFirstLogin, business, currentPlan, user, tokens, sessionId } = data.data;
+      console.log('Login successful:', { isFirstLogin, user, business, currentPlan });
       
       // Store tokens in cookies
       const cookieResult = await setAuthCookies(tokens.accessToken, tokens.refreshToken);
@@ -108,6 +109,11 @@ export default function LoginPage() {
           console.warn("Failed to prefetch quick stats:", error);
           // Don't block login flow if stats fetch fails
         }
+      }
+
+      // Store current plan data in Zustand store
+      if (currentPlan) {
+        setCurrentPlan(currentPlan);
       }
       
       hideLoader();

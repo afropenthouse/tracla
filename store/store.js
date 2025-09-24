@@ -207,3 +207,50 @@ export const useSubscriptionStore = create()(
     }
   )
 );
+
+// Current Plan Store - for login response currentPlan data
+export const useCurrentPlanStore = create()(
+  persist(
+    (set, get) => ({
+      currentPlan: null,
+
+      // Set current plan data from login response
+      setCurrentPlan: (currentPlan) => set({ currentPlan }),
+
+      // Update current plan data
+      updateCurrentPlan: (updatedPlan) =>
+        set((state) => ({
+          currentPlan: { ...state.currentPlan, ...updatedPlan },
+        })),
+
+      // Clear current plan data
+      clearCurrentPlan: () => set({ currentPlan: null }),
+
+      // Getters for plan properties
+      getTierName: () => {
+        const state = get();
+        return state.currentPlan?.tierName || null;
+      },
+
+      getMaxBranches: () => {
+        const state = get();
+        return state.currentPlan?.maxBranches || 0;
+      },
+
+      getMaxMonthlyMessages: () => {
+        const state = get();
+        return state.currentPlan?.maxMonthlyMessages || 0;
+      },
+
+      // Check if user can create more branches
+      canCreateBranch: (currentBranchCount) => {
+        const state = get();
+        const maxBranches = state.currentPlan?.maxBranches || 0;
+        return currentBranchCount < maxBranches;
+      },
+    }),
+    {
+      name: "currentPlanStore",
+    }
+  )
+);

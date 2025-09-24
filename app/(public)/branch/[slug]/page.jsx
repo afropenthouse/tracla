@@ -115,16 +115,15 @@ const PurchaseReceiptUpload = () => {
 
   const formatDateTime = (dateTimeObj) => {
     if (!dateTimeObj || !dateTimeObj.date) {
-      const now = new Date();
       return {
-        day: now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        day: "--",
+        time: "--"
       };
     }
 
     try {
-      // Parse date in DD/MM/YYYY format
-      const [day, month, year] = dateTimeObj.date.split('/');
+      // Parse date in DD/MM/YYYY or DD-MM-YYYY format
+      const [day, month, year] = dateTimeObj.date.replace('-', '/').split('/');
       const dateStr = `${year}-${month}-${day}` + (dateTimeObj.time ? ' ' + dateTimeObj.time : '');
       const date = new Date(dateStr);
       
@@ -133,10 +132,9 @@ const PurchaseReceiptUpload = () => {
         time: date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
       };
     } catch (error) {
-      const now = new Date();
       return {
-        day: now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        day: "--",
+        time: "--"
       };
     }
   };
@@ -353,27 +351,55 @@ const PurchaseReceiptUpload = () => {
       return;
     }
 
-    if (!extractedData?.dateTime?.date) {
-      setError('No purchase date detected from receipt');
-      return;
-    }
+    // Commenting out date validation - allow submission even without valid date
+    // if (!extractedData?.dateTime?.date) {
+    //   setError('No purchase date detected from receipt');
+    //   return;
+    // }
 
-    if (!extractedData?.merchant?.name) {
-      setError('No merchant name detected from receipt');
-      return;
-    }
+    // Check if date is valid (can be parsed properly) - but don't block submission
+    // try {
+    //   const [day, month, year] = extractedData.dateTime.date.replace('-', '/').split('/');
+    //   const dateStr = `${year}-${month}-${day}` + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '');
+    //   const date = new Date(dateStr);
+      
+    //   // Check if date is invalid (NaN)
+    //   if (isNaN(date.getTime())) {
+    //     setError('Invalid purchase date detected from receipt');
+    //     return;
+    //   }
+    // } catch (error) {
+    //   setError('Invalid purchase date detected from receipt');
+    //   return;
+    // }
+
+    // Commenting out merchant name validation
+    // if (!extractedData?.merchant?.name) {
+    //   setError('No merchant name detected from receipt');
+    //   return;
+    // }
 
     const purchaseData = {
       phoneNumber: phoneNumber.replace(/\s/g, ''),
       amount: extractedData.amount,
-      purchaseDate: extractedData.dateTime ? 
+      purchaseDate: extractedData.dateTime && extractedData.dateTime.date ? 
         (() => {
-          const [day, month, year] = extractedData.dateTime.date.split('/');
-          const dateStr = `${year}-${month}-${day}` + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '');
-          return new Date(dateStr).toISOString();
+          try {
+            const [day, month, year] = extractedData.dateTime.date.replace('-', '/').split('/');
+            const dateStr = `${year}-${month}-${day}` + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '');
+            const date = new Date(dateStr);
+            
+            // Check if date is valid before converting to ISO string
+            if (isNaN(date.getTime())) {
+              return new Date().toISOString(); // Fallback to current date
+            }
+            return date.toISOString();
+          } catch (error) {
+            return new Date().toISOString(); // Fallback to current date on any error
+          }
         })() : 
         new Date().toISOString(),
-      merchantName: extractedData.merchant.name
+      // merchantName: extractedData.merchant.name // Commented out - not sending merchant name to backend
     };
 
     console.log('📤 Submitting purchase data:', purchaseData);
@@ -679,7 +705,7 @@ const PurchaseReceiptUpload = () => {
                   ) : (
                     <>
                       <Gift size={20} />
-                      Claim My Discounts
+                      Submit
                     </>
                   )}
                 </button>

@@ -7,9 +7,9 @@ import { Settings, Crown, Clock, Play } from 'lucide-react';
 
 const SubscriptionDebugPanel = () => {
   // Only show in development
-  if (process.env.NODE_ENV !== 'development') {
-    return null;
-  }
+  // if (process.env.NODE_ENV !== 'development') {
+  //   return null;
+  // }
 
   const { 
     isSubscribed, 

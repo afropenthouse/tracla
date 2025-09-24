@@ -5,12 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Crown, CreditCard, Copy, CheckCircle, ArrowLeft, Banknote, Building, Hash } from 'lucide-react';
 import { usePaymentModalStore } from '@/store/modalStore';
 import { useSubscriptionStore } from '@/store/store';
+import { useBusinessStore } from '@/store/store';
 import { useToastStore } from '@/store/toastStore';
+import { getDVA, verifyPayment } from '@/lib/api';
 import confetti from 'canvas-confetti';
 
 const PaymentModal = () => {
   const { isOpen, onClose } = usePaymentModalStore();
   const { updateLastPaymentModalShown, dismissPaymentModalLonger, setSubscription } = useSubscriptionStore();
+  const { business } = useBusinessStore();
   const { showSuccess, showError } = useToastStore();
   
   // Multi-step state: 'plans' -> 'payment' -> 'success'
@@ -18,22 +21,23 @@ const PaymentModal = () => {
   const [selectedPlan, setSelectedPlan] = useState('growth');
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
   const [billingPeriods, setBillingPeriods] = useState({
-    starter: 'monthly',
     growth: 'monthly',
-    business: 'monthly'
+    enterprise: 'monthly'
   });
   const [isProcessing, setIsProcessing] = useState(false);
   
   // Payment details
   const [paymentDetails, setPaymentDetails] = useState(null);
 
-  // Bank details (fake data)
-  const bankDetails = {
-    bankName: "Guaranty Trust Bank (GTBank)",
-    accountName: "Tracla Technologies Ltd",
-    accountNumber: "0123456789",
-    sortCode: "058152052"
-  };
+  // Bank details (will be populated from API)
+  const [bankDetails, setBankDetails] = useState({
+    bankName: "",
+    accountName: "",
+    accountNumber: "",
+    sortCode: ""
+  });
+  const [isCreatingDVA, setIsCreatingDVA] = useState(false);
+  const [verificationError, setVerificationError] = useState('');
 
   const getPrice = (plan, period) => {
     return plan.price[period];
@@ -51,30 +55,12 @@ const PaymentModal = () => {
 
   const plans = [
     {
-      id: 'starter',
-      name: 'Starter',
-      price: {
-        monthly: '₦35,000',
-        quarterly: '₦29,000',
-        yearly: '₦25,000'
-      },
-      description: 'Perfect for small businesses',
-      features: [
-        {text: 'Access to customer dashboard with spending data', included: true},
-        {text: 'Identify and reward top spenders', included: true},
-        {text: 'View customer insights: number of visits, total spend, etc.', included: true},
-        {text: '1 branch only', included: true},
-        {text: 'Segment customers better using dashboard filters', included: true},
-      ],
-      highlight: false
-    },
-    {
       id: 'growth',
-      name: 'Growth',
+      name: 'Tier 1',
       price: {
-        monthly: '₦45,000',
-        quarterly: '₦39,000',
-        yearly: '₦35,000'
+        monthly: '₦20,000',
+        quarterly: '₦18,000',
+        yearly: '₦16,000'
       },
       description: 'Great for growing businesses',
       features: [
@@ -87,12 +73,12 @@ const PaymentModal = () => {
       highlight: true
     },
     {
-      id: 'business',
-      name: 'Enterprise',
+      id: 'enterprise',
+      name: 'Tier 2',
       price: {
-        monthly: '₦140,000',
-        quarterly: '₦120,000',
-        yearly: '₦100,000'
+        monthly: '₦35,000',
+        quarterly: '₦32,000',
+        yearly: '₦30,000'
       },
       description: 'For large businesses and enterprises',
       features: [
@@ -112,6 +98,7 @@ const PaymentModal = () => {
     updateLastPaymentModalShown();
     setCurrentStep('plans');
     setPaymentDetails(null);
+    setVerificationError('');
     onClose();
   };
 
@@ -119,20 +106,48 @@ const PaymentModal = () => {
     dismissPaymentModalLonger();
     setCurrentStep('plans');
     setPaymentDetails(null);
+    setVerificationError('');
     onClose();
     showSuccess('We\'ll remind you about upgrading in an hour.');
   };
 
-  const handlePlanSelect = (planId, period) => {
+  const handlePlanSelect = async (planId, period) => {
     const plan = plans.find(p => p.id === planId);
-    setPaymentDetails({
+    const paymentData = {
       planId,
       planName: plan.name,
       period,
       amount: plan.price[period],
       periodText: getPeriodText(period)
-    });
-    setCurrentStep('payment');
+    };
+    
+    setPaymentDetails(paymentData);
+    setIsCreatingDVA(true);
+    
+    try {
+      // Call DVA API to get dedicated virtual account
+      const dvaResponse = await getDVA({
+        plan: planId,
+        billingPeriod: period,
+        amount: plan.price[period]
+      });
+      
+      // Update bank details with real DVA data
+      const dvaData = dvaResponse.data.dva;
+      setBankDetails({
+        bankName: dvaData.bankName,
+        accountName: dvaData.accountName,
+        accountNumber: dvaData.accountNumber,
+        sortCode: dvaData.bankId?.toString() || ""
+      });
+      
+      setCurrentStep('payment');
+    } catch (error) {
+      console.error('Failed to create DVA:', error);
+      showError('Failed to generate payment details. Please try again.');
+    } finally {
+      setIsCreatingDVA(false);
+    }
   };
 
   const copyToClipboard = async (text, label) => {
@@ -145,15 +160,26 @@ const PaymentModal = () => {
   };
 
   const handlePaymentConfirm = async () => {
+    if (!business?.id) {
+      showError('Business information not found. Please try again.');
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      // Simulate payment verification (2 seconds delay)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Verify payment with backend
+      const verificationResponse = await verifyPayment(business.id);
+      const planData = verificationResponse.data;
       
-      // Set subscription in store
+      // Check if user is no longer on basic plan
+      if (planData.currentTier === 'basic') {
+        throw new Error('Payment not yet verified. Please ensure you have transferred the exact amount.');
+      }
+      
+      // Update subscription in store
       setSubscription({
-        plan: paymentDetails.planId,
+        plan: planData.currentTier,
         planName: paymentDetails.planName,
         amount: paymentDetails.amount,
         period: paymentDetails.period,
@@ -173,7 +199,8 @@ const PaymentModal = () => {
       }, 300);
       
     } catch (error) {
-      showError('Payment verification failed. Please try again.');
+      console.error('Payment verification failed:', error);
+      setVerificationError(error.message || 'Payment verification failed. Please try again or contact support.');
     } finally {
       setIsProcessing(false);
     }
@@ -189,6 +216,7 @@ const PaymentModal = () => {
     if (!isOpen) {
       setCurrentStep('plans');
       setPaymentDetails(null);
+      setVerificationError('');
     }
   }, [isOpen]);
 
@@ -221,9 +249,9 @@ const PaymentModal = () => {
         <div className="flex justify-center mb-8">
           <div className="bg-gray-100 rounded-lg p-1 shadow-sm">
             <button
-              onClick={() => setBillingPeriods({starter: 'monthly', growth: 'monthly', business: 'monthly'})}
+              onClick={() => setBillingPeriods({growth: 'monthly', enterprise: 'monthly'})}
               className={`px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer ${
-                billingPeriods.starter === 'monthly' && billingPeriods.growth === 'monthly' && billingPeriods.business === 'monthly'
+                billingPeriods.growth === 'monthly' && billingPeriods.enterprise === 'monthly'
                   ? 'bg-[#6c0f2a] text-white'
                   : 'text-gray-700 hover:bg-gray-200'
               }`}
@@ -231,9 +259,9 @@ const PaymentModal = () => {
               Monthly
             </button>
             <button
-              onClick={() => setBillingPeriods({starter: 'quarterly', growth: 'quarterly', business: 'quarterly'})}
+              onClick={() => setBillingPeriods({growth: 'quarterly', enterprise: 'quarterly'})}
               className={`px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer ${
-                billingPeriods.starter === 'quarterly' && billingPeriods.growth === 'quarterly' && billingPeriods.business === 'quarterly'
+                billingPeriods.growth === 'quarterly' && billingPeriods.enterprise === 'quarterly'
                   ? 'bg-[#6c0f2a] text-white'
                   : 'text-gray-700 hover:bg-gray-200'
               }`}
@@ -241,9 +269,9 @@ const PaymentModal = () => {
               Quarterly
             </button>
             <button
-              onClick={() => setBillingPeriods({starter: 'yearly', growth: 'yearly', business: 'yearly'})}
+              onClick={() => setBillingPeriods({growth: 'yearly', enterprise: 'yearly'})}
               className={`px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer ${
-                billingPeriods.starter === 'yearly' && billingPeriods.growth === 'yearly' && billingPeriods.business === 'yearly'
+                billingPeriods.growth === 'yearly' && billingPeriods.enterprise === 'yearly'
                   ? 'bg-[#6c0f2a] text-white'
                   : 'text-gray-700 hover:bg-gray-200'
               }`}
@@ -254,7 +282,7 @@ const PaymentModal = () => {
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto items-start">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.id}
@@ -264,14 +292,7 @@ const PaymentModal = () => {
               transition={{ duration: 0.3, delay: index * 0.1 }}
               whileHover={{ y: -2 }}
             >
-              {plan.highlight && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20">
-                  <span className="bg-yellow-400 text-[#6c0f2a] px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    MOST POPULAR
-                  </span>
-                </div>
-              )}
-              <div className={`p-6 text-center ${plan.highlight ? 'bg-[#6c0f2a] text-white' : 'bg-white'} relative ${plan.highlight ? 'pt-8' : ''}`}>
+                            <div className={`p-6 text-center ${plan.highlight ? 'bg-[#6c0f2a] text-white' : 'bg-white'} relative ${plan.highlight ? 'pt-8' : ''}`}>
                 
                 <h3 className={`text-xl font-bold ${plan.highlight ? 'text-white' : 'text-[#6c0f2a]'}`}>
                   {plan.name}
@@ -299,13 +320,21 @@ const PaymentModal = () => {
                   <div className="mb-6">
                     <button
                       onClick={() => handlePlanSelect(plan.id, billingPeriods[plan.id])}
+                      disabled={isCreatingDVA}
                       className={`w-full py-3 rounded-lg font-medium text-base transition-all duration-300 cursor-pointer ${
                         plan.highlight
                           ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
                           : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
-                      }`}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      Choose Plan
+                      {isCreatingDVA ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Generating Account...
+                        </div>
+                      ) : (
+                        'Choose Plan'
+                      )}
                     </button>
                   </div>
 
@@ -478,15 +507,29 @@ const PaymentModal = () => {
         <div className="max-w-4xl mx-auto mt-4">
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-xs text-blue-800">
-              <strong>Important:</strong> Use your business email as transfer reference for quick identification.
+              <strong>Important:</strong> You must transfer the exact amount shown for quick payment verification.
             </p>
           </div>
         </div>
 
+        {/* Error Message */}
+        {verificationError && (
+          <div className="max-w-md mx-auto mb-4">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">
+                <strong>Error:</strong> {verificationError}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-4 max-w-md mx-auto mt-6">
           <button
-            onClick={() => setCurrentStep('plans')}
+            onClick={() => {
+              setVerificationError('');
+              setCurrentStep('plans');
+            }}
             className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
           >
             Go Back
