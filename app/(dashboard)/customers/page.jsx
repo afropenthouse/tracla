@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Users, Search, MoreVertical, MessageSquare, Phone, Eye, ChevronDown, Check, FileText, 
-  FileSpreadsheet, Filter, RefreshCw, Calendar, Loader2, AlertCircle, Store, BarChart3
+  FileSpreadsheet, Filter, RefreshCw, Calendar, Loader2, AlertCircle, Store, BarChart3, ArrowUpDown
 } from 'lucide-react';
 import { RxCaretDown, RxCaretSort, RxCaretUp } from 'react-icons/rx';
 import { FaAngleLeft, FaAngleRight } from 'react-icons/fa';
@@ -52,7 +52,7 @@ const ActionDropdown = ({ item, onAction }) => {
   }, []);
   
   const actions = [
-    { id: 'viewCustomer', label: 'View Customer', icon: Eye, color: 'text-red-600' }
+    { id: 'viewCustomer', label: 'View Customer', icon: Eye, color: 'text-[#6c0f2a]' }
   ];
   
   return (
@@ -159,11 +159,13 @@ const CustomersPage = () => {
   
   // UI state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(1);
   const filterRef = useRef(null);
+  const sortRef = useRef(null);
   
   const [filterValues, setFilterValues] = useState({
     minAmount: "",
@@ -214,6 +216,9 @@ const CustomersPage = () => {
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setIsFilterOpen(false);
       }
+      if (sortRef.current && !sortRef.current.contains(event.target)) {
+        setIsSortOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -258,6 +263,7 @@ const CustomersPage = () => {
       setOrder("desc");
     }
     setPage(1);
+    setIsSortOpen(false); // Close sort dropdown on mobile after selection
   };
   
   const handleAction = (action, item) => {
@@ -358,6 +364,58 @@ const CustomersPage = () => {
         
         {/* Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-3 justify-end">
+          <div className="relative w-full sm:w-auto" ref={sortRef}>
+            <button
+              onClick={() => setIsSortOpen(!isSortOpen)}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-xl text-sm hover:bg-gray-50 transition-colors cursor-pointer w-full sm:w-auto md:hidden"
+            >
+              <ArrowUpDown size={18} />
+              {sortBy ? `Sort by ${sortBy.replace(/([A-Z])/g, ' $1').toLowerCase()}` : 'Sort'}
+              {sortBy && (
+                <span className="text-xs">
+                  ({order === 'asc' ? '↑' : '↓'})
+                </span>
+              )}
+            </button>
+            {isSortOpen && (
+              <div className="absolute right-0 mt-2 w-full sm:w-64 bg-white rounded-xl shadow-lg z-50 p-4 border md:hidden">
+                <h3 className="font-semibold text-gray-700 mb-3">Sort By</h3>
+                <div className="space-y-2">
+                  {[
+                    { id: 'totalspent', label: 'Total Spent' },
+                    { id: 'visitcount', label: 'Visit Count' },
+                    { id: 'lastvisit', label: 'Last Visit' }
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => handleSort(option.id)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer flex items-center justify-between group"
+                    >
+                      <span className={`text-sm ${sortBy === option.id ? 'font-medium text-[#6c0f2a]' : 'text-gray-700'}`}>
+                        {option.label}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {sortBy === option.id && (
+                          <span className="text-xs text-[#6c0f2a] font-medium">
+                            {order === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                          ↻
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-500">
+                    <span className="font-medium">Tip:</span> Click a field to toggle between ascending and descending order
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className="relative w-full sm:w-auto" ref={filterRef}>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}

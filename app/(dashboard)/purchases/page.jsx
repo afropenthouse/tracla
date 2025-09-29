@@ -2,12 +2,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Receipt, Search, MoreVertical, Eye, Users, ChevronDown, Check, FileText, 
-  FileSpreadsheet, Filter, RefreshCw, Calendar, ShoppingBag, Loader2, AlertCircle, Store, BarChart3
+  FileSpreadsheet, Filter, RefreshCw, Calendar, ShoppingBag, Loader2, AlertCircle, Store, BarChart3, ArrowUpDown
 } from 'lucide-react';
 import { RxCaretDown, RxCaretSort, RxCaretUp } from 'react-icons/rx';
 import { FaAngleLeft, FaAngleRight } from 'react-icons/fa';
 import { usePurchasesData } from '@/lib/queries/branch';
 import { useBranchStore, useBusinessStore } from '@/store/store';
+import { useCustomerDetailsModalStore } from '@/store/modalStore';
 
 // Header Cell Component
 const HeaderCell = ({ text, hasSort = false, onSort, sortBy, order }) => {
@@ -147,14 +148,17 @@ const PurchasesPage = () => {
   // Store hooks
   const { currentBranch } = useBranchStore();
   const { business } = useBusinessStore();
+  const { onOpen: openCustomerModal } = useCustomerDetailsModalStore();
   
   // UI state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(1);
   const filterRef = useRef(null);
+  const sortRef = useRef(null);
   
   const [filterValues, setFilterValues] = useState({
     minAmount: "",
@@ -203,6 +207,9 @@ const PurchasesPage = () => {
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setIsFilterOpen(false);
       }
+      if (sortRef.current && !sortRef.current.contains(event.target)) {
+        setIsSortOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -243,11 +250,33 @@ const PurchasesPage = () => {
       setOrder("desc");
     }
     setPage(1);
+    setIsSortOpen(false); // Close sort dropdown on mobile after selection
   };
   
   const handleAction = (action, item) => {
     console.log(`Action: ${action}`, item);
-    alert(`Action: ${action} for purchase by ${item.customerPhone}`);
+    
+    if (action === 'viewCustomer') {
+      // Create a customer object from the purchase data - the modal will fetch analytics
+      const customerData = {
+        id: item.customerId,
+        phoneNumber: item.customerPhone,
+        name: `Customer ${item.customerPhone}`,
+        // Basic info - modal will fetch detailed analytics
+        totalSpent: item.amount || 0,
+        totalSpend: item.amount || 0,
+        visitCount: 1,
+        totalVisits: 1,
+        lastVisit: item.purchaseDate,
+        branchId: item.branchId,
+        branchName: item.branchName
+      };
+      
+      console.log('Opening customer modal with data:', customerData);
+      openCustomerModal(customerData);
+    } else if (action === 'viewReceipt') {
+      alert(`View receipt for purchase by ${item.customerPhone}`);
+    }
   };
   
   const handleFilterChange = (name, value) => {
@@ -353,6 +382,57 @@ const PurchasesPage = () => {
         
         {/* Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-3 justify-end">
+          <div className="relative w-full sm:w-auto" ref={sortRef}>
+            <button
+              onClick={() => setIsSortOpen(!isSortOpen)}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-xl text-sm hover:bg-gray-50 transition-colors cursor-pointer w-full sm:w-auto md:hidden"
+            >
+              <ArrowUpDown size={18} />
+              {sortBy ? `Sort by ${sortBy.replace(/([A-Z])/g, ' $1').toLowerCase()}` : 'Sort'}
+              {sortBy && (
+                <span className="text-xs">
+                  ({order === 'asc' ? '↑' : '↓'})
+                </span>
+              )}
+            </button>
+            {isSortOpen && (
+              <div className="absolute right-0 mt-2 w-full sm:w-64 bg-white rounded-xl shadow-lg z-50 p-4 border md:hidden">
+                <h3 className="font-semibold text-gray-700 mb-3">Sort By</h3>
+                <div className="space-y-2">
+                  {[
+                    { id: 'amount', label: 'Amount' },
+                    { id: 'purchasedate', label: 'Purchase Date' }
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => handleSort(option.id)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer flex items-center justify-between group"
+                    >
+                      <span className={`text-sm ${sortBy === option.id ? 'font-medium text-[#6c0f2a]' : 'text-gray-700'}`}>
+                        {option.label}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {sortBy === option.id && (
+                          <span className="text-xs text-[#6c0f2a] font-medium">
+                            {order === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                          ↻
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-500">
+                    <span className="font-medium">Tip:</span> Click a field to toggle between ascending and descending order
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className="relative w-full sm:w-auto" ref={filterRef}>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
