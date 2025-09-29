@@ -301,7 +301,7 @@ const ActionDropdown = ({ item, onAction, viewMode }) => {
 
   const purchaseActions = [
     { id: 'viewCustomer', label: 'View Customer', icon: Eye, color: 'text-[#1A73E8]' },
-    { id: 'viewReceipt', label: 'View Receipt', icon: Receipt, color: 'text-gray-700' }
+    // { id: 'viewReceipt', label: 'View Receipt', icon: Receipt, color: 'text-gray-700' }
   ];
 
   const actions = viewMode === 'customers' ? customerActions : purchaseActions;

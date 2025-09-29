@@ -53,7 +53,7 @@ const ActionDropdown = ({ item, onAction }) => {
   
   const actions = [
     { id: 'viewCustomer', label: 'View Customer', icon: Eye, color: 'text-red-600' },
-    { id: 'viewReceipt', label: 'View Receipt', icon: Receipt, color: 'text-gray-700' }
+    // { id: 'viewReceipt', label: 'View Receipt', icon: Receipt, color: 'text-gray-700' }
   ];
   
   return (

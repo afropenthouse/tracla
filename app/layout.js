@@ -33,8 +33,8 @@ export default function RootLayout({ children }) {
         <QueryProvider>
           <GlobalLoader />
           <Toast />
-          {/* <PaymentModal />
-          <PaymentModalTrigger /> */}
+          <PaymentModal />
+          <PaymentModalTrigger />
           <ForgotPasswordModal />
           <CustomerDetailsModal />
           <SubscriptionDebugPanel />

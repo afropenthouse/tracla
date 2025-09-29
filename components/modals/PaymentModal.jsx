@@ -19,11 +19,7 @@ const PaymentModal = () => {
   // Multi-step state: 'plans' -> 'payment' -> 'success'
   const [currentStep, setCurrentStep] = useState('plans');
   const [selectedPlan, setSelectedPlan] = useState('growth');
-  const [selectedPeriod, setSelectedPeriod] = useState('monthly');
-  const [billingPeriods, setBillingPeriods] = useState({
-    growth: 'monthly',
-    enterprise: 'monthly'
-  });
+  const [activeMobilePlan, setActiveMobilePlan] = useState('growth');
   const [isProcessing, setIsProcessing] = useState(false);
   
   // Payment details
@@ -37,31 +33,14 @@ const PaymentModal = () => {
     sortCode: ""
   });
   const [isCreatingDVA, setIsCreatingDVA] = useState(false);
+  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState(null);
   const [verificationError, setVerificationError] = useState('');
-
-  const getPrice = (plan, period) => {
-    return plan.price[period];
-  };
-
-  const getPeriod = (period) => {
-    return '/mo';
-  };
-
-  const getPeriodText = (period) => {
-    if (period === 'quarterly') return 'for 3 months';
-    if (period === 'yearly') return 'for 12 months';
-    return 'for 1 month';
-  };
 
   const plans = [
     {
       id: 'growth',
       name: 'Tier 1',
-      price: {
-        monthly: '₦20,000',
-        quarterly: '₦18,000',
-        yearly: '₦16,000'
-      },
+      price: '₦20,000',
       description: 'Great for growing businesses',
       features: [
         {text: 'Access to customer dashboard with spending data', included: true},
@@ -75,11 +54,7 @@ const PaymentModal = () => {
     {
       id: 'enterprise',
       name: 'Tier 2',
-      price: {
-        monthly: '₦35,000',
-        quarterly: '₦32,000',
-        yearly: '₦30,000'
-      },
+      price: '₦35,000',
       description: 'For large businesses and enterprises',
       features: [
         {text: 'Access to customer dashboard with spending data', included: true},
@@ -111,25 +86,25 @@ const PaymentModal = () => {
     showSuccess('We\'ll remind you about upgrading in an hour.');
   };
 
-  const handlePlanSelect = async (planId, period) => {
+  const handlePlanSelect = async (planId) => {
     const plan = plans.find(p => p.id === planId);
     const paymentData = {
       planId,
       planName: plan.name,
-      period,
-      amount: plan.price[period],
-      periodText: getPeriodText(period)
+      amount: plan.price,
+      periodText: 'for 1 month'
     };
     
     setPaymentDetails(paymentData);
     setIsCreatingDVA(true);
+    setSelectedPlanForPayment(planId);
     
     try {
       // Call DVA API to get dedicated virtual account
       const dvaResponse = await getDVA({
         plan: planId,
-        billingPeriod: period,
-        amount: plan.price[period]
+        billingPeriod: 'monthly',
+        amount: plan.price
       });
       
       // Update bank details with real DVA data
@@ -147,6 +122,7 @@ const PaymentModal = () => {
       showError('Failed to generate payment details. Please try again.');
     } finally {
       setIsCreatingDVA(false);
+      setSelectedPlanForPayment(null);
     }
   };
 
@@ -182,7 +158,7 @@ const PaymentModal = () => {
         plan: planData.currentTier,
         planName: paymentDetails.planName,
         amount: paymentDetails.amount,
-        period: paymentDetails.period,
+        period: 'monthly',
         expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
         isActive: true
       });
@@ -221,68 +197,141 @@ const PaymentModal = () => {
   }, [isOpen]);
 
   const renderPlansStep = () => (
-    <>
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#6c0f2a] rounded-xl flex items-center justify-center">
-              <Crown size={20} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-[#6c0f2a]">Upgrade Your Plan</h2>
-              <p className="text-gray-600">Choose the perfect plan for your business</p>
-            </div>
+      <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200/50">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-[#6c0f2a] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <Crown className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-          >
-            <X size={24} className="text-gray-600" />
-          </button>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Upgrade Your Plan</h2>
+            <p className="text-xs sm:text-base text-gray-600">Choose the perfect plan for your business</p>
+          </div>
         </div>
+        <button
+          onClick={handleClose}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+        >
+          <X className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
+        </button>
       </div>
 
       {/* Content */}
-      <div className="p-6">
-        {/* Billing Period Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-gray-100 rounded-lg p-1 shadow-sm">
-            <button
-              onClick={() => setBillingPeriods({growth: 'monthly', enterprise: 'monthly'})}
-              className={`px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer ${
-                billingPeriods.growth === 'monthly' && billingPeriods.enterprise === 'monthly'
-                  ? 'bg-[#6c0f2a] text-white'
-                  : 'text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingPeriods({growth: 'quarterly', enterprise: 'quarterly'})}
-              className={`px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer ${
-                billingPeriods.growth === 'quarterly' && billingPeriods.enterprise === 'quarterly'
-                  ? 'bg-[#6c0f2a] text-white'
-                  : 'text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Quarterly
-            </button>
-            <button
-              onClick={() => setBillingPeriods({growth: 'yearly', enterprise: 'yearly'})}
-              className={`px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer ${
-                billingPeriods.growth === 'yearly' && billingPeriods.enterprise === 'yearly'
-                  ? 'bg-[#6c0f2a] text-white'
-                  : 'text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Yearly
-            </button>
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+        {/* Mobile Tabs */}
+        <div className="md:hidden mb-6">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            {plans.map((plan) => (
+              <button
+                key={plan.id}
+                onClick={() => setActiveMobilePlan(plan.id)}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                  activeMobilePlan === plan.id
+                    ? plan.highlight
+                      ? 'bg-[#6c0f2a] text-white'
+                      : 'bg-white text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {plan.name}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Plans Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto items-start">
+        {/* Mobile Single Plan View */}
+        <div className="md:hidden">
+          {plans
+            .filter(plan => plan.id === activeMobilePlan)
+            .map((plan) => (
+              <motion.div
+                key={plan.id}
+                className={`rounded-2xl overflow-hidden flex flex-col relative ${plan.highlight ? 'border-2 border-[#6c0f2a] z-10' : 'border border-gray-200'}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className={`p-4 text-center ${plan.highlight ? 'bg-[#6c0f2a] text-white' : 'bg-white'} relative`}>
+                  <h3 className={`text-lg font-bold ${plan.highlight ? 'text-white' : 'text-[#6c0f2a]'}`}>
+                    {plan.name}
+                  </h3>
+                  <p className={`text-xs mb-3 ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>
+                    {plan.description}
+                  </p>
+                  
+                  <div className="my-3">
+                    <span className="text-2xl font-bold">
+                      {plan.price}
+                    </span>
+                    <span className={`text-sm ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>
+                      /mo
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col flex-grow">
+                  <div className="bg-white p-4 flex-grow">
+                    {/* Payment Button */}
+                    <div className="mb-4">
+                      <button
+                        onClick={() => handlePlanSelect(plan.id)}
+                        disabled={isCreatingDVA && selectedPlanForPayment === plan.id}
+                        className={`w-full py-2.5 rounded-lg font-medium text-sm transition-all duration-300 cursor-pointer ${
+                          plan.highlight
+                            ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
+                            : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {isCreatingDVA && selectedPlanForPayment === plan.id ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-xs">Generating Account...</span>
+                          </div>
+                        ) : (
+                          'Choose Plan'
+                        )}
+                      </button>
+                    </div>
+
+                    <ul className="space-y-2">
+                      {plan.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start">
+                          {feature.included ? (
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className="h-4 w-4 flex-shrink-0 mr-2 mt-0.5 text-green-500" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className="h-4 w-4 flex-shrink-0 mr-2 mt-0.5 text-red-400" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          )}
+                          <span className={`text-xs ${feature.included ? 'text-gray-700' : 'text-gray-400'}`}>
+                            {feature.text}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+        </div>
+
+        {/* Desktop Grid View */}
+        <div className="hidden md:grid md:grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto items-start">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.id}
@@ -292,8 +341,7 @@ const PaymentModal = () => {
               transition={{ duration: 0.3, delay: index * 0.1 }}
               whileHover={{ y: -2 }}
             >
-                            <div className={`p-6 text-center ${plan.highlight ? 'bg-[#6c0f2a] text-white' : 'bg-white'} relative ${plan.highlight ? 'pt-8' : ''}`}>
-                
+              <div className={`p-6 text-center ${plan.highlight ? 'bg-[#6c0f2a] text-white' : 'bg-white'} relative ${plan.highlight ? 'pt-8' : ''}`}>
                 <h3 className={`text-xl font-bold ${plan.highlight ? 'text-white' : 'text-[#6c0f2a]'}`}>
                   {plan.name}
                 </h3>
@@ -303,14 +351,11 @@ const PaymentModal = () => {
                 
                 <div className="my-4">
                   <span className="text-3xl font-bold">
-                    {getPrice(plan, billingPeriods[plan.id])}
+                    {plan.price}
                   </span>
                   <span className={`text-base ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>
-                    {getPeriod(billingPeriods[plan.id])}
+                    /mo
                   </span>
-                  <div className={`text-sm mt-1 ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>
-                    {getPeriodText(billingPeriods[plan.id])}
-                  </div>
                 </div>
               </div>
 
@@ -319,18 +364,18 @@ const PaymentModal = () => {
                   {/* Payment Button */}
                   <div className="mb-6">
                     <button
-                      onClick={() => handlePlanSelect(plan.id, billingPeriods[plan.id])}
-                      disabled={isCreatingDVA}
+                      onClick={() => handlePlanSelect(plan.id)}
+                      disabled={isCreatingDVA && selectedPlanForPayment === plan.id}
                       className={`w-full py-3 rounded-lg font-medium text-base transition-all duration-300 cursor-pointer ${
                         plan.highlight
                           ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
                           : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      {isCreatingDVA ? (
+                      {isCreatingDVA && selectedPlanForPayment === plan.id ? (
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Generating Account...
+                          <span className="text-sm">Generating Account...</span>
                         </div>
                       ) : (
                         'Choose Plan'
@@ -375,86 +420,84 @@ const PaymentModal = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center">
-          <div className="text-sm text-gray-600 mb-4">
+        <div className="mt-6 sm:mt-8 text-center">
+          <div className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
             <p>All plans include 24/7 support and a 30-day money-back guarantee</p>
-            <p className="mt-1">Cancel anytime • No setup fees</p>
+            {/* <p className="mt-1">Cancel anytime • No setup fees</p> */}
           </div>
           <button
             onClick={handleRemindLater}
-            className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors cursor-pointer"
+            className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 underline transition-colors cursor-pointer"
           >
             Remind me later
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 
   const renderPaymentStep = () => (
-    <>
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setCurrentStep('plans')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-            >
-              <ArrowLeft size={20} className="text-gray-600" />
-            </button>
-            <div className="w-10 h-10 bg-[#6c0f2a] rounded-xl flex items-center justify-center">
-              <CreditCard size={20} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-[#6c0f2a]">Payment Details</h2>
-              <p className="text-gray-600">Transfer to complete your subscription</p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
+      <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200/50">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <button 
+            onClick={() => setCurrentStep('plans')}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
-            <X size={24} className="text-gray-600" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
           </button>
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-[#6c0f2a] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <CreditCard className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Payment Details</h2>
+            <p className="text-xs sm:text-base text-gray-600">Transfer to complete your subscription</p>
+          </div>
         </div>
+        <button
+          onClick={handleClose}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+        >
+          <X className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
+        </button>
       </div>
 
       {/* Content */}
-      <div className="p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {/* Left Column - Order Summary */}
-          <div className="bg-gradient-to-r from-[#6c0f2a]/10 to-[#d32f2f]/10 rounded-xl p-4 border border-[#6c0f2a]/20">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Summary</h3>
-            <div className="space-y-2 text-sm">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+        <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
+          {/* Order Summary */}
+          <div className="bg-gradient-to-r from-[#6c0f2a]/10 to-[#d32f2f]/10 rounded-xl p-4 sm:p-6 border border-[#6c0f2a]/20">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Order Summary</h3>
+            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Plan:</span>
-                <span className="font-medium">{paymentDetails?.planName}</span>
+                <span className="font-medium text-xs sm:text-sm">{paymentDetails?.planName}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Period:</span>
-                <span className="font-medium">{paymentDetails?.periodText}</span>
+                <span className="font-medium text-xs sm:text-sm">{paymentDetails?.periodText}</span>
               </div>
-              <div className="border-t border-gray-200 pt-2 mt-3">
+              <div className="border-t border-gray-200 pt-2 sm:pt-3 mt-2 sm:mt-3">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-900">Total:</span>
-                  <span className="text-xl font-bold text-[#6c0f2a]">{paymentDetails?.amount}</span>
+                  <span className="font-semibold text-gray-900 text-xs sm:text-sm">Total:</span>
+                  <span className="text-lg sm:text-xl font-bold text-[#6c0f2a]">{paymentDetails?.amount}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Bank Details */}
-          <div className="bg-white border-2 border-[#6c0f2a]/20 rounded-xl p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Banknote size={18} className="text-[#6c0f2a]" />
+          {/* Bank Details */}
+          <div className="bg-white border-2 border-[#6c0f2a]/20 rounded-xl p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+              <Banknote className="w-4 h-4 sm:w-5 sm:h-5 text-[#6c0f2a]" />
               Bank Details
             </h3>
             
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Building size={14} className="text-gray-600" />
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Building className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   <div>
                     <p className="text-xs text-gray-600">Bank</p>
                     <p className="font-medium text-sm">{bankDetails.bankName}</p>
@@ -462,15 +505,15 @@ const PaymentModal = () => {
                 </div>
                 <button
                   onClick={() => copyToClipboard(bankDetails.bankName, 'Bank name')}
-                  className="p-1.5 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:bg-gray-200 rounded transition-colors cursor-pointer"
                 >
-                  <Copy size={14} className="text-gray-600" />
+                  <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Hash size={14} className="text-gray-600" />
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Hash className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   <div>
                     <p className="text-xs text-gray-600">Account Number</p>
                     <p className="font-medium text-sm">{bankDetails.accountNumber}</p>
@@ -478,15 +521,15 @@ const PaymentModal = () => {
                 </div>
                 <button
                   onClick={() => copyToClipboard(bankDetails.accountNumber, 'Account number')}
-                  className="p-1.5 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:bg-gray-200 rounded transition-colors cursor-pointer"
                 >
-                  <Copy size={14} className="text-gray-600" />
+                  <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <CreditCard size={14} className="text-gray-600" />
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   <div>
                     <p className="text-xs text-gray-600">Account Name</p>
                     <p className="font-medium text-sm">{bankDetails.accountName}</p>
@@ -494,9 +537,9 @@ const PaymentModal = () => {
                 </div>
                 <button
                   onClick={() => copyToClipboard(bankDetails.accountName, 'Account name')}
-                  className="p-1.5 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:bg-gray-200 rounded transition-colors cursor-pointer"
                 >
-                  <Copy size={14} className="text-gray-600" />
+                  <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 </button>
               </div>
             </div>
@@ -504,8 +547,8 @@ const PaymentModal = () => {
         </div>
 
         {/* Important Note */}
-        <div className="max-w-4xl mx-auto mt-4">
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="max-w-4xl mx-auto mt-3 sm:mt-4">
+          <div className="p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-xs text-blue-800">
               <strong>Important:</strong> You must transfer the exact amount shown for quick payment verification.
             </p>
@@ -514,9 +557,9 @@ const PaymentModal = () => {
 
         {/* Error Message */}
         {verificationError && (
-          <div className="max-w-md mx-auto mb-4">
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">
+          <div className="max-w-md mx-auto mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs sm:text-sm text-red-800">
                 <strong>Error:</strong> {verificationError}
               </p>
             </div>
@@ -524,25 +567,25 @@ const PaymentModal = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-4 max-w-md mx-auto mt-6">
+        <div className="flex gap-2 sm:gap-4 max-w-md mx-auto mt-4 sm:mt-6">
           <button
             onClick={() => {
               setVerificationError('');
               setCurrentStep('plans');
             }}
-            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+            className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs sm:text-sm cursor-pointer"
           >
             Go Back
           </button>
           <button
             onClick={handlePaymentConfirm}
             disabled={isProcessing}
-            className="flex-1 bg-[#6c0f2a] text-white px-4 py-2.5 rounded-lg hover:bg-[#5a0d23] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="flex-1 bg-[#6c0f2a] text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg hover:bg-[#5a0d23] transition-colors font-medium text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isProcessing ? (
               <div className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Verifying...
+                <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-xs sm:text-sm">Verifying...</span>
               </div>
             ) : (
               'I Have Made Payment'
@@ -550,70 +593,68 @@ const PaymentModal = () => {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 
   const renderSuccessStep = () => (
-    <>
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#6c0f2a] rounded-xl flex items-center justify-center">
-              <CheckCircle size={20} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-[#6c0f2a]">Payment Successful!</h2>
-              <p className="text-gray-600">Welcome to Tracla Pro</p>
-            </div>
+      <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200/50">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-[#6c0f2a] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
           </div>
-          <button
-            onClick={handleSuccessClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-          >
-            <X size={24} className="text-gray-600" />
-          </button>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Payment Successful!</h2>
+            <p className="text-xs sm:text-base text-gray-600">Welcome to Tracla Pro</p>
+          </div>
         </div>
+        <button
+          onClick={handleSuccessClose}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+        >
+          <X className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
+        </button>
       </div>
 
       {/* Content */}
-      <div className="p-6 max-w-2xl mx-auto text-center">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 max-w-2xl mx-auto text-center">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="mb-8"
+          className="mb-4 sm:mb-6 md:mb-8"
         >
-          <div className="w-20 h-20 bg-[#6c0f2a]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle size={40} className="text-[#6c0f2a]" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#6c0f2a]/10 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-[#6c0f2a]" />
           </div>
-          <h3 className="text-3xl font-bold text-gray-900 mb-4">
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
             Thank You for Your Payment!
           </h3>
-          <p className="text-lg text-gray-600 mb-6">
+          <p className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6">
             Your subscription to <strong>{paymentDetails?.planName}</strong> has been activated successfully.
           </p>
         </motion.div>
 
-        <div className="bg-gradient-to-r from-[#6c0f2a]/5 to-[#d32f2f]/5 rounded-2xl p-6 mb-8 border border-[#6c0f2a]/20">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">What's Next?</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-[#6c0f2a] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+        <div className="bg-gradient-to-r from-[#6c0f2a]/5 to-[#d32f2f]/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 md:mb-8 border border-[#6c0f2a]/20">
+          <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">What's Next?</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-left">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-[#6c0f2a] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="text-white text-xs font-bold">1</span>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Access Premium Features</p>
-                <p className="text-sm text-gray-600">All premium features are now available in your dashboard</p>
+                <p className="font-medium text-gray-900 text-sm sm:text-base">Access Premium Features</p>
+                <p className="text-xs sm:text-sm text-gray-600">All premium features are now available in your dashboard</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-[#6c0f2a] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-[#6c0f2a] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="text-white text-xs font-bold">2</span>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Setup Complete</p>
-                <p className="text-sm text-gray-600">Your account is ready for advanced customer analytics</p>
+                <p className="font-medium text-gray-900 text-sm sm:text-base">Setup Complete</p>
+                <p className="text-xs sm:text-sm text-gray-600">Your account is ready for advanced customer analytics</p>
               </div>
             </div>
           </div>
@@ -621,29 +662,36 @@ const PaymentModal = () => {
 
         <button
           onClick={handleSuccessClose}
-          className="bg-[#6c0f2a] text-white px-8 py-3 rounded-xl hover:bg-[#5a0d23] transition-colors font-medium cursor-pointer"
+          className="bg-[#6c0f2a] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl hover:bg-[#5a0d23] transition-colors font-medium text-sm sm:text-base cursor-pointer"
         >
           Continue to Dashboard
         </button>
       </div>
-    </>
+    </div>
   );
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.7)" }}
-        >
+        <>
+          {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            onClick={onClose}
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                         w-[90vw] max-w-[400px] sm:max-w-2xl bg-white/80 backdrop-blur-xl 
+                         rounded-2xl shadow-2xl border border-white/20 z-50 overflow-hidden max-h-[85vh]
+                         ${currentStep === 'plans' ? 'lg:max-w-4xl' : 'lg:max-w-2xl'}`}
             onClick={(e) => e.stopPropagation()}
           >
             <AnimatePresence mode="wait">
@@ -654,6 +702,7 @@ const PaymentModal = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
+                  className="h-full flex flex-col"
                 >
                   {renderPlansStep()}
                 </motion.div>
@@ -666,6 +715,7 @@ const PaymentModal = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
+                  className="h-full flex flex-col"
                 >
                   {renderPaymentStep()}
                 </motion.div>
@@ -678,13 +728,14 @@ const PaymentModal = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
+                  className="h-full flex flex-col"
                 >
                   {renderSuccessStep()}
                 </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
-        </motion.div>
+        </>
       )}
     </AnimatePresence>
   );
