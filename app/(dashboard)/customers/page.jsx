@@ -8,6 +8,7 @@ import { RxCaretDown, RxCaretSort, RxCaretUp } from 'react-icons/rx';
 import { FaAngleLeft, FaAngleRight } from 'react-icons/fa';
 import { useCustomersData } from '@/lib/queries/branch';
 import { useBranchStore, useBusinessStore } from '@/store/store';
+import { useCustomerDetailsModalStore } from '@/store/modalStore';
 
 // Header Cell Component
 const HeaderCell = ({ text, hasSort = false, onSort, sortBy, order }) => {
@@ -154,6 +155,7 @@ const CustomersPage = () => {
   // Store hooks
   const { currentBranch } = useBranchStore();
   const { business } = useBusinessStore();
+  const { onOpen: openCustomerModal } = useCustomerDetailsModalStore();
   
   // UI state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -260,7 +262,9 @@ const CustomersPage = () => {
   
   const handleAction = (action, item) => {
     console.log(`Action: ${action}`, item);
-    alert(`Action: ${action} for customer ${item.phoneNumber}`);
+    if (action === 'viewCustomer') {
+      openCustomerModal(item);
+    }
   };
   
   const handleFilterChange = (name, value) => {
@@ -453,7 +457,7 @@ const CustomersPage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              placeholder="Search by phone number..."
+              placeholder="Search by number"
             />
             <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
@@ -470,16 +474,16 @@ const CustomersPage = () => {
             
             {isLoading ? (
               <div className="py-12 text-center">
-                <Loader2 size={48} className="animate-spin text-red-500 mx-auto mb-4" />
+                <Loader2 size={48} className="animate-spin text-[#6c0f2a] mx-auto mb-4" />
                 <p className="text-gray-600">Loading customers...</p>
               </div>
             ) : error ? (
               <div className="py-12 text-center">
-                <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                <AlertCircle size={48} className="text-[#6c0f2a] mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">{error.message}</p>
                 <button 
                   onClick={handleRefresh}
-                  className="px-4 py-2 bg-[#6c0f2a] text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-[#6c0f2a] text-white rounded-lg hover:bg-[#6c0f2a] transition-colors cursor-pointer"
                 >
                   Try Again
                 </button>
@@ -611,16 +615,16 @@ const CustomersPage = () => {
           <div className="divide-y divide-gray-200/50">
             {isLoading ? (
               <div className="py-12 text-center">
-                <Loader2 size={48} className="animate-spin text-red-500 mx-auto mb-4" />
+                <Loader2 size={48} className="animate-spin text-[#6c0f2a] mx-auto mb-4" />
                 <p className="text-gray-600">Loading customers...</p>
               </div>
             ) : error ? (
               <div className="py-12 text-center">
-                <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                <AlertCircle size={48} className="text-[#6c0f2a] mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">{error.message}</p>
                 <button 
                   onClick={handleRefresh}
-                  className="px-4 py-2 bg-[#6c0f2a] text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-[#6c0f2a] text-white rounded-lg hover:bg-[#6c0f2a] transition-colors cursor-pointer"
                 >
                   Try Again
                 </button>

@@ -6,6 +6,7 @@ import Toast from "@/components/common/Toast";
 import PaymentModal from "@/components/modals/PaymentModal";
 import PaymentModalTrigger from "@/components/PaymentModalTrigger";
 import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
+import CustomerDetailsModal from "@/components/modals/CustomerDetailsModal";
 import SubscriptionDebugPanel from "@/components/dev/SubscriptionDebugPanel";  
 
 const geistSans = Geist({
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
           {/* <PaymentModal />
           <PaymentModalTrigger /> */}
           <ForgotPasswordModal />
+          <CustomerDetailsModal />
           <SubscriptionDebugPanel />
           {children}
         </QueryProvider>

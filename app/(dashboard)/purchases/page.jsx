@@ -132,7 +132,7 @@ const PurchaseCard = ({ purchase, onAction, formatCurrency, formatDate, formatTi
       <div className="flex justify-center">
         <button
           onClick={() => onAction('viewCustomer', purchase)}
-          className="flex items-center gap-2 px-3 py-1.5 text-[#6c0f2a] border border-[#6c0f2a] rounded-lg text-sm hover:bg-red-600 hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-3 py-1.5 text-[#6c0f2a] border border-[#6c0f2a] rounded-lg text-sm hover:bg-[#6c0f2a] hover:text-white transition-colors cursor-pointer"
         >
           <Users size={14} />
           View Customer
@@ -431,7 +431,7 @@ const PurchasesPage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              placeholder="Search by customer phone..."
+              placeholder="Search by number"
             />
             <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
@@ -652,7 +652,7 @@ const PurchasesPage = () => {
                   <div className="text-center">
                     <button
                       onClick={() => handleAction('viewCustomer', purchase)}
-                      className="flex items-center gap-2 px-3 py-1.5 text-[#6c0f2a] border border-[#6c0f2a] rounded-lg text-sm hover:bg-red-600 hover:text-white transition-colors cursor-pointer"
+                      className="flex items-center gap-2 px-3 py-1.5 text-[#6c0f2a] border border-[#6c0f2a] rounded-lg text-sm hover:bg-[#6c0f2a] hover:text-white transition-colors cursor-pointer"
                     >
                       <Users size={14} />
                       View Customer
@@ -691,7 +691,7 @@ const PurchasesPage = () => {
                         onClick={() => handlePageChange(pageNum)}
                         className={`px-3 py-2 text-sm font-medium rounded-lg cursor-pointer ${
                           pagination.page === pageNum
-                            ? "text-white bg-gradient-to-r from-red-500 to-rose-600"
+                            ? "text-white bg-[#6c0f2a]"
                             : "text-gray-700 hover:bg-gray-50"
                         }`}
                       >

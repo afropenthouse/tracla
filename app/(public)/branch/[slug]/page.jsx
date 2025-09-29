@@ -351,27 +351,26 @@ const PurchaseReceiptUpload = () => {
       return;
     }
 
-    // Commenting out date validation - allow submission even without valid date
-    // if (!extractedData?.dateTime?.date) {
-    //   setError('No purchase date detected from receipt');
-    //   return;
-    // }
+    if (!extractedData?.dateTime?.date) {
+      setError('No purchase date detected from receipt');
+      return;
+    }
 
-    // Check if date is valid (can be parsed properly) - but don't block submission
-    // try {
-    //   const [day, month, year] = extractedData.dateTime.date.replace('-', '/').split('/');
-    //   const dateStr = `${year}-${month}-${day}` + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '');
-    //   const date = new Date(dateStr);
+    // Check if date is valid (can be parsed properly)
+    try {
+      const [day, month, year] = extractedData.dateTime.date.replace('-', '/').split('/');
+      const dateStr = `${year}-${month}-${day}` + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '');
+      const date = new Date(dateStr);
       
-    //   // Check if date is invalid (NaN)
-    //   if (isNaN(date.getTime())) {
-    //     setError('Invalid purchase date detected from receipt');
-    //     return;
-    //   }
-    // } catch (error) {
-    //   setError('Invalid purchase date detected from receipt');
-    //   return;
-    // }
+      // Check if date is invalid (NaN)
+      if (isNaN(date.getTime())) {
+        setError('Invalid purchase date detected from receipt');
+        return;
+      }
+    } catch (error) {
+      setError('Invalid purchase date detected from receipt');
+      return;
+    }
 
     // Commenting out merchant name validation
     // if (!extractedData?.merchant?.name) {

@@ -62,4 +62,11 @@ export const useForgotPasswordModalStore = create((set) => ({
   onClose: () => set({ isOpen: false }),
 }));
 
+export const useCustomerDetailsModalStore = create((set) => ({
+  isOpen: false,
+  customer: null,
+  onOpen: (customer) => set({ isOpen: true, customer }),
+  onClose: () => set({ isOpen: false, customer: null }),
+}));
+
 
