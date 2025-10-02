@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Users, Calendar, Filter, Loader2 } from 'lucide-react';
+import { X, DollarSign, Users, Calendar, Filter, Loader2, History, Receipt } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCustomerDetailsModalStore } from '@/store/modalStore';
 import { useBusinessStore, useBranchStore } from '@/store/store';
@@ -95,9 +95,21 @@ const CustomerDetailsModal = () => {
     await fetchCustomerAnalytics({});
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   if (!customer) return null;
 
   const displayData = analyticsData || customer;
+  const recentPurchases = customer.recentPurchases || [];
 
   return (
     <AnimatePresence>
@@ -144,7 +156,7 @@ const CustomerDetailsModal = () => {
             </div>
 
             {/* Main Content */}
-            <div className="p-3 sm:p-6 space-y-3 sm:space-y-6 overflow-y-auto max-h-[50vh]">
+            <div className="p-3 sm:p-6 space-y-3 sm:space-y-6 overflow-y-auto max-h-[70vh]">
               {/* Stats Overview */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Total Spent */}
@@ -245,6 +257,50 @@ const CustomerDetailsModal = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Recent Purchases Section */}
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-xl p-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <History className="w-4 h-4 text-gray-600" />
+                  <h3 className="text-sm font-semibold text-gray-700">Recent Purchases</h3>
+                </div>
+                
+                {recentPurchases.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Receipt className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No recent purchases found</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {recentPurchases.map((purchase, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-gray-100"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-[#6c0f2a]/10 rounded-lg flex items-center justify-center">
+                            <Receipt className="w-4 h-4 text-[#6c0f2a]" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {formatCurrency(purchase.amount)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Purchase #{index + 1}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-600">
+                            {formatDate(purchase.purchaseDate)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           </motion.div>
         </>
