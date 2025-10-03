@@ -9,6 +9,8 @@ import { FaAngleLeft, FaAngleRight } from 'react-icons/fa';
 import { useCustomersData } from '@/lib/queries/branch';
 import { useBranchStore, useBusinessStore } from '@/store/store';
 import { useCustomerDetailsModalStore } from '@/store/modalStore';
+import MessageModal from '@/components/modals/MessageModal';
+import { sendSingleMessage } from '@/lib/api';
 
 // Header Cell Component
 const HeaderCell = ({ text, hasSort = false, onSort, sortBy, order }) => {
@@ -52,7 +54,8 @@ const ActionDropdown = ({ item, onAction }) => {
   }, []);
   
   const actions = [
-    { id: 'viewCustomer', label: 'View Customer', icon: Eye, color: 'text-[#6c0f2a]' }
+    { id: 'viewCustomer', label: 'View Customer', icon: Eye, color: 'text-[#6c0f2a]' },
+    { id: 'sendMessage', label: 'Send a message', icon: MessageSquare, color: 'text-green-600' }
   ];
   
   return (
@@ -176,6 +179,10 @@ const CustomersPage = () => {
     dateTo: "",
   });
   
+  // Message modal state
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [messageCustomer, setMessageCustomer] = useState(null);
+  
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   
@@ -271,6 +278,29 @@ const CustomersPage = () => {
     if (action === 'viewCustomer') {
       openCustomerModal(item);
     }
+    if (action === 'sendMessage') {
+      setMessageCustomer(item);
+      setIsMessageModalOpen(true);
+    }
+  };
+  
+  const handleSendSingleMessage = async (customer, message) => {
+    try {
+      const businessId = business?.id;
+      if (!businessId) {
+        alert('Business ID not found. Please log in again.');
+        return;
+      }
+      const result = await sendSingleMessage(businessId, customer?.id, message);
+      if (result?.success) {
+        alert('Message sent successfully');
+      } else {
+        alert(`Failed to send message: ${result?.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to send single message:', error);
+      alert('Failed to send message. Please try again.');
+    }
   };
   
   const handleFilterChange = (name, value) => {
@@ -315,6 +345,7 @@ const CustomersPage = () => {
   };
   
   return (
+    <>
     <div className="min-h-screen p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         
@@ -812,6 +843,14 @@ const CustomersPage = () => {
         </div>
       </div>
     </div>
+      {/* Message Modal inside component */}
+      <MessageModal
+        isOpen={isMessageModalOpen}
+        onClose={() => setIsMessageModalOpen(false)}
+        customer={messageCustomer}
+        onSend={handleSendSingleMessage}
+      />
+    </>
   );
 };
 

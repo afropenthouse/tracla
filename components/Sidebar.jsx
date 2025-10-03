@@ -112,6 +112,14 @@ const VibEazyBusinessSidebar = ({
     },
   ];
 
+  const communicationItems = [
+    { 
+      label: 'WhatsApp Messages', 
+      icon: MessageSquare, 
+      path: '/messages'
+    },
+  ];
+
   const businessItems = [
     { 
       label: 'Business Overview', 
@@ -221,6 +229,34 @@ const VibEazyBusinessSidebar = ({
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Analytics</h4>
               <div className="space-y-1">
                 {analyticsItems.map((item) => (
+                  <Link key={item.path} href={item.path}>
+                    <div className={`w-full flex items-center justify-start px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden cursor-pointer ${
+                      isActive(item.path) 
+                        ? 'text-white shadow-lg' 
+                        : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
+                    }`}>
+                      {/* Active background gradient */}
+                      {isActive(item.path) && (
+                        <div className={`absolute inset-0 bg-[#6d0e2b] rounded-xl`} />
+                      )}
+                      
+                      <div className="relative z-10 flex items-center w-full">
+                        <item.icon size={18} className={isActive(item.path) ? 'text-white' : 'text-gray-600'} />
+                        <span className={`ml-3 ${isActive(item.path) ? 'text-white' : 'text-gray-700'}`}>
+                          {item.label}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Communication Section */}
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Communication</h4>
+              <div className="space-y-1">
+                {communicationItems.map((item) => (
                   <Link key={item.path} href={item.path}>
                     <div className={`w-full flex items-center justify-start px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden cursor-pointer ${
                       isActive(item.path) 
@@ -442,6 +478,28 @@ const VibEazyBusinessSidebar = ({
                 <div className="mb-4">
                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Analytics</h4>
                   {analyticsItems.map((item) => (
+                    <Link key={item.path} href={item.path}>
+                      <div 
+                        className={`block w-full text-left px-4 py-3 rounded-xl text-base font-medium transition-all cursor-pointer ${
+                          isActive(item.path) 
+                            ? 'text-white bg-[#6d0e2b] shadow-lg' 
+                            : 'text-gray-700 hover:bg-white/50'
+                        }`}
+                        onClick={() => setShowMobileMenu(false)}
+                      >
+                        <div className="flex items-center">
+                          <item.icon size={20} className="mr-4" />
+                          <span className="flex-1">{item.label}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Communication Section */}
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Communication</h4>
+                  {communicationItems.map((item) => (
                     <Link key={item.path} href={item.path}>
                       <div 
                         className={`block w-full text-left px-4 py-3 rounded-xl text-base font-medium transition-all cursor-pointer ${

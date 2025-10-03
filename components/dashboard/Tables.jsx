@@ -9,6 +9,8 @@ import {
 import { IoMdInformationCircleOutline } from 'react-icons/io';
 import { RxCaretDown, RxCaretSort, RxCaretUp } from 'react-icons/rx';
 import { FaAngleLeft, FaAngleRight } from 'react-icons/fa';
+import MessageModal from '../modals/MessageModal';
+import { sendSingleMessage } from '@/lib/api';
 
 // Mock data based on the Prisma models
 const mockCustomers = [
@@ -301,6 +303,7 @@ const ActionDropdown = ({ item, onAction, viewMode }) => {
 
   const purchaseActions = [
     { id: 'viewCustomer', label: 'View Customer', icon: Eye, color: 'text-[#1A73E8]' },
+    { id: 'sendMessage', label: 'Send Message', icon: MessageSquare, color: 'text-gray-700' },
     // { id: 'viewReceipt', label: 'View Receipt', icon: Receipt, color: 'text-gray-700' }
   ];
 
@@ -358,6 +361,10 @@ const VibeazyTable = () => {
     dateFrom: "",
     dateTo: "",
   });
+
+  // Message modal state
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   const customerSearchFields = [
     "Phone Number",
@@ -429,7 +436,32 @@ const VibeazyTable = () => {
 
   const handleAction = (action, item) => {
     console.log(`Action: ${action}`, item);
-    alert(`Action: ${action} for ${viewMode === 'customers' ? item.phoneNumber : item.customerPhone}`);
+    
+    if (action === 'sendMessage') {
+      setSelectedCustomer(item);
+      setIsMessageModalOpen(true);
+    } else {
+      alert(`Action: ${action} for ${viewMode === 'customers' ? item.phoneNumber : item.customerPhone}`);
+    }
+  };
+
+  const handleSendMessage = async (customer, message) => {
+    try {
+      // For now, using mock business ID - in real app, get from context/auth
+      const businessId = 'business_001';
+      const customerId = customer.id || customer.customerId;
+      
+      const result = await sendSingleMessage(businessId, customerId, message);
+      
+      if (result.success) {
+        alert('Message sent successfully!');
+      } else {
+        alert(`Failed to send message: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again.');
+    }
   };
 
   const handleSearchFieldSelect = (field) => {
@@ -917,13 +949,7 @@ const VibeazyTable = () => {
                   </div>
 
                   <div className="text-center">
-                    <button
-                      onClick={() => handleAction('viewCustomer', purchase)}
-                      className="flex items-center gap-2 px-3 py-1.5 text-[#1A73E8] border border-[#1A73E8] rounded-lg text-sm hover:bg-[#1A73E8] hover:text-white transition-colors cursor-pointer"
-                    >
-                      <Users size={14} />
-                      View Customer
-                    </button>
+                    <ActionDropdown item={purchase} onAction={handleAction} viewMode={viewMode} />
                   </div>
                 </div>
               ))}
@@ -981,6 +1007,14 @@ const VibeazyTable = () => {
           </div>
         </div>
       </div>
+
+      {/* Message Modal */}
+      <MessageModal
+        isOpen={isMessageModalOpen}
+        onClose={() => setIsMessageModalOpen(false)}
+        customer={selectedCustomer}
+        onSend={handleSendMessage}
+      />
     </div>
   );
 };

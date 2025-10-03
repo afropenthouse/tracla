@@ -200,54 +200,55 @@ const CustomerDetailsModal = () => {
                 </div>
               </div>
 
-              {/* Date Range Filter */}
-              <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-xl p-3">
-                <div className="flex flex-col gap-3">
-                  {/* Title */}
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-3 h-3 text-gray-600" />
-                    <h3 className="text-sm font-semibold text-gray-700">Filter by Date Range</h3>
+              {/* Date Range Filter - Elegant Design */}
+              <div className="bg-gradient-to-br from-white/90 to-gray-50/80 backdrop-blur-xl border border-gray-200/50 shadow-xl rounded-2xl p-6">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-gradient-to-br from-[#6c0f2a]/10 to-[#d32f2f]/10 rounded-xl">
+                    <Filter className="w-5 h-5 text-[#6c0f2a]" />
                   </div>
-                  
-                  {/* Date Inputs */}
-                  <div className="grid grid-cols-1 gap-2">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">From Date</label>
-                      <input
-                        type="date"
-                        value={dateFilter.dateFrom}
-                        onChange={(e) => handleDateFilterChange('dateFrom', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#6c0f2a]/20 focus:border-[#6c0f2a] transition-all duration-300 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">To Date</label>
-                      <input
-                        type="date"
-                        value={dateFilter.dateTo}
-                        onChange={(e) => handleDateFilterChange('dateTo', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#6c0f2a]/20 focus:border-[#6c0f2a] transition-all duration-300 text-sm"
-                      />
-                    </div>
+                  <h3 className="text-lg font-semibold text-gray-800">Filter by Date Range</h3>
+                </div>
+                
+                {/* Date Inputs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">From Date</label>
+                    <input
+                      type="date"
+                      value={dateFilter.dateFrom}
+                      onChange={(e) => handleDateFilterChange('dateFrom', e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#6c0f2a]/30 focus:border-[#6c0f2a] transition-all duration-300 text-sm shadow-sm hover:shadow-md"
+                    />
                   </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={clearDateFilter}
-                      disabled={isLoading}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoading ? 'Clearing...' : 'Clear'}
-                    </button>
-                    <button
-                      onClick={applyDateFilter}
-                      disabled={isLoading}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-[#6c0f2a] to-[#d32f2f] rounded-lg hover:from-[#d32f2f] hover:to-[#6c0f2a] transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoading ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <Loader2 className="w-3 h-3 animate-spin" />
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">To Date</label>
+                    <input
+                      type="date"
+                      value={dateFilter.dateTo}
+                      onChange={(e) => handleDateFilterChange('dateTo', e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#6c0f2a]/30 focus:border-[#6c0f2a] transition-all duration-300 text-sm shadow-sm hover:shadow-md"
+                    />
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={clearDateFilter}
+                    disabled={isLoading}
+                    className="flex-1 px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  >
+                    Clear Filters
+                  </button>
+                  <button
+                    onClick={applyDateFilter}
+                    disabled={isLoading}
+                    className="flex-1 px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-[#6c0f2a] to-[#d32f2f] rounded-xl hover:from-[#d32f2f] hover:to-[#6c0f2a] transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
                           Applying...
                         </div>
                       ) : (
@@ -256,7 +257,6 @@ const CustomerDetailsModal = () => {
                     </button>
                   </div>
                 </div>
-              </div>
 
               {/* Recent Purchases Section */}
               <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg rounded-xl p-3">

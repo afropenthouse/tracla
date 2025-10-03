@@ -151,21 +151,14 @@ const PurchasesPage = () => {
   const { onOpen: openCustomerModal } = useCustomerDetailsModalStore();
   
   // UI state
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(1);
-  const filterRef = useRef(null);
   const sortRef = useRef(null);
   
-  const [filterValues, setFilterValues] = useState({
-    minAmount: "",
-    maxAmount: "",
-    dateFrom: "",
-    dateTo: "",
-  });
+
   
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState(search);
@@ -184,10 +177,6 @@ const PurchasesPage = () => {
     page,
     limit: 10,
     search: debouncedSearch || undefined,
-    minAmount: filterValues.minAmount || undefined,
-    maxAmount: filterValues.maxAmount || undefined,
-    dateFrom: filterValues.dateFrom || undefined,
-    dateTo: filterValues.dateTo || undefined,
     sortBy: sortBy || undefined,
     order: order || undefined,
   };
@@ -201,12 +190,9 @@ const PurchasesPage = () => {
   
   const isBusinessView = !currentBranch;
   
-  // Close filters on outside click
+  // Close sort dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (filterRef.current && !filterRef.current.contains(event.target)) {
-        setIsFilterOpen(false);
-      }
       if (sortRef.current && !sortRef.current.contains(event.target)) {
         setIsSortOpen(false);
       }
@@ -269,7 +255,14 @@ const PurchasesPage = () => {
         totalVisits: 1,
         lastVisit: item.purchaseDate,
         branchId: item.branchId,
-        branchName: item.branchName
+        branchName: item.branchName,
+        // Add recent purchases array with the current purchase
+        recentPurchases: [
+          {
+            amount: item.amount || 0,
+            purchaseDate: item.purchaseDate
+          }
+        ]
       };
       
       console.log('Opening customer modal with data:', customerData);
@@ -279,20 +272,9 @@ const PurchasesPage = () => {
     }
   };
   
-  const handleFilterChange = (name, value) => {
-    setFilterValues((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+
   
   const clearFilters = () => {
-    setFilterValues({
-      minAmount: "",
-      maxAmount: "",
-      dateFrom: "",
-      dateTo: "",
-    });
     setSearch('');
     setSortBy('');
     setOrder('desc');
@@ -313,10 +295,7 @@ const PurchasesPage = () => {
     setPage(newPage);
   };
   
-  const applyFilters = () => {
-    setPage(1); // Reset to first page when applying filters
-    setIsFilterOpen(false);
-  };
+
   
   const getBranchColor = (branchName) => {
     const colors = {
@@ -433,76 +412,7 @@ const PurchasesPage = () => {
             )}
           </div>
           
-          <div className="relative w-full sm:w-auto" ref={filterRef}>
-            <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-xl text-sm hover:bg-gray-50 transition-colors cursor-pointer w-full sm:w-auto"
-            >
-              <Filter size={18} />
-              Show Filters
-            </button>
-            {isFilterOpen && (
-              <div className="absolute right-0 mt-2 w-full sm:w-80 bg-white rounded-xl shadow-lg z-50 p-6 border">
-                <div className="flex flex-col gap-4">
-                  <h3 className="font-semibold text-gray-700 mb-2">Filters</h3>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Purchase Amount Range
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        placeholder="Min Amount"
-                        value={filterValues.minAmount}
-                        onChange={(e) => handleFilterChange("minAmount", e.target.value)}
-                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Max Amount"
-                        value={filterValues.maxAmount}
-                        onChange={(e) => handleFilterChange("maxAmount", e.target.value)}
-                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Date Range
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
-                        value={filterValues.dateFrom}
-                        onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
-                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      />
-                      <input
-                        type="date"
-                        value={filterValues.dateTo}
-                        onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 mt-4">
-                    <button
-                      onClick={clearFilters}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      onClick={applyFilters}
-                      className="px-4 py-2 text-sm font-medium text-white bg-[#6c0f2a] border border-transparent rounded-lg hover:from-rose-500 hover:to-red-600 cursor-pointer"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+
           
           {/* Search Controls - Customer Phone Only */}
           <div className="relative w-full sm:w-auto">
@@ -593,7 +503,7 @@ const PurchasesPage = () => {
                           onClick={() => handlePageChange(pageNum)}
                           className={`w-8 h-8 text-xs font-medium rounded-lg cursor-pointer flex items-center justify-center ${
                             pagination.page === pageNum
-                              ? "text-white bg-gradient-to-r from-red-500 to-rose-600"
+                              ? "text-white bg-[#6c0f2a]"
                               : "text-gray-700 hover:bg-gray-50"
                           }`}
                         >
@@ -619,7 +529,7 @@ const PurchasesPage = () => {
                     className={`px-3 py-1.5 border-transparent rounded-lg shadow-sm text-xs font-medium text-white flex items-center ${
                       pagination.page >= pagination.totalPages
                         ? "cursor-not-allowed bg-gray-400"
-                        : "bg-gradient-to-r from-red-500 to-rose-600 hover:from-rose-500 hover:to-red-600 cursor-pointer"
+                        : "bg-[#6c0f2a] hover:bg-[#d32f2f] cursor-pointer"
                     }`}
                   >
                     Next
@@ -797,7 +707,7 @@ const PurchasesPage = () => {
                   className={`px-4 py-2 border-transparent rounded-lg shadow-sm text-sm font-medium text-white flex items-center ${
                     pagination.page >= pagination.totalPages
                       ? "cursor-not-allowed bg-gray-400"
-                      : "bg-gradient-to-r from-red-500 to-rose-600 hover:from-rose-500 hover:to-red-600 cursor-pointer"
+                      : "bg-[#6c0f2a] hover:bg-[#d32f2f] cursor-pointer"
                   }`}
                 >
                   Next
