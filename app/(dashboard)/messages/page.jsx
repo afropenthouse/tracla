@@ -9,8 +9,8 @@ import { useCustomersData } from '@/lib/queries/branch';
 import { useBusinessStore } from '@/store/store';
 
 const MessagesPage = () => {
-  const [activeTab, setActiveTab] = useState('send'); // 'send' | 'history' | 'topspenders'
-  const [messageType, setMessageType] = useState('all'); // 'all', 'selected'
+  const [activeTab, setActiveTab] = useState('send'); // 'send' | 'history'
+  const [messageType, setMessageType] = useState('all'); // 'all', 'selected', 'topspenders'
   const [message, setMessage] = useState('');
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +27,8 @@ const MessagesPage = () => {
     dateFrom: '',
     dateTo: '',
     search: '',
-    category: 'top10' // 'top10' | 'top50' | 'min20k'
+    minAmount: '',
+    maxAmount: ''
   });
 
   // Top Up state for purchasing message credits (₦10 per message)
@@ -35,6 +36,7 @@ const MessagesPage = () => {
   const [topUpMode, setTopUpMode] = useState('messages'); // 'messages' | 'amount'
   const [topUpMessages, setTopUpMessages] = useState(100);
   const [topUpAmount, setTopUpAmount] = useState(1000);
+  const [balance, setBalance] = useState(0);
   const PRICE_PER_MESSAGE = 10; // ₦10 per message
   const computedTopUpAmount = topUpMode === 'messages' ? topUpMessages * PRICE_PER_MESSAGE : topUpAmount;
   const computedTopUpMessages = topUpMode === 'amount' ? Math.floor(topUpAmount / PRICE_PER_MESSAGE) : topUpMessages;
@@ -148,14 +150,13 @@ const MessagesPage = () => {
     if (from) list = list.filter((c) => new Date(c.lastVisit) >= from);
     if (to) list = list.filter((c) => new Date(c.lastVisit) <= to);
 
-    // category
-    list.sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0));
-    if (spenderFilters.category === 'top5') list = list.slice(0, 5);
-    else if (spenderFilters.category === 'top10') list = list.slice(0, 10);
-    else if (spenderFilters.category === 'top50') list = list.slice(0, 50);
-    else if (spenderFilters.category === 'min20k') list = list.filter((c) => (c.totalSpent || 0) >= 20000);
-    else if (spenderFilters.category === 'below20k') list = list.filter((c) => (c.totalSpent || 0) < 20000);
+    // amount range filters
+    const min = spenderFilters.minAmount !== '' ? Number(spenderFilters.minAmount) : null;
+    const max = spenderFilters.maxAmount !== '' ? Number(spenderFilters.maxAmount) : null;
+    if (min !== null) list = list.filter((c) => (c.totalSpent || 0) >= min);
+    if (max !== null) list = list.filter((c) => (c.totalSpent || 0) <= max);
 
+    list.sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0));
     return list;
   }, [customers, spenderFilters]);
 
@@ -201,10 +202,11 @@ const MessagesPage = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">WhatsApp Messages</h1>
-            <p className="text-gray-600">Send bulk WhatsApp messages to your customers</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Send a message</h1>
+            <p className="text-gray-600">Send bulk SMS messages to your customers</p>
           </div>
           <div className="flex items-center gap-3">
+            <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg text-sm">Balance: ₦{balance.toLocaleString()}</span>
             <button
               onClick={() => setShowTopUpModal(true)}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
@@ -281,6 +283,7 @@ const MessagesPage = () => {
               <button
                 onClick={() => {
                   // Frontend-only: simulate adding to balance
+                  setBalance((prev) => prev + computedTopUpAmount);
                   setShowTopUpModal(false);
                 }}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -316,17 +319,6 @@ const MessagesPage = () => {
             <Clock className="w-4 h-4 inline mr-2" />
             Message History
           </button>
-          <button
-            onClick={() => setActiveTab('topspenders')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'topspenders'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Users className="w-4 h-4 inline mr-2" />
-            Top Spenders
-          </button>
         </nav>
       </div>
 
@@ -347,9 +339,7 @@ const MessagesPage = () => {
                     onChange={(e) => setMessageType(e.target.value)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
-                  <span className="ml-2 text-sm font-medium text-gray-700">
-                    All Customers
-                  </span>
+                  <span className="ml-2 text-sm font-medium text-gray-700">All Customers</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -360,9 +350,18 @@ const MessagesPage = () => {
                     onChange={(e) => setMessageType(e.target.value)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
-                  <span className="ml-2 text-sm font-medium text-gray-700">
-                    Selected Customers
-                  </span>
+                  <span className="ml-2 text-sm font-medium text-gray-700">Selected Customers</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="messageType"
+                    value="topspenders"
+                    checked={messageType === 'topspenders'}
+                    onChange={(e) => setMessageType(e.target.value)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm font-medium text-gray-700">Top Spenders</span>
                 </label>
               </div>
 
@@ -391,9 +390,107 @@ const MessagesPage = () => {
                     )}
                   </div>
                   {selectedCustomers.length > 0 && (
-                    <p className="text-sm text-blue-600 mt-2">
-                      {selectedCustomers.length} customer(s) selected
-                    </p>
+                    <p className="text-sm text-blue-600 mt-2">{selectedCustomers.length} customer(s) selected</p>
+                  )}
+                </div>
+              )}
+
+              {/* Top Spenders Selection */}
+              {messageType === 'topspenders' && (
+                <div className="mt-4 space-y-4">
+                  <h4 className="text-sm font-medium text-gray-700">Filter Top Spenders:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                        <Search className="w-4 h-4 text-gray-500" />
+                        <input
+                          type="text"
+                          value={spenderFilters.search}
+                          onChange={(e) => setSpenderFilters({ ...spenderFilters, search: e.target.value })}
+                          placeholder="Search phone"
+                          className="bg-transparent outline-none w-full"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+                      <input
+                        type="date"
+                        value={spenderFilters.dateFrom}
+                        onChange={(e) => setSpenderFilters({ ...spenderFilters, dateFrom: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                      <input
+                        type="date"
+                        value={spenderFilters.dateTo}
+                        onChange={(e) => setSpenderFilters({ ...spenderFilters, dateTo: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Amount Range (₦)</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={spenderFilters.minAmount}
+                          onChange={(e) => setSpenderFilters({ ...spenderFilters, minAmount: e.target.value })}
+                          placeholder="Min"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                        <span className="text-gray-500">-</span>
+                        <input
+                          type="number"
+                          value={spenderFilters.maxAmount}
+                          onChange={(e) => setSpenderFilters({ ...spenderFilters, maxAmount: e.target.value })}
+                          placeholder="Max"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Select</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spent (₦)</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Visit</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {topSpenders.length === 0 ? (
+                          <tr>
+                            <td colSpan="4" className="px-6 py-12 text-center text-gray-500">No top spenders found.</td>
+                          </tr>
+                        ) : (
+                          topSpenders.map((c) => (
+                            <tr key={c.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCustomers.includes(c.id)}
+                                  onChange={() => toggleSpenderSelect(c.id)}
+                                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.phone}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₦{(c.totalSpent || 0).toLocaleString()}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.lastVisit ? new Date(c.lastVisit).toLocaleDateString() : '-'}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {selectedCustomers.length > 0 && (
+                    <p className="text-sm text-blue-600 mt-2">{selectedCustomers.length} top spender(s) selected</p>
                   )}
                 </div>
               )}
@@ -405,27 +502,23 @@ const MessagesPage = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Compose Message</h3>
             <div className="space-y-4">
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  WhatsApp Message
-                </label>
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">SMS Message</label>
                 <textarea
                   id="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your WhatsApp message here..."
+                  placeholder="Type your SMS message here..."
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   disabled={isLoading}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {message.length}/1000 characters
-                </p>
+                <p className="text-xs text-gray-500 mt-1">{message.length}/1000 characters</p>
               </div>
 
               <div className="flex justify-end">
                 <button
                   onClick={handleSendMessage}
-                  disabled={isLoading || !message.trim()}
+                  disabled={isLoading || !message.trim() || (messageType !== 'all' && selectedCustomers.length === 0)}
                   className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isLoading ? (
@@ -436,7 +529,7 @@ const MessagesPage = () => {
                   ) : (
                     <>
                       <Send className="w-4 h-4" />
-                      Send Messages
+                      Send SMS
                     </>
                   )}
                 </button>
@@ -571,138 +664,8 @@ const MessagesPage = () => {
       )}
 
       {/* Top Spenders Tab */}
-      {activeTab === 'topspenders' && (
-        <div className="space-y-6">
-          {/* Filters and Categories */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Spenders</h3>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                  <Search className="w-4 h-4 text-gray-500" />
-                  <input
-                    type="text"
-                    value={spenderFilters.search}
-                    onChange={(e) => setSpenderFilters({ ...spenderFilters, search: e.target.value })}
-                    placeholder="Search phone"
-                    className="bg-transparent outline-none w-full"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-                <input
-                  type="date"
-                  value={spenderFilters.dateFrom}
-                  onChange={(e) => setSpenderFilters({ ...spenderFilters, dateFrom: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                <input
-                  type="date"
-                  value={spenderFilters.dateTo}
-                  onChange={(e) => setSpenderFilters({ ...spenderFilters, dateTo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={spenderFilters.category}
-                  onChange={(e) => setSpenderFilters({ ...spenderFilters, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="top5">Top 5</option>
-                  <option value="top10">Top 10</option>
-                  <option value="top50">Top 50</option>
-                  <option value="min20k">Min ₦20k</option>
-                  <option value="below20k">Below ₦20k</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Top Spenders List and Bulk Messaging */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Select</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spent (₦)</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Visit</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {displayTopSpenders.length === 0 ? (
-                        <tr>
-                          <td colSpan="4" className="px-6 py-12 text-center text-gray-500">No top spenders found.</td>
-                        </tr>
-                      ) : (
-                        displayTopSpenders.map((c) => (
-                          <tr key={c.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4">
-                              <input
-                                type="checkbox"
-                                checked={selectedCustomers.includes(c.id)}
-                                onChange={() => toggleSpenderSelect(c.id)}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                              />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.phone}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₦{(c.totalSpent || 0).toLocaleString()}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.lastVisit ? new Date(c.lastVisit).toLocaleDateString() : '-'}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Bulk Message Composer */}
-              <div className="lg:col-span-1">
-                <h3 className="text-md font-semibold text-gray-900 mb-2">Message Top Spenders</h3>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your WhatsApp message to top spenders..."
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                />
-                <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                  <span>{message.length}/1000</span>
-                  <span>{selectedCustomers.length} selected</span>
-                </div>
-                <div className="flex justify-end mt-3">
-                  <button
-                    onClick={handleSendToTopSpenders}
-                    disabled={isLoading || !message.trim() || selectedCustomers.length === 0}
-                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        Send to Top Spenders
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {false && activeTab === 'topspenders' && (
+        <div className="space-y-6">{/* hidden per requirements */}</div>
       )}
     </div>
   );
