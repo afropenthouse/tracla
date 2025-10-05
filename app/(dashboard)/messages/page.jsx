@@ -202,14 +202,22 @@ const MessagesPage = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Send a message</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Send Messages</h1>
             <p className="text-gray-600">Send bulk SMS messages to your customers</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg text-sm">Balance: ₦{balance.toLocaleString()}</span>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-sky-50 to-sky-100 border border-sky-200 shadow-sm">
+              <MessageSquare className="w-4 h-4 text-sky-600" />
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-sky-700 leading-none">#</span>
+                <span className="text-3xl font-bold text-sky-700 leading-none">0</span>
+                <span className="text-sm text-sky-700 leading-tight">/0</span>
+                <span className="text-xs text-sky-600 ml-1">messages left</span>
+              </div>
+            </div>
             <button
               onClick={() => setShowTopUpModal(true)}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-[#6d0e2b] text-white rounded-lg hover:opacity-90 transition-colors flex items-center gap-2"
             >
               <PlusCircle className="w-4 h-4" />
               Top Up
@@ -278,7 +286,7 @@ const MessagesPage = () => {
             <div className="mt-6 flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <CreditCard className="w-4 h-4" />
-                <span>Payment method: Card </span>
+                <span>Pay with card </span>
               </div>
               <button
                 onClick={() => {
@@ -286,7 +294,7 @@ const MessagesPage = () => {
                   setBalance((prev) => prev + computedTopUpAmount);
                   setShowTopUpModal(false);
                 }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="px-4 py-2 bg-[#6d0e2b] text-white rounded-lg hover:opacity-90 transition-colors"
               >
                 Confirm Top Up
               </button>
@@ -449,8 +457,21 @@ const MessagesPage = () => {
                           placeholder="Max"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         />
+
                       </div>
                     </div>
+                  </div>
+
+                  <div className="flex justify-end mb-2">
+                    <button
+                      className="px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
+                      onClick={() => {
+                        const allIds = topSpenders.map((c) => c.id);
+                        setSelectedCustomers(allIds);
+                      }}
+                    >
+                      Select All
+                    </button>
                   </div>
 
                   <div className="overflow-x-auto">

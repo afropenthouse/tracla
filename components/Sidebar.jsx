@@ -114,7 +114,7 @@ const VibEazyBusinessSidebar = ({
 
   const communicationItems = [
     { 
-      label: 'WhatsApp Messages', 
+      label: 'Send Messages', 
       icon: MessageSquare, 
       path: '/messages'
     },
@@ -130,9 +130,9 @@ const VibEazyBusinessSidebar = ({
   
   const loyaltyItems = [
     { 
-      label: 'Loyalty & Points', 
+      label: 'Rewards', 
       icon: Gift, 
-      path: '/loyalty'
+      path: '/rewards'
     },
   ];
   
@@ -288,9 +288,9 @@ const VibEazyBusinessSidebar = ({
               </div>
             </div>
 
-            {/* Loyalty Section */}
+            {/* Rewards Section */}
             <div>
-              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Loyalty</h4>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Rewards</h4>
               <div className="space-y-1">
                 {loyaltyItems.map((item) => (
                   <Link key={item.path} href={item.path}>
@@ -554,9 +554,9 @@ const VibEazyBusinessSidebar = ({
                   ))}
                 </div>
 
-                {/* Loyalty Section */}
+                {/* Rewards Section */}
                 <div className="mb-4">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Loyalty</h4>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-4">Rewards</h4>
                   {loyaltyItems.map((item) => (
                     <Link key={item.path} href={item.path}>
                       <div 

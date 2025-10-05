@@ -370,15 +370,27 @@ const TodayStats = ({ data, isLoading, error }) => {
           {stats.map((stat, index) => (
             <div 
               key={index}
-              className="bg-white/80 backdrop-blur-lg border border-white/50 rounded-xl p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group/card"
+              className="bg-white/80 backdrop-blur-lg border border-white/50 rounded-xl p-3 sm:p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group/card"
             >
-              <div className="flex items-center gap-3 mb-2">
+              {/* Mobile layout: icon + number + label inline for sleek look */}
+              <div className="flex items-center gap-3 sm:hidden">
+                <div className="p-2 bg-[#6d0e2b]/10 rounded-lg">
+                  <stat.icon size={16} className="text-[#6d0e2b]" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-bold text-gray-900">{stat.value}</span>
+                  <span className="text-[11px] font-medium text-gray-600">{stat.title}</span>
+                </div>
+              </div>
+
+              {/* Larger screens: original stacked layout */}
+              <div className="hidden sm:flex items-center gap-3 mb-2">
                 <div className="p-2 bg-[#6d0e2b]/10 rounded-lg">
                   <stat.icon size={16} className="text-[#6d0e2b]" />
                 </div>
                 <span className="text-xs font-semibold text-gray-600">{stat.title}</span>
               </div>
-              <p className="text-lg font-bold text-gray-900 truncate">
+              <p className="hidden sm:block text-lg font-bold text-gray-900 truncate">
                 {stat.value}
               </p>
             </div>

@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Gift, TrendingUp, Calendar, Settings, Plus, Trash2, Edit, Search, X, Send } from 'lucide-react';
 
 // Frontend-only demo: point rule, rewards, and purchases live in component state
-export default function LoyaltyPage() {
+export default function RewardsPage() {
   // Points: assign N points per ₦ spent (e.g., 1 point per ₦100)
   const [nairaPerPoint, setNairaPerPoint] = useState(100); // ₦ per 1 point
   const [rewardPercent, setRewardPercent] = useState(20); // redeem value e.g. 20%
@@ -99,50 +99,13 @@ export default function LoyaltyPage() {
             <Gift className="text-white" size={20} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Loyalty & Points</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Make your top customers spend more with Rewards</h1>
             <p className="text-xs sm:text-sm text-gray-500">Assign points from spend and reward by points</p>
           </div>
         </div>
       </div>
 
-      {/* Rules & Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2">Points Rule</h3>
-          <div className="space-y-2">
-            <label className="text-xs text-gray-600">₦ per 1 point</label>
-            <input type="number" value={nairaPerPoint} onChange={(e) => setNairaPerPoint(Number(e.target.value))} className="w-full rounded-lg border px-3 py-2 text-sm" />
-            <label className="text-xs text-gray-600">Reward value (% of purchase)</label>
-            <input type="number" value={rewardPercent} onChange={(e) => setRewardPercent(Number(e.target.value))} className="w-full rounded-lg border px-3 py-2 text-sm" />
-            <p className="text-xs text-gray-500">Example: ₦{nairaPerPoint} per point • Reward {rewardPercent}%</p>
-          </div>
-        </div>
-        {/* Summary - removed */}
-        {false && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-gray-800 mb-2">Summary</h3>
-            <p className="text-xs text-gray-600 mb-1">Total Issued Points</p>
-            <p className="text-2xl font-bold text-[#6d0e2b]">{totalIssuedPoints.toLocaleString()}</p>
-            <div className="mt-3">
-              <p className="text-xs text-gray-600">Top Spender</p>
-              <p className="text-sm font-semibold text-gray-900">{topSpender ? topSpender.phone : '—'}</p>
-              <p className="text-xs text-gray-500">₦{topSpender ? topSpender.amount.toLocaleString() : 0} • {topSpender ? topSpender.points.toLocaleString() : 0} pts</p>
-            </div>
-          </div>
-        )}
-        {false && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-gray-800 mb-2">Add Purchase</h3>
-            <div className="space-y-2">
-              <input type="text" placeholder="Customer phone (e.g. +23480...)" value={newPurchase.phone} onChange={(e) => setNewPurchase({ ...newPurchase, phone: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm" />
-              <input type="number" placeholder="Amount (₦)" value={newPurchase.amount} onChange={(e) => setNewPurchase({ ...newPurchase, amount: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm" />
-              <button onClick={addPurchase} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm hover:opacity-90">
-                <Plus size={16} /> Add
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+
 
       {/* Filters */}
       {false && (
@@ -207,6 +170,9 @@ export default function LoyaltyPage() {
       )}
 
       {/* Rewards CRUD */}
+      <div className="mb-4">
+        <h2 className="text-xs sm:text-sm font-semibold text-gray-800">#10 for 100 points</h2>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Create Reward */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -252,11 +218,8 @@ export default function LoyaltyPage() {
                   <button onClick={() => deleteReward(rw.id)} className="text-xs px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-red-600">
                     <Trash2 size={14} />
                   </button>
-                  <button onClick={() => { setSelectedReward(rw); setIsClaimsOpen(true); }} className="text-xs px-3 py-1.5 rounded-lg border hover:bg-gray-50">
-                    View Claims
-                  </button>
                   <button onClick={() => { setSelectedReward(rw); setIsRewardMessageOpen(true); }} className="text-xs px-3 py-1.5 rounded-lg border hover:bg-gray-50 bg-[#6d0e2b] text-white">
-                    Send Message
+                    send message
                   </button>
                 </div>
               </div>
@@ -266,7 +229,7 @@ export default function LoyaltyPage() {
         </div>
       </div>
       {/* Reward Claims Modal */}
-      {isClaimsOpen && selectedReward && (
+      {false && selectedReward && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsClaimsOpen(false)}></div>
           <div className="relative bg-white rounded-xl border border-gray-200 w-full max-w-lg p-6 shadow-xl">
