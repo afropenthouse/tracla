@@ -1,12 +1,13 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  MessageSquare, Send, Users, Clock, CheckCircle, XCircle, 
-  Loader2, Filter, Search, Calendar, RefreshCw, AlertCircle, Wallet, CreditCard, X, PlusCircle
+  MessageSquare, Send, Users, Clock, CheckCircle, XCircle,
+  Loader2, Filter, Search, Calendar, RefreshCw, AlertCircle, Wallet, X, PlusCircle
 } from 'lucide-react';
-import { sendBulkMessage, sendBulkMessageToAll, getMessageHistory } from '@/lib/api';
+import { sendBulkMessage, sendBulkMessageToAll, getMessageHistory, getTermiiBalance } from '@/lib/api';
 import { useCustomersData } from '@/lib/queries/branch';
 import { useBusinessStore } from '@/store/store';
+
 
 const MessagesPage = () => {
   const [activeTab, setActiveTab] = useState('send'); // 'send' | 'history'
@@ -45,21 +46,15 @@ const MessagesPage = () => {
   const businessId = business?.id;
 
   const { data: customersResponse, isLoading: customersLoading, error: customersError } = useCustomersData({ page: 1, limit: 200 });
-  const customers = customersResponse?.customers || [];
-  const defaultCustomers = [
-    { id: 'd1', phoneNumber: '2348100000001', totalSpent: 50000, lastVisit: new Date().toISOString(), createdAt: new Date().toISOString() },
-    { id: 'd2', phoneNumber: '2348100000002', totalSpent: 40000, lastVisit: new Date().toISOString(), createdAt: new Date().toISOString() },
-    { id: 'd3', phoneNumber: '2348100000003', totalSpent: 30000, lastVisit: new Date().toISOString(), createdAt: new Date().toISOString() },
-    { id: 'd4', phoneNumber: '2348100000004', totalSpent: 15000, lastVisit: new Date().toISOString(), createdAt: new Date().toISOString() },
-    { id: 'd5', phoneNumber: '2348100000005', totalSpent: 8000, lastVisit: new Date().toISOString(), createdAt: new Date().toISOString() },
-  ];
-  const sourceCustomers = customers && customers.length > 0 ? customers : defaultCustomers;
+  const sourceCustomers = customersResponse?.customers || [];
 
   useEffect(() => {
     if (!businessId) return;
     if (activeTab === 'history') {
       fetchMessageHistory();
     }
+    // Always refresh balance when business or tab changes
+    fetchBalance();
   }, [activeTab, businessId]);
 
   const fetchMessageHistory = async () => {
@@ -70,6 +65,19 @@ const MessagesPage = () => {
       }
     } catch (error) {
       console.error('Error fetching message history:', error);
+    }
+  };
+
+  const fetchBalance = async () => {
+    if (!businessId) return;
+    try {
+      const result = await getTermiiBalance(businessId);
+      if (result.success) {
+        const bal = result.data?.balance;
+        if (typeof bal === 'number') setBalance(bal);
+      }
+    } catch (error) {
+      console.error('Error fetching balance:', error);
     }
   };
 
@@ -130,10 +138,10 @@ const MessagesPage = () => {
     }
   };
 
-  // Derive mock top spenders from customers data (frontend-only)
+  // Derive top spenders from actual customers data
   // Assume each customer has totalSpent, lastVisit, createdAt
   const topSpenders = useMemo(() => {
-    const src = customers && customers.length > 0 ? customers : defaultCustomers;
+    const src = sourceCustomers;
     let list = src
       .map((c) => ({ id: c.id, phone: c.phoneNumber, totalSpent: c.totalSpent || 0, lastVisit: c.lastVisit || c.createdAt }))
       .filter((c) => !!c.phone);
@@ -158,12 +166,9 @@ const MessagesPage = () => {
 
     list.sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0));
     return list;
-  }, [customers, spenderFilters]);
+  }, [sourceCustomers, spenderFilters]);
 
-  const displayTopSpenders = topSpenders.length > 0 ? topSpenders : defaultCustomers
-    .map((c) => ({ id: c.id, phone: c.phoneNumber, totalSpent: c.totalSpent || 0, lastVisit: c.lastVisit || c.createdAt }))
-    .sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0))
-    .slice(0, 5);
+  const displayTopSpenders = topSpenders;
 
   const toggleSpenderSelect = (id) => {
     setSelectedCustomers((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -206,13 +211,11 @@ const MessagesPage = () => {
             <p className="text-gray-600">Send bulk SMS messages to your customers</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-sky-50 to-sky-100 border border-sky-200 shadow-sm">
-              <MessageSquare className="w-4 h-4 text-sky-600" />
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-sky-700 leading-none">#</span>
-                <span className="text-3xl font-bold text-sky-700 leading-none">0</span>
-                <span className="text-sm text-sky-700 leading-tight">/0</span>
-                <span className="text-xs text-sky-600 ml-1">messages left</span>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 shadow-sm">
+              <Wallet className="w-4 h-4 text-emerald-700" />
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-emerald-700">Balance</span>
+                <span className="text-2xl font-bold text-emerald-800">₦{balance.toLocaleString()}</span>
               </div>
             </div>
             <button
@@ -283,16 +286,12 @@ const MessagesPage = () => {
               </div>
             )}
 
-            <div className="mt-6 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <CreditCard className="w-4 h-4" />
-                <span>Pay with card </span>
-              </div>
+            <div className="mt-6 flex items-center justify-end">
               <button
                 onClick={() => {
-                  // Frontend-only: simulate adding to balance
-                  setBalance((prev) => prev + computedTopUpAmount);
+                  // Instead of simulating balance, just close and refresh actual balance
                   setShowTopUpModal(false);
+                  fetchBalance();
                 }}
                 className="px-4 py-2 bg-[#6d0e2b] text-white rounded-lg hover:opacity-90 transition-colors"
               >
@@ -349,7 +348,8 @@ const MessagesPage = () => {
                   />
                   <span className="ml-2 text-sm font-medium text-gray-700">All Customers</span>
                 </label>
-                <label className="flex items-center">
+                {/* Removed simple Selected Customers option */}
+                {/* <label className="flex items-center">
                   <input
                     type="radio"
                     name="messageType"
@@ -359,7 +359,7 @@ const MessagesPage = () => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm font-medium text-gray-700">Selected Customers</span>
-                </label>
+                </label> */}
                 <label className="flex items-center">
                   <input
                     type="radio"
@@ -369,7 +369,7 @@ const MessagesPage = () => {
                     onChange={(e) => setMessageType(e.target.value)}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
-                  <span className="ml-2 text-sm font-medium text-gray-700">Top Spenders</span>
+                  <span className="ml-2 text-sm font-medium text-gray-700">Selected Customers</span>
                 </label>
               </div>
 
@@ -406,7 +406,7 @@ const MessagesPage = () => {
               {/* Top Spenders Selection */}
               {messageType === 'topspenders' && (
                 <div className="mt-4 space-y-4">
-                  <h4 className="text-sm font-medium text-gray-700">Filter Top Spenders:</h4>
+                  <h4 className="text-sm font-medium text-gray-700">Filter Selected Customers:</h4>
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -462,7 +462,7 @@ const MessagesPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end mb-2">
+                  <div className="flex justify-end mb-2 gap-2">
                     <button
                       className="px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
                       onClick={() => {
@@ -471,6 +471,15 @@ const MessagesPage = () => {
                       }}
                     >
                       Select All
+                    </button>
+                    <button
+                      className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm"
+                      onClick={() => {
+                        setSpenderFilters({ dateFrom: '', dateTo: '', search: '', minAmount: '', maxAmount: '' });
+                        setSelectedCustomers([]);
+                      }}
+                    >
+                      Clear Filters
                     </button>
                   </div>
 
@@ -487,7 +496,7 @@ const MessagesPage = () => {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {topSpenders.length === 0 ? (
                           <tr>
-                            <td colSpan="4" className="px-6 py-12 text-center text-gray-500">No top spenders found.</td>
+                            <td colSpan="4" className="px-6 py-12 text-center text-gray-500">No customers found.</td>
                           </tr>
                         ) : (
                           topSpenders.map((c) => (
@@ -520,41 +529,47 @@ const MessagesPage = () => {
 
           {/* Message Composition */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Compose Message</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Compose Message</h3>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
+                <Wallet className="w-4 h-4 text-emerald-700" />
+                <span className="text-xs text-emerald-700">Balance:</span>
+                <span className="text-sm font-bold text-emerald-800">₦{balance.toLocaleString()}</span>
+                <span className="ml-2 text-xs text-gray-600">0/0 messages</span>
+              </div>
+            </div>
             <div className="space-y-4">
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">SMS Message</label>
-                <textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your SMS message here..."
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-gray-500 mt-1">{message.length}/1000 characters</p>
-              </div>
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">SMS Message</label>
+              <textarea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type your SMS message here..."
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">{message.length}/1000 characters</p>
+            </div>
 
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSendMessage}
-                  disabled={isLoading || !message.trim() || (messageType !== 'all' && selectedCustomers.length === 0)}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Send SMS
-                    </>
-                  )}
-                </button>
-              </div>
+            <div className="flex justify-end">
+              <button
+                onClick={handleSendMessage}
+                disabled={isLoading || !message.trim() || (messageType !== 'all' && selectedCustomers.length === 0)}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Send SMS
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

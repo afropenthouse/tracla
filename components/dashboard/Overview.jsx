@@ -368,9 +368,9 @@ const TodayStats = ({ data, isLoading, error }) => {
         
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {stats.map((stat, index) => (
-            <div 
+            <div
               key={index}
-              className="bg-white/80 backdrop-blur-lg border border-white/50 rounded-xl p-3 sm:p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group/card"
+              className="bg-white border border-white/40 shadow-lg rounded-xl p-3 sm:p-4 hover:scale-105 transition-all duration-300 group/card"
             >
               {/* Mobile layout: icon + number + label inline for sleek look */}
               <div className="flex items-center gap-3 sm:hidden">
