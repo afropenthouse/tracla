@@ -101,9 +101,14 @@ Analyze the receipt now:`;
       console.log('Raw response:', text);
       
       // Fallback: Try to extract key information manually
+      // const amount = text.match(/amount["\s:]*(\d+(?:\.\d{2})?)/i);
+      // const currency = text.match(/currency["\s:]*["']?([A-Z]{3})["']?/i);
+      // const date = text.match(/date["\s:]*["']?([^"'\n]+)["']?/i);
+
       const amount = text.match(/amount["\s:]*(\d+(?:\.\d{2})?)/i);
       const currency = text.match(/currency["\s:]*["']?([A-Z]{3})["']?/i);
       const date = text.match(/date["\s:]*["']?([^"'\n]+)["']?/i);
+      
       
       extractedData = {
         amount: amount ? parseFloat(amount[1]) : null,
