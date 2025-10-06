@@ -171,7 +171,8 @@ export default function RewardsPage() {
 
       {/* Rewards CRUD */}
       <div className="mb-4">
-        <h2 className="text-xs sm:text-sm font-semibold text-gray-800">₦10 for 100 points</h2>
+        <h2 className="text-xs sm:text-sm font-semibold text-gray-800">
+          10 points = ₦1000</h2>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Create Reward */}
