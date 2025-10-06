@@ -46,7 +46,15 @@ const MessagesPage = () => {
   const businessId = business?.id;
 
   const { data: customersResponse, isLoading: customersLoading, error: customersError } = useCustomersData({ page: 1, limit: 200 });
-  const sourceCustomers = customersResponse?.customers || [];
+// Frontend-only mock customers fallback (used when no customers are returned)
+const mockCustomers = [
+  { id: 'mock1', phoneNumber: '+2348012345678', name: 'Ayo', totalSpent: 342000, lastVisit: '2025-09-20', createdAt: '2025-09-01' },
+  { id: 'mock2', phoneNumber: '+2348023456789', name: 'Bisi', totalSpent: 289000, lastVisit: '2025-09-21', createdAt: '2025-09-05' },
+  { id: 'mock3', phoneNumber: '+2348034567890', name: 'Chika', totalSpent: 234000, lastVisit: '2025-09-22', createdAt: '2025-09-07' },
+  { id: 'mock4', phoneNumber: '+2348045678901', name: 'Dayo', totalSpent: 189000, lastVisit: '2025-09-23', createdAt: '2025-09-10' },
+  { id: 'mock5', phoneNumber: '+2348056789012', name: 'Eniola', totalSpent: 165000, lastVisit: '2025-09-24', createdAt: '2025-09-12' },
+];
+  const sourceCustomers = (customersResponse?.customers && customersResponse.customers.length > 0) ? customersResponse.customers : mockCustomers;
 
   useEffect(() => {
     if (!businessId) return;
