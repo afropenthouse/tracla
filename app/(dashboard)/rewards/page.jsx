@@ -99,8 +99,8 @@ export default function RewardsPage() {
             <Gift className="text-white" size={20} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Make your top customers spend more with Rewards</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Assign points from spend and reward by points</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Rewards</h1>
+            <p className="text-xs sm:text-sm text-gray-500">Create rewards and get your customers spending more.</p>
           </div>
         </div>
       </div>
@@ -171,38 +171,38 @@ export default function RewardsPage() {
 
       {/* Rewards CRUD */}
       <div className="mb-4">
-        <h2 className="text-xs sm:text-sm font-semibold text-gray-800">#10 for 100 points</h2>
+        <h2 className="text-xs sm:text-sm font-semibold text-gray-800">₦10 for 100 points</h2>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Create Reward */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-3">
           <h3 className="text-sm font-semibold text-gray-800 mb-2">Create Reward</h3>
           <div className="space-y-2">
-            <input type="text" placeholder="Label" value={newReward.label} onChange={(e) => setNewReward({ ...newReward, label: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm" />
-            <input type="number" placeholder="Points required" value={newReward.points} onChange={(e) => setNewReward({ ...newReward, points: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm" />
-            <input type="text" placeholder="Description" value={newReward.description} onChange={(e) => setNewReward({ ...newReward, description: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm" />
+            <input type="text" placeholder="Label" value={newReward.label} onChange={(e) => setNewReward({ ...newReward, label: e.target.value })} className="w-full rounded-md border px-2.5 py-1.5 text-sm" />
+            <input type="number" placeholder="Points required" value={newReward.points} onChange={(e) => setNewReward({ ...newReward, points: e.target.value })} className="w-full rounded-md border px-2.5 py-1.5 text-sm" />
+            <input type="text" placeholder="Description" value={newReward.description} onChange={(e) => setNewReward({ ...newReward, description: e.target.value })} className="w-full rounded-md border px-2.5 py-1.5 text-sm" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-gray-600">Valid From</label>
-                <input type="date" value={newReward.validFrom} onChange={(e) => setNewReward({ ...newReward, validFrom: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm" />
+                <input type="date" value={newReward.validFrom} onChange={(e) => setNewReward({ ...newReward, validFrom: e.target.value })} className="w-full rounded-md border px-2.5 py-1.5 text-sm" />
               </div>
               <div>
                 <label className="text-xs text-gray-600">Valid To</label>
-                <input type="date" value={newReward.validTo} onChange={(e) => setNewReward({ ...newReward, validTo: e.target.value })} className="w-full rounded-lg border px-3 py-2 text-sm" />
+                <input type="date" value={newReward.validTo} onChange={(e) => setNewReward({ ...newReward, validTo: e.target.value })} className="w-full rounded-md border px-2.5 py-1.5 text-sm" />
               </div>
             </div>
-            <button onClick={createReward} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm hover:opacity-90">
+            <button onClick={createReward} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#6d0e2b] text-white text-sm hover:opacity-90">
               <Plus size={16} /> Create
             </button>
           </div>
         </div>
 
         {/* Rewards List */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-3">
           <h3 className="text-sm font-semibold text-gray-800 mb-2">Rewards</h3>
           <div className="space-y-3">
             {rewards.map((rw) => (
-              <div key={rw.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+              <div key={rw.id} className="flex items-center justify-between bg-gray-50 rounded-md p-2.5">
                 <div>
                   <p className="font-medium text-gray-900">{rw.label}</p>
                   <p className="text-xs text-gray-600">{rw.description}</p>
