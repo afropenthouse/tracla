@@ -1,19 +1,44 @@
 'use client'
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Gift, TrendingUp, Calendar, Settings, Plus, Trash2, Edit, Search, X, Send } from 'lucide-react';
+
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useBusinessStore } from '@/store/store';
+import { getRewards, createRewardApi, updateRewardApi, deleteRewardApi } from '@/lib/api';
 
 // Frontend-only demo: point rule, rewards, and purchases live in component state
 export default function RewardsPage() {
+  const { business } = useBusinessStore();
+  const businessId = business?.id;
   // Points: assign N points per ₦ spent (e.g., 1 point per ₦100)
   const [nairaPerPoint, setNairaPerPoint] = useState(100); // ₦ per 1 point
   const [rewardPercent, setRewardPercent] = useState(20); // redeem value e.g. 20%
 
-  // Rewards CRUD (frontend-only)
-  const [rewards, setRewards] = useState([
-    { id: 'rw1', label: 'Free Drink', points: 100, description: 'Any soft drink', validFrom: '', validTo: '' },
-    { id: 'rw2', label: '10% Off', points: 250, description: 'Discount on next purchase', validFrom: '', validTo: '' },
-  ]);
+  // Rewards CRUD (backend-powered)
+  const [rewards, setRewards] = useState([]);
   const [newReward, setNewReward] = useState({ label: '', points: '', description: '', validFrom: '', validTo: '' });
+
+  // Loading & editing state
+  const queryClient = useQueryClient();
+  const { data: rewardsResp, isLoading: rewardsLoading, isError: rewardsError } = useQuery({
+    queryKey: ['rewards', businessId],
+    queryFn: () => getRewards(businessId),
+    enabled: false, // Disable auto-fetch; we will rely on create/update/delete and manual refresh
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (rewardsResp?.success) {
+      setRewards(Array.isArray(rewardsResp.data) ? rewardsResp.data : []);
+    } else if (rewardsResp) {
+      setRewards([]);
+    }
+  }, [rewardsResp]);
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [editForm, setEditForm] = useState({ label: '', points: '', description: '', validFrom: '', validTo: '' });
 
   // Purchases ledger sample (phone + amount and derived points)
   const [purchases, setPurchases] = useState([
@@ -30,10 +55,13 @@ export default function RewardsPage() {
   const [selectedReward, setSelectedReward] = useState(null);
   const [rewardMessage, setRewardMessage] = useState('');
   // Frontend-only demo claims store keyed by reward id
-  const [rewardClaims, setRewardClaims] = useState({
-    rw1: ['+2348097772221', '+2348069090880'],
-    rw2: []
-  });
+  const [rewardClaims, setRewardClaims] = useState({});
+
+  // Load rewards from backend
+  useEffect(() => {
+    // Disabled initial fetch to avoid 404 and rely on CRUD updates
+    // If you want to fetch on demand, use a manual handler calling getRewards(businessId)
+  }, [businessId]);
 
   // Derived points for a purchase based on rule
   const computePoints = (amount) => Math.floor(amount / nairaPerPoint);
@@ -79,16 +107,77 @@ export default function RewardsPage() {
   };
 
   // Rewards CRUD operations
-  const createReward = () => {
-    const pts = Number(newReward.points);
-    if (!newReward.label || isNaN(pts) || pts <= 0) return;
-    setRewards((prev) => [
-      { id: `rw${Date.now()}`, label: newReward.label.trim(), points: pts, description: newReward.description.trim(), validFrom: newReward.validFrom, validTo: newReward.validTo },
-      ...prev,
-    ]);
-    setNewReward({ label: '', points: '', description: '', validFrom: '', validTo: '' });
+  // Helper to normalize date inputs to ISO yyyy-mm-dd to avoid locale parsing issues on backend
+  const toIsoDate = (value) => {
+    if (!value) return undefined;
+    // If value looks like dd/mm/yyyy, convert to yyyy-mm-dd
+    if (typeof value === 'string' && value.includes('/')) {
+      const parts = value.split('/');
+      if (parts.length === 3) {
+        const [dd, mm, yyyy] = parts;
+        const iso = `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+        return iso;
+      }
+    }
+    // Otherwise assume value is already yyyy-mm-dd
+    return value;
   };
-  const deleteReward = (id) => setRewards((prev) => prev.filter((r) => r.id !== id));
+  const createReward = async () => {
+    const pts = Number(newReward.points);
+    if (!businessId) {
+      alert('Business ID not found. Please log in again.');
+      return;
+    }
+    if (!newReward.label || isNaN(pts) || pts <= 0) return;
+    // Client-side sanity check for date range
+    const from = toIsoDate(newReward.validFrom);
+    const to = toIsoDate(newReward.validTo);
+    if (from && to) {
+      const fromDate = new Date(from);
+      const toDate = new Date(to);
+      if (!isNaN(fromDate) && !isNaN(toDate) && toDate < fromDate) {
+        alert('Valid To date must be after Valid From date');
+        return;
+      }
+    }
+    const payload = {
+      label: newReward.label.trim(),
+      description: newReward.description.trim() || undefined,
+      points: pts,
+      validFrom: from,
+      validTo: to,
+    };
+    try {
+      const result = await createRewardApi(businessId, payload);
+      if (result?.success && result.data) {
+        setRewards((prev) => [result.data, ...prev]);
+        setNewReward({ label: '', points: '', description: '', validFrom: '', validTo: '' });
+      } else {
+        alert(result?.message || 'Failed to create reward');
+      }
+    } catch (error) {
+      console.error('Create reward failed:', error);
+      const backendMessage = error?.response?.data?.message || error?.message || 'Failed to create reward';
+      alert(backendMessage);
+    }
+  };
+  const deleteReward = async (id) => {
+    if (!businessId) {
+      alert('Business ID not found. Please log in again.');
+      return;
+    }
+    try {
+      const result = await deleteRewardApi(businessId, id);
+      if (result?.success) {
+        setRewards((prev) => prev.filter((r) => r.id !== id));
+      } else {
+        alert(result?.message || 'Failed to delete reward');
+      }
+    } catch (error) {
+      console.error('Delete reward failed:', error);
+      alert('Failed to delete reward');
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6">
@@ -202,7 +291,14 @@ export default function RewardsPage() {
         <div className="bg-white rounded-lg border border-gray-200 p-3">
           <h3 className="text-sm font-semibold text-gray-800 mb-2">Rewards</h3>
           <div className="space-y-3">
-            {rewards.map((rw) => (
+            {rewardsLoading && (
+              <div className="space-y-2">
+                <div className="h-12 bg-gray-100 animate-pulse rounded" />
+                <div className="h-12 bg-gray-100 animate-pulse rounded" />
+                <div className="h-12 bg-gray-100 animate-pulse rounded" />
+              </div>
+            )}
+            {!rewardsLoading && rewards.map((rw) => (
               <div key={rw.id} className="flex items-center justify-between bg-gray-50 rounded-md p-2.5">
                 <div>
                   <p className="font-medium text-gray-900">{rw.label}</p>
@@ -213,19 +309,24 @@ export default function RewardsPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="text-xs px-3 py-1.5 rounded-lg border hover:bg-gray-50">
+                  <button onClick={() => openEdit(rw)} className="text-xs px-3 py-1.5 rounded-lg border hover:bg-gray-50">
                     <Edit size={14} />
                   </button>
                   <button onClick={() => deleteReward(rw.id)} className="text-xs px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-red-600">
                     <Trash2 size={14} />
                   </button>
-                  <button onClick={() => { setSelectedReward(rw); setIsRewardMessageOpen(true); }} className="text-xs px-3 py-1.5 rounded-lg border hover:bg-gray-50 bg-[#6d0e2b] text-white">
+                  <button onClick={() => { setSelectedReward(rw); setIsRewardMessageOpen(true); }} className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded shadow">
                     send message
                   </button>
                 </div>
               </div>
             ))}
-            {rewards.length === 0 && <p className="text-sm text-gray-500">No rewards yet.</p>}
+            {!rewardsLoading && rewards.length === 0 && (
+              <p className="text-sm text-gray-500">No rewards yet.</p>
+            )}
+            {rewardsError && (
+              <p className="text-sm text-red-600">Failed to load rewards.</p>
+            )}
           </div>
         </div>
       </div>

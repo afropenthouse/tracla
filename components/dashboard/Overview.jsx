@@ -266,7 +266,7 @@ const OverviewCards = ({ data, isLoading, error }) => {
               <p className="text-sm font-medium text-gray-600">{card.title}</p>
               <p className="text-2xl font-bold text-gray-900">
                 {isLoading ? (
-                  <div className="h-7 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <span className="inline-block h-7 w-24 bg-gray-200 rounded-lg animate-pulse"></span>
                 ) : (
                   card.value
                 )}
