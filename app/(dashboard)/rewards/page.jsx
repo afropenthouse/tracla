@@ -23,7 +23,7 @@ export default function RewardsPage() {
   const { data: rewardsResp, isLoading: rewardsLoading, isError: rewardsError } = useQuery({
     queryKey: ['rewards', businessId],
     queryFn: () => getRewards(businessId),
-    enabled: false, // Disable auto-fetch; we will rely on create/update/delete and manual refresh
+    enabled: !!businessId,
     staleTime: 60_000,
   });
 
@@ -59,8 +59,21 @@ export default function RewardsPage() {
 
   // Load rewards from backend
   useEffect(() => {
-    // Disabled initial fetch to avoid 404 and rely on CRUD updates
-    // If you want to fetch on demand, use a manual handler calling getRewards(businessId)
+    const loadRewards = async () => {
+      if (!businessId) return;
+      try {
+        const result = await getRewards(businessId);
+        if (result?.success) {
+          setRewards(Array.isArray(result.data) ? result.data : []);
+        } else {
+          setRewards([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch rewards:', error);
+        setRewards([]);
+      }
+    };
+    loadRewards();
   }, [businessId]);
 
   // Derived points for a purchase based on rule
@@ -107,21 +120,6 @@ export default function RewardsPage() {
   };
 
   // Rewards CRUD operations
-  // Helper to normalize date inputs to ISO yyyy-mm-dd to avoid locale parsing issues on backend
-  const toIsoDate = (value) => {
-    if (!value) return undefined;
-    // If value looks like dd/mm/yyyy, convert to yyyy-mm-dd
-    if (typeof value === 'string' && value.includes('/')) {
-      const parts = value.split('/');
-      if (parts.length === 3) {
-        const [dd, mm, yyyy] = parts;
-        const iso = `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
-        return iso;
-      }
-    }
-    // Otherwise assume value is already yyyy-mm-dd
-    return value;
-  };
   const createReward = async () => {
     const pts = Number(newReward.points);
     if (!businessId) {
@@ -129,23 +127,12 @@ export default function RewardsPage() {
       return;
     }
     if (!newReward.label || isNaN(pts) || pts <= 0) return;
-    // Client-side sanity check for date range
-    const from = toIsoDate(newReward.validFrom);
-    const to = toIsoDate(newReward.validTo);
-    if (from && to) {
-      const fromDate = new Date(from);
-      const toDate = new Date(to);
-      if (!isNaN(fromDate) && !isNaN(toDate) && toDate < fromDate) {
-        alert('Valid To date must be after Valid From date');
-        return;
-      }
-    }
     const payload = {
       label: newReward.label.trim(),
       description: newReward.description.trim() || undefined,
       points: pts,
-      validFrom: from,
-      validTo: to,
+      validFrom: newReward.validFrom || undefined,
+      validTo: newReward.validTo || undefined,
     };
     try {
       const result = await createRewardApi(businessId, payload);
@@ -157,8 +144,7 @@ export default function RewardsPage() {
       }
     } catch (error) {
       console.error('Create reward failed:', error);
-      const backendMessage = error?.response?.data?.message || error?.message || 'Failed to create reward';
-      alert(backendMessage);
+      alert('Failed to create reward');
     }
   };
   const deleteReward = async (id) => {
