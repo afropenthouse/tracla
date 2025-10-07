@@ -775,6 +775,47 @@ const PurchaseReceiptUpload = () => {
                 </div>
               </div>
 
+              {/* Points Progress Bar */}
+              {(() => {
+                const targetPoints = 100; // Frontend-only target for next reward
+                const totalSpentNaira = Number(recordPurchaseMutation?.data?.data?.customer?.totalSpent || 0);
+                const currentPoints = Math.floor(totalSpentNaira / 1000); // 1 point per ₦1,000 spent (example)
+                const purchasePoints = Math.floor((extractedData?.amount || 0) / 1000);
+                const progressPercent = Math.min(100, Math.round((currentPoints / targetPoints) * 100));
+                const pointsRemaining = Math.max(0, targetPoints - currentPoints);
+
+                return (
+                  <div className="mt-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap size={18} className="text-[#d32f2f]" />
+                      <span className="font-medium text-gray-900">Your Points Progress</span>
+                    </div>
+                    <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
+                      <div className="w-full bg-red-200 rounded-full h-3">
+                        <div
+                          className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] h-3 rounded-full transition-all duration-700"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <div className="text-lg font-bold text-gray-900">{currentPoints}</div>
+                          <div className="text-xs text-gray-600">Total Points</div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-gray-900">+{purchasePoints}</div>
+                          <div className="text-xs text-gray-600">This Purchase</div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-gray-900">{pointsRemaining}</div>
+                          <div className="text-xs text-gray-600">To Next Reward ({targetPoints})</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <button
                 onClick={resetUpload}
                 className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
