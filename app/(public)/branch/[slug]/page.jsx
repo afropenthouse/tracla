@@ -780,11 +780,10 @@ const PurchaseReceiptUpload = () => {
                 const targetPoints = 100; // Frontend-only target for next reward
                 const totalSpentNaira = Number(recordPurchaseMutation?.data?.data?.customer?.totalSpent || 0);
                 const currentPoints = Math.floor(totalSpentNaira / 1000); // 1 point per ₦1,000 spent (example)
-                // const purchasePoints = Math.floor((extractedData?.amount || 0) / 1000); // removed per request
+                const purchasePoints = Math.floor((extractedData?.amount || 0) / 1000);
                 const progressPercent = Math.min(100, Math.round((currentPoints / targetPoints) * 100));
                 const pointsRemaining = Math.max(0, targetPoints - currentPoints);
-                const pluralTxt = pointsRemaining === 1 ? 'point' : 'points';
-              
+
                 return (
                   <div className="mt-6">
                     <div className="flex items-center gap-2 mb-2">
