@@ -1,4 +1,3 @@
-// frontend\app\(dashboard)\rewards\page.jsx
 'use client'
 import React, { useMemo, useState, useEffect } from 'react';
 import { Gift, Plus, Trash2, Edit, Search, X, Send } from 'lucide-react';
@@ -24,6 +23,9 @@ export default function RewardsPage() {
     validFrom: '', 
     validTo: '' 
   });
+
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Reward messaging state
   const [isRewardMessageOpen, setIsRewardMessageOpen] = useState(false);
@@ -79,6 +81,19 @@ export default function RewardsPage() {
     });
   };
 
+  // OPEN EDIT MODAL
+  const openEdit = (reward) => {
+    setEditTarget(reward);
+    setEditForm({
+      label: reward.label,
+      points: reward.points.toString(),
+      description: reward.description || '',
+      validFrom: reward.validFrom || '',
+      validTo: reward.validTo || ''
+    });
+    setIsEditOpen(true);
+  };
+
   // UPDATE Reward
   const updateReward = () => {
     if (!editTarget) return;
@@ -110,24 +125,17 @@ export default function RewardsPage() {
     setEditForm({ label: '', points: '', description: '', validFrom: '', validTo: '' });
   };
 
-  // DELETE Reward
-  const deleteReward = (id) => {
-    if (confirm('Are you sure you want to delete this reward?')) {
-      setRewards(prev => prev.filter(reward => reward.id !== id));
-    }
+  // OPEN DELETE CONFIRMATION
+  const openDeleteConfirm = (reward) => {
+    setDeleteConfirm(reward);
   };
 
-  // Open edit modal
-  const openEdit = (reward) => {
-    setEditTarget(reward);
-    setEditForm({
-      label: reward.label,
-      points: reward.points.toString(),
-      description: reward.description || '',
-      validFrom: reward.validFrom || '',
-      validTo: reward.validTo || ''
-    });
-    setIsEditOpen(true);
+  // DELETE Reward
+  const confirmDelete = () => {
+    if (!deleteConfirm) return;
+    
+    setRewards(prev => prev.filter(reward => reward.id !== deleteConfirm.id));
+    setDeleteConfirm(null);
   };
 
   // Send reward message (simulated)
@@ -253,7 +261,7 @@ export default function RewardsPage() {
                       <Edit size={14} />
                     </button>
                     <button 
-                      onClick={() => deleteReward(reward.id)} 
+                      onClick={() => openDeleteConfirm(reward)} 
                       className="text-xs p-1.5 rounded-lg border hover:bg-gray-50 text-red-600"
                       title="Delete reward"
                     >
@@ -355,6 +363,46 @@ export default function RewardsPage() {
                   className="px-4 py-2 text-sm bg-[#6d0e2b] text-white rounded-lg hover:opacity-90"
                 >
                   Update Reward
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirm(null)}></div>
+          <div className="relative bg-white rounded-xl border border-gray-200 w-full max-w-md p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Confirm Delete</h3>
+              <button 
+                className="p-2 rounded-lg hover:bg-gray-100" 
+                onClick={() => setDeleteConfirm(null)}
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete the reward <strong>"{deleteConfirm.label}"</strong>? 
+                This action cannot be undone.
+              </p>
+              
+              <div className="flex justify-end gap-3 mt-4">
+                <button 
+                  onClick={() => setDeleteConfirm(null)} 
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDelete} 
+                  className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Delete Reward
                 </button>
               </div>
             </div>

@@ -430,6 +430,18 @@ const PurchaseReceiptUpload = () => {
 
   const isProcessing = processingProgress > 0 || recordPurchaseMutation.isPending;
 
+  // Points progress calculations
+  const totalPoints = recordPurchaseMutation.data?.data?.customer
+    ? Math.floor((recordPurchaseMutation.data.data.customer.totalSpent || 0) / 100)
+    : 0;
+  const purchasePoints = recordPurchaseMutation.data?.data?.purchase
+    ? Math.floor((recordPurchaseMutation.data.data.purchase.amount || 0) / 100)
+    : 0;
+  const nextMilestone = totalPoints > 0 ? Math.ceil(totalPoints / 100) * 100 : 100;
+  const pointsIntoMilestone = totalPoints % 100;
+  const progressPercent = Math.round((pointsIntoMilestone / 100) * 100);
+  const pointsToNext = Math.max(0, nextMilestone - totalPoints);
+
   // Loading state
   if (isLoadingBranch) {
     return (
@@ -738,21 +750,6 @@ const PurchaseReceiptUpload = () => {
                 }
               </p>
 
-              {/* {!recordPurchaseMutation.data.data.customer.isNewCustomer && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-blue-600">{recordPurchaseMutation.data.data.customer.visitCount}</div>
-                      <div className="text-xs text-blue-700">Total Visits</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-blue-600">₦{recordPurchaseMutation.data.data.customer.totalSpent?.toLocaleString()}</div>
-                      <div className="text-xs text-blue-700">Total Spent</div>
-                    </div>
-                  </div>
-                </div>
-              )} */}
-
               <div className="text-left space-y-4 mb-6">
                 <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -771,6 +768,27 @@ const PurchaseReceiptUpload = () => {
                   <div>
                     <div className="font-medium text-gray-900">Keep visiting {businessInfo.branchName}!</div>
                     <div className="text-sm text-gray-600">Collect more discounts for rewards and discounts</div>
+                  </div>
+                </div>
+
+                {/* Points Progress */}
+                <div className="p-4 rounded-lg border border-amber-200 bg-gradient-to-r from-yellow-50 to-amber-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Star size={16} className="text-amber-600" />
+                      <span className="text-sm font-medium text-gray-700">Your Points</span>
+                    </div>
+                    <div className="text-lg font-bold text-amber-600">{totalPoints} pts</div>
+                  </div>
+                  <div className="w-full bg-amber-200 h-2 rounded-full">
+                    <div
+                      className="bg-gradient-to-r from-amber-500 to-yellow-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs text-gray-700">
+                    <span>+{purchasePoints} pts from this purchase</span>
+                    <span>{pointsToNext} pts to {nextMilestone}</span>
                   </div>
                 </div>
               </div>
