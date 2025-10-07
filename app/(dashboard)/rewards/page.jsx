@@ -1,9 +1,12 @@
 'use client'
 import React, { useMemo, useState, useEffect } from 'react';
 import { Gift, Plus, Trash2, Edit, Search, X, Send } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useBusinessStore } from "@/store/store";
+import { getRewards as getRewardsApi, createRewardApi, updateRewardApi, deleteRewardApi } from "@/lib/api";
 
 export default function RewardsPage() {
-  // Rewards CRUD (client-side only)
+  // Rewards CRUD (now backed by API)
   const [rewards, setRewards] = useState([]);
   const [newReward, setNewReward] = useState({ 
     label: '', 
@@ -32,52 +35,73 @@ export default function RewardsPage() {
   const [selectedReward, setSelectedReward] = useState(null);
   const [rewardMessage, setRewardMessage] = useState('');
 
-  // Load rewards from localStorage on component mount
+  // Replace localStorage with backend-powered fetching
+  const { business } = useBusinessStore();
+  const businessId = business?.id;
+  const queryClient = useQueryClient();
+
+  const { data: rewardsResponse, isLoading: rewardsLoading, isError: rewardsError } = useQuery({
+    queryKey: ['rewards', businessId],
+    queryFn: () => getRewardsApi(businessId),
+    enabled: !!businessId,
+  });
+
   useEffect(() => {
-    const savedRewards = localStorage.getItem('rewards');
-    if (savedRewards) {
-      setRewards(JSON.parse(savedRewards));
+    const list = rewardsResponse?.data || [];
+    setRewards(Array.isArray(list) ? list : []);
+  }, [rewardsResponse]);
+
+  const createRewardMutation = useMutation({
+    mutationFn: (payload) => createRewardApi(businessId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rewards', businessId] });
     }
-  }, []);
+  });
 
-  // Save rewards to localStorage whenever rewards change
-  useEffect(() => {
-    localStorage.setItem('rewards', JSON.stringify(rewards));
-  }, [rewards]);
+  const updateRewardMutation = useMutation({
+    mutationFn: ({ rewardId, payload }) => updateRewardApi(businessId, rewardId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rewards', businessId] });
+      setIsEditOpen(false);
+      setEditTarget(null);
+      setEditForm({ label: '', points: '', description: '', validFrom: '', validTo: '' });
+    }
+  });
 
-  // Generate unique ID for new rewards
-  const generateId = () => {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-  };
+  const deleteRewardMutation = useMutation({
+    mutationFn: (rewardId) => deleteRewardApi(businessId, rewardId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rewards', businessId] });
+      setDeleteConfirm(null);
+    }
+  });
 
-  // CREATE Reward
+  // Create Reward (API-backed)
   const createReward = () => {
+    if (!businessId) {
+      alert('Please select a business to create rewards.');
+      return;
+    }
+
     const points = Number(newReward.points);
-    
-    if (!newReward.label || isNaN(points) || points <= 0) {
+
+    if (!newReward.label.trim() || Number.isNaN(points) || points <= 0) {
       alert('Please fill in all required fields with valid data');
       return;
     }
 
-    const reward = {
-      id: generateId(),
+    const payload = {
       label: newReward.label.trim(),
-      description: newReward.description.trim(),
-      points: points,
-      validFrom: newReward.validFrom || null,
-      validTo: newReward.validTo || null,
-      createdAt: new Date().toISOString()
+      description: newReward.description.trim() || undefined,
+      points,
+      validFrom: newReward.validFrom || undefined,
+      validTo: newReward.validTo || undefined,
     };
 
-    setRewards(prev => [reward, ...prev]);
-    
-    // Reset form
-    setNewReward({ 
-      label: '', 
-      points: '', 
-      description: '', 
-      validFrom: '', 
-      validTo: '' 
+    createRewardMutation.mutate(payload, {
+      onSuccess: () => {
+        setNewReward({ label: '', points: '', description: '', validFrom: '', validTo: '' });
+      }
     });
   };
 
@@ -94,7 +118,7 @@ export default function RewardsPage() {
     setIsEditOpen(true);
   };
 
-  // UPDATE Reward
+  // UPDATE Reward (API-backed)
   const updateReward = () => {
     if (!editTarget) return;
 
@@ -105,24 +129,15 @@ export default function RewardsPage() {
       return;
     }
 
-    setRewards(prev => prev.map(reward => 
-      reward.id === editTarget.id 
-        ? {
-            ...reward,
-            label: editForm.label.trim(),
-            description: editForm.description.trim(),
-            points: points,
-            validFrom: editForm.validFrom || null,
-            validTo: editForm.validTo || null,
-            updatedAt: new Date().toISOString()
-          }
-        : reward
-    ));
+    const payload = {
+      label: editForm.label.trim(),
+      description: editForm.description.trim() || undefined,
+      points,
+      validFrom: editForm.validFrom || undefined,
+      validTo: editForm.validTo || undefined,
+    };
 
-    // Close edit modal and reset
-    setIsEditOpen(false);
-    setEditTarget(null);
-    setEditForm({ label: '', points: '', description: '', validFrom: '', validTo: '' });
+    updateRewardMutation.mutate({ rewardId: editTarget.id, payload });
   };
 
   // OPEN DELETE CONFIRMATION
@@ -130,12 +145,11 @@ export default function RewardsPage() {
     setDeleteConfirm(reward);
   };
 
-  // DELETE Reward
+  // DELETE Reward (API-backed)
   const confirmDelete = () => {
     if (!deleteConfirm) return;
     
-    setRewards(prev => prev.filter(reward => reward.id !== deleteConfirm.id));
-    setDeleteConfirm(null);
+    deleteRewardMutation.mutate(deleteConfirm.id);
   };
 
   // Send reward message (simulated)
@@ -185,6 +199,7 @@ export default function RewardsPage() {
           <div className="space-y-2">
             <input 
               type="text" 
+              label="Label"
               placeholder="Label *" 
               value={newReward.label} 
               onChange={(e) => setNewReward({ ...newReward, label: e.target.value })} 
@@ -237,7 +252,9 @@ export default function RewardsPage() {
         <div className="bg-white rounded-lg border border-gray-200 p-3">
           <h3 className="text-sm font-semibold text-gray-800 mb-2">Rewards</h3>
           <div className="space-y-3">
-            {rewards.length === 0 ? (
+            {rewardsLoading ? (
+              <p className="text-sm text-gray-500">Loading rewards...</p>
+            ) : rewards.length === 0 ? (
               <p className="text-sm text-gray-500">No rewards yet. Create your first reward!</p>
             ) : (
               rewards.map((reward) => (
