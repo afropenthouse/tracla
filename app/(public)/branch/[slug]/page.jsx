@@ -649,87 +649,166 @@ const PurchaseReceiptUpload = () => {
               </div>
 
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="text-xs text-gray-600">Total Spent</div>
-                    <div className="text-xl font-bold text-green-700">
-                      ₦{Number(recordPurchaseMutation?.data?.data?.customer?.totalSpent || 0).toLocaleString()}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-700">Amount Spent</span>
+                  <span className="text-lg font-bold text-green-600">₦{extractedData.amount?.toLocaleString() || '0'}</span>
+                </div>
+                
+                {extractedData.dateTime && (
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <Calendar size={16} />
+                        Day
+                      </span>
+                      <span className="text-sm text-gray-800">{formatDateTime(extractedData.dateTime).day}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <Clock size={16} />
+                        Time
+                      </span>
+                      <span className="text-sm text-gray-800">{formatDateTime(extractedData.dateTime).time}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone size={20} className="text-gray-400" />
+                    </div>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                      placeholder="0801 234 5678"
+                      className="block w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-[#d32f2f] focus:border-[#d32f2f] text-lg"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={recordPurchaseMutation.isPending}
+                  className="w-full bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white py-4 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all flex items-center justify-center gap-2"
+                >
+                  {recordPurchaseMutation.isPending ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Recording Purchase...
+                    </>
+                  ) : (
+                    <>
+                      <Gift size={20} />
+                      Submit
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {error && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+                  <AlertCircle size={20} className="text-red-600 flex-shrink-0" />
+                  <span className="text-sm text-red-700">{error}</span>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Step 3: Confirmation */}
+        {step === 3 && extractedData && recordPurchaseMutation.data && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] rounded-full flex items-center justify-center mx-auto mb-6">
+                <Star className="text-white" size={32} />
+              </div>
+              
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                {recordPurchaseMutation.data.data.customer.isNewCustomer ? 'Welcome!' : 'Thank You!'}
+              </h2>
+              <p className="text-gray-600 mb-6">
+                {recordPurchaseMutation.data.data.customer.isNewCustomer 
+                  ? `Thank you for visiting ${businessInfo.branchName}! Your purchase has been recorded.`
+                  : `You've earned points with ${businessInfo.name}`
+                }
+              </p>
+
+              {/* {!recordPurchaseMutation.data.data.customer.isNewCustomer && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-blue-600">{recordPurchaseMutation.data.data.customer.visitCount}</div>
+                      <div className="text-xs text-blue-700">Total Visits</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-blue-600">₦{recordPurchaseMutation.data.data.customer.totalSpent?.toLocaleString()}</div>
+                      <div className="text-xs text-blue-700">Total Spent</div>
                     </div>
                   </div>
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="text-xs text-gray-600">This Purchase</div>
-                    <div className="text-xl font-bold text-blue-700">
-                      ₦{Number(extractedData?.amount || 0).toLocaleString()}
-                    </div>
+                </div>
+              )} */}
+
+              <div className="text-left space-y-4 mb-6">
+                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Heart size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">Purchase Recorded!</div>
+                    <div className="text-sm text-gray-600">Your purchase has been added to {phoneNumber} for {businessInfo.branchName}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <Gift size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">Keep visiting {businessInfo.branchName}!</div>
+                    <div className="text-sm text-gray-600">Collect more discounts for rewards and discounts</div>
                   </div>
                 </div>
               </div>
 
+              {/* Points Progress Bar */}
               {(() => {
-                const amountPerPoint = branchData?.data?.amountPerPoint || 100; // 1 point per ₦100
-                const rewards = branchData?.data?.rewards || [];
+                const targetPoints = 100; // Frontend-only target for next reward
                 const totalSpentNaira = Number(recordPurchaseMutation?.data?.data?.customer?.totalSpent || 0);
-                const purchaseAmount = Number(extractedData?.amount || 0);
-
-                const currentPoints = Math.floor(totalSpentNaira / amountPerPoint);
-                const purchasePoints = Math.floor(purchaseAmount / amountPerPoint);
-
-                const nextReward = rewards.find(r => totalSpentNaira < r.amountTarget) || null;
-                const targetAmount = nextReward ? nextReward.amountTarget : (rewards[rewards.length - 1]?.amountTarget || 0);
-                const progressPercent = targetAmount > 0 ? Math.min(100, Math.round((totalSpentNaira / targetAmount) * 100)) : 0;
-                const amountRemaining = targetAmount > 0 ? Math.max(0, targetAmount - totalSpentNaira) : 0;
+                const currentPoints = Math.floor(totalSpentNaira / 1000); // 1 point per ₦1,000 spent (example)
+                const purchasePoints = Math.floor((extractedData?.amount || 0) / 1000);
+                const progressPercent = Math.min(100, Math.round((currentPoints / targetPoints) * 100));
+                const pointsRemaining = Math.max(0, targetPoints - currentPoints);
 
                 return (
                   <div className="mt-6">
                     <div className="flex items-center gap-2 mb-2">
                       <Zap size={18} className="text-[#d32f2f]" />
-                      <span className="font-medium text-gray-900">Rewards Progress</span>
+                      <span className="font-medium text-gray-900">Your Points Progress</span>
                     </div>
                     <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm text-gray-700">
-                          {nextReward ? (
-                            <>Next Reward: <span className="font-semibold text-gray-900">{nextReward.label}</span> ({nextReward.points} pts)</>
-                          ) : (
-                            <>Rewards Unlocked</>
-                          )}
-                        </div>
-                        {targetAmount > 0 && (
-                          <div className="text-sm text-gray-700">Target: ₦{Number(targetAmount).toLocaleString()}</div>
-                        )}
-                      </div>
                       <div className="w-full bg-red-200 rounded-full h-3">
                         <div
-                          className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2f] h-3 rounded-full transition-all duration-700"
+                          className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] h-3 rounded-full transition-all duration-700"
                           style={{ width: `${progressPercent}%` }}
                         />
                       </div>
                       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                         <div>
-                          <div className="text-lg font-bold text-gray-900">₦{Number(totalSpentNaira).toLocaleString()}</div>
-                          <div className="text-xs text-gray-600">Total Amount</div>
+                          <div className="text-lg font-bold text-gray-900">{currentPoints}</div>
+                          <div className="text-xs text-gray-600">Total Points</div>
                         </div>
                         <div>
-                          <div className="text-lg font-bold text-gray-900">+₦{Number(purchaseAmount).toLocaleString()}</div>
+                          <div className="text-lg font-bold text-gray-900">+{purchasePoints}</div>
                           <div className="text-xs text-gray-600">This Purchase</div>
                         </div>
                         <div>
-                          <div className="text-lg font-bold text-gray-900">₦{Number(amountRemaining).toLocaleString()}</div>
-                          <div className="text-xs text-gray-600">To Next Reward</div>
-                        </div>
-                      </div>
-                      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                        <div>
-                          <div className="text-sm text-gray-700">Points</div>
-                          <div className="text-base font-bold text-gray-900">{currentPoints}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-gray-700">This Purchase</div>
-                          <div className="text-base font-bold text-gray-900">+{purchasePoints}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-gray-700">Per ₦{amountPerPoint}</div>
-                          <div className="text-xs text-gray-600">10 pts = ₦1000</div>
+                          <div className="text-lg font-bold text-gray-900">{pointsRemaining}</div>
+                          <div className="text-xs text-gray-600">To Next Reward ({targetPoints})</div>
                         </div>
                       </div>
                     </div>
@@ -740,70 +819,6 @@ const PurchaseReceiptUpload = () => {
               <button
                 onClick={resetUpload}
                 className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                Upload Another Receipt
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Step 3: Confirmation */}
-        {step === 3 && extractedData && recordPurchaseMutation.data && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-              <div className="text-left space-y-4 mb-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="text-xs text-gray-600">Total Spent</div>
-                    <div className="text-xl font-bold text-green-700">
-                      ₦{Number(recordPurchaseMutation?.data?.data?.customer?.totalSpent || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="text-xs text-gray-600">This Purchase</div>
-                    <div className="text-xl font-bold text-blue-700">
-                      ₦{Number(extractedData?.amount || 0).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Rewards Progress */}
-              <div className="bg-white rounded-lg p-4 border border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-medium text-gray-900">Rewards Progress</span>
-                  {nextReward ? (
-                    <span className="text-sm text-gray-600">Next Reward: {nextReward?.name || 'Reward'} ({targetAmount ? `Target ₦${Number(targetAmount).toLocaleString()}` : 'No target'})</span>
-                  ) : (
-                    <span className="text-sm text-gray-600">No active rewards</span>
-                  )}
-                </div>
-                <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
-                  <div
-                    className="h-3 rounded-full bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a]"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <div className="mt-3 text-sm text-gray-600">{amountRemaining > 0 ? `₦${Number(amountRemaining).toLocaleString()} remaining to next reward` : 'Reward reached!'}</div>
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <div className="text-sm text-gray-700">Points</div>
-                    <div className="text-base font-bold text-gray-900">{currentPoints}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-700">This Purchase</div>
-                    <div className="text-base font-bold text-gray-900">+{purchasePoints}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-700">Per ₦{amountPerPoint}</div>
-                    <div className="text-xs text-gray-600">10 pts = ₦1000</div>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={resetUpload}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium mt-6"
               >
                 Upload Another Receipt
               </button>
