@@ -4,7 +4,7 @@ import {
   MessageSquare, Send, Users, Clock, CheckCircle, XCircle,
   Loader2, Filter, Search, Calendar, RefreshCw, AlertCircle, Wallet, X, PlusCircle
 } from 'lucide-react';
-import { sendBulkMessage, sendBulkMessageToAll, getMessageHistory, getTermiiBalance } from '@/lib/api';
+import { sendBulkMessage, sendBulkMessageToAll, getMessageHistory } from '@/lib/api';
 import { useCustomersData } from '@/lib/queries/branch';
 import { useBusinessStore } from '@/store/store';
 
@@ -79,16 +79,8 @@ const MessagesPage = () => {
   };
 
   const fetchBalance = async () => {
-    if (!businessId) return;
-    try {
-      const result = await getTermiiBalance(businessId);
-      if (result.success) {
-        const bal = result.data?.balance;
-        if (typeof bal === 'number') setBalance(bal);
-      }
-    } catch (error) {
-      console.error('Error fetching balance:', error);
-    }
+    // Balance is intentionally not connected to any service. Always show 0.
+    setBalance(0);
   };
 
   const [showResultModal, setShowResultModal] = useState(false);
@@ -235,7 +227,7 @@ const MessagesPage = () => {
               <Wallet className="w-4 h-4 text-emerald-700" />
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-emerald-700">Balance</span>
-                <span className="text-2xl font-bold text-emerald-800">₦{balance.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-emerald-800">₦0</span>
               </div>
             </div>
             <button
@@ -311,7 +303,7 @@ const MessagesPage = () => {
                 onClick={() => {
                   // Instead of simulating balance, just close and refresh actual balance
                   setShowTopUpModal(false);
-                  fetchBalance();
+                  // fetchBalance(); // Removed to keep balance fixed at 0
                 }}
                 className="px-4 py-2 bg-[#6d0e2b] text-white rounded-lg hover:opacity-90 transition-colors"
               >
@@ -628,7 +620,7 @@ const MessagesPage = () => {
               <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
                 <Wallet className="w-4 h-4 text-emerald-700" />
                 <span className="text-xs text-emerald-700">Balance:</span>
-                <span className="text-sm font-bold text-emerald-800">₦{balance.toLocaleString()}</span>
+                <span className="text-sm font-bold text-emerald-800">₦0</span>
                 <span className="ml-2 text-xs text-gray-600">0/0 messages</span>
               </div>
             </div>
