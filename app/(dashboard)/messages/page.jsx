@@ -91,6 +91,8 @@ const MessagesPage = () => {
     }
   };
 
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
   const handleSendMessage = async () => {
     if (!message.trim()) {
       alert('Please enter a message');
@@ -113,15 +115,20 @@ const MessagesPage = () => {
       }
 
       if (result.success) {
-        alert('Messages sent successfully!');
+        // Show modal with summary from backend
+        setSendResult(result.data);
+        setShowResultModal(true);
         setMessage('');
         setSelectedCustomers([]);
       } else {
-        alert(`Failed to send messages: ${result.error}`);
+        // Show error in modal
+        setSendResult({ error: result.error });
+        setShowResultModal(true);
       }
     } catch (error) {
       console.error('Error sending messages:', error);
-      alert('Failed to send messages. Please try again.');
+      setSendResult({ error: 'Failed to send messages. Please try again.' });
+      setShowResultModal(true);
     } finally {
       setIsLoading(false);
     }
@@ -197,15 +204,18 @@ const MessagesPage = () => {
     try {
       const result = await sendBulkMessage(businessId, selectedCustomers, message.trim());
       if (result.success) {
-        alert('Messages sent to top spenders!');
+        setSendResult(result.data);
+        setShowResultModal(true);
         setMessage('');
         setSelectedCustomers([]);
       } else {
-        alert(`Failed to send: ${result.error}`);
+        setSendResult({ error: result.error });
+        setShowResultModal(true);
       }
     } catch (e) {
       console.error(e);
-      alert('Failed to send messages');
+      setSendResult({ error: 'Failed to send messages. Please try again.' });
+      setShowResultModal(true);
     } finally {
       setIsLoading(false);
     }
@@ -787,6 +797,80 @@ const MessagesPage = () => {
       {false && activeTab === 'topspenders' && (
         <div className="space-y-6">{/* hidden per requirements */}</div>
       )}
+
+      {showResultModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Message Send Summary</h3>
+              <button
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                onClick={() => setShowResultModal(false)}
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-3">
+              {sendResult?.error ? (
+                <div className="flex items-start gap-3">
+                  <XCircle className="w-5 h-5 text-red-600" />
+                  <div>
+                    <p className="text-sm text-red-700 font-medium">{sendResult.error}</p>
+                    <p className="text-xs text-gray-600">Please review your selections and try again.</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-800">
+                        Sent to {sendResult?.totalCustomers ?? sendResult?.data?.totalCustomers ?? (messageType === 'all' ? 'all customers' : selectedCustomers.length)} customers
+                      </p>
+                      <p className="text-sm text-gray-800">Successfully sent: {sendResult?.totalSent ?? sendResult?.data?.totalSent ?? 0}</p>
+                      <p className="text-sm text-gray-800">Failed: {sendResult?.totalFailed ?? sendResult?.data?.totalFailed ?? 0}</p>
+                      {sendResult?.data?.branchFilter && (
+                        <p className="text-xs text-gray-600">{sendResult.data.branchFilter}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {Array.isArray(sendResult?.data?.results) && sendResult.data.results.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-gray-900 mb-2">Delivery details</p>
+                      <div className="max-h-40 overflow-auto border border-gray-200 rounded">
+                        <ul className="divide-y divide-gray-100">
+                          {sendResult.data.results.map((r, idx) => (
+                            <li key={idx} className="p-2 text-sm flex items-center justify-between">
+                              <span className="text-gray-700">{r?.customer?.phoneNumber || r?.phoneNumber}</span>
+                              {r?.success ? (
+                                <span className="text-green-600">sent</span>
+                              ) : (
+                                <span className="text-red-600">failed</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setShowResultModal(false)}
+                className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
