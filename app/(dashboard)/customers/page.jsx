@@ -11,6 +11,7 @@ import { useBranchStore, useBusinessStore } from '@/store/store';
 import { useCustomerDetailsModalStore } from '@/store/modalStore';
 import MessageModal from '@/components/modals/MessageModal';
 import { sendSingleMessage } from '@/lib/api';
+import { useToastStore } from '@/store/toastStore';
 
 // Header Cell Component
 const HeaderCell = ({ text, hasSort = false, onSort, sortBy, order }) => {
@@ -159,6 +160,7 @@ const CustomersPage = () => {
   const { currentBranch } = useBranchStore();
   const { business } = useBusinessStore();
   const { onOpen: openCustomerModal } = useCustomerDetailsModalStore();
+  const { showSuccess, showError } = useToastStore();
   
   // UI state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -288,18 +290,18 @@ const CustomersPage = () => {
     try {
       const businessId = business?.id;
       if (!businessId) {
-        alert('Business ID not found. Please log in again.');
+        showError('Business ID not found. Please log in again.');
         return;
       }
       const result = await sendSingleMessage(businessId, customer?.id, message);
       if (result?.success) {
-        alert('Message sent successfully');
+        showSuccess('Message sent successfully');
       } else {
-        alert(`Failed to send message: ${result?.error || 'Unknown error'}`);
+        showError(`Failed to send message: ${result?.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Failed to send single message:', error);
-      alert('Failed to send message. Please try again.');
+      showError('Failed to send message. Please try again.');
     }
   };
   

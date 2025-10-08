@@ -1,10 +1,16 @@
 'use client'
 import { useState } from 'react';
 import { X, MessageSquare, Send, Loader2 } from 'lucide-react';
+import { useBusinessStore } from '@/store/store';
+import { useToastStore } from '@/store/toastStore';
+import { sendSingleMessage as sendSingleMessageApi } from '@/lib/api';
 
 const MessageModal = ({ isOpen, onClose, customer, onSend }) => {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const { business } = useBusinessStore();
+  const { showSuccess, showError } = useToastStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -12,11 +18,25 @@ const MessageModal = ({ isOpen, onClose, customer, onSend }) => {
 
     setIsLoading(true);
     try {
-      await onSend(customer, message.trim());
+      const payloadMessage = message.trim();
+      if (onSend) {
+        await onSend(customer, payloadMessage);
+      } else {
+        const businessId = business?.id;
+        if (!businessId || !customer?.id) {
+          throw new Error('Missing business or customer identification');
+        }
+        const result = await sendSingleMessageApi(businessId, customer.id, payloadMessage);
+        if (!result?.success) {
+          throw new Error(result?.error || 'Failed to send message');
+        }
+        showSuccess?.('Message sent successfully');
+      }
       setMessage('');
       onClose();
     } catch (error) {
       console.error('Failed to send message:', error);
+      showError?.(error?.message || 'Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +91,7 @@ const MessageModal = ({ isOpen, onClose, customer, onSend }) => {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message here..."
               rows={4}
+              maxLength={1000}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               disabled={isLoading}
               required

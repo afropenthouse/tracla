@@ -44,17 +44,13 @@ const MessagesPage = () => {
 
   const { business } = useBusinessStore();
   const businessId = business?.id;
+  // Pagination for selected customers list
+  const [customersPage, setCustomersPage] = useState(1);
+  const CUSTOMERS_PER_PAGE = 10;
 
-  const { data: customersResponse, isLoading: customersLoading, error: customersError } = useCustomersData({ page: 1, limit: 200 });
-// Frontend-only mock customers fallback (used when no customers are returned)
-const mockCustomers = [
-  { id: 'mock1', phoneNumber: '+2348012345678', name: 'Ayo', totalSpent: 342000, lastVisit: '2025-09-20', createdAt: '2025-09-01' },
-  { id: 'mock2', phoneNumber: '+2348023456789', name: 'Bisi', totalSpent: 289000, lastVisit: '2025-09-21', createdAt: '2025-09-05' },
-  { id: 'mock3', phoneNumber: '+2348034567890', name: 'Chika', totalSpent: 234000, lastVisit: '2025-09-22', createdAt: '2025-09-07' },
-  { id: 'mock4', phoneNumber: '+2348045678901', name: 'Dayo', totalSpent: 189000, lastVisit: '2025-09-23', createdAt: '2025-09-10' },
-  { id: 'mock5', phoneNumber: '+2348056789012', name: 'Eniola', totalSpent: 165000, lastVisit: '2025-09-24', createdAt: '2025-09-12' },
-];
-  const sourceCustomers = (customersResponse?.customers && customersResponse.customers.length > 0) ? customersResponse.customers : mockCustomers;
+  const { data: customersResponse, isLoading: customersLoading, error: customersError, refetch: refetchCustomers } = useCustomersData({ page: customersPage, limit: CUSTOMERS_PER_PAGE });
+  // Use backend customers directly. If the API returns no customers, show an empty list.
+  const sourceCustomers = customersResponse?.customers || [];
 
   useEffect(() => {
     if (!businessId) return;
@@ -63,6 +59,12 @@ const mockCustomers = [
     }
     // Always refresh balance when business or tab changes
     fetchBalance();
+    // Ensure customers are refetched when business/tab changes so selected customers panel has fresh data
+    try {
+      if (typeof refetchCustomers === 'function') refetchCustomers();
+    } catch (e) {
+      console.error('Failed to refetch customers on business/tab change', e);
+    }
   }, [activeTab, businessId]);
 
   const fetchMessageHistory = async () => {
@@ -386,7 +388,32 @@ const mockCustomers = [
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">Select Customers:</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                    {sourceCustomers.length === 0 ? (
+                    {customersLoading ? (
+                        // Render skeleton rows for the loading state
+                        Array.from({ length: CUSTOMERS_PER_PAGE }).map((_, idx) => (
+                          <div key={idx} className="flex items-center p-3 border border-gray-200 rounded-lg animate-pulse">
+                            <div className="h-4 w-4 bg-gray-200 rounded" />
+                            <div className="ml-3 w-full">
+                              <div className="h-4 bg-gray-200 w-1/3 rounded mb-2" />
+                              <div className="h-3 bg-gray-200 w-1/4 rounded" />
+                            </div>
+                          </div>
+                        ))
+                      ) : customersError ? (
+                      <div className="col-span-1 md:col-span-2 lg:col-span-3 py-8 text-center text-red-500">
+                        <p className="mb-2">Failed to load customers.</p>
+                        <button
+                          onClick={() => refetchCustomers()}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    ) : !businessId ? (
+                      <div className="col-span-1 md:col-span-2 lg:col-span-3 py-8 text-center text-gray-500 text-sm">
+                        No business selected. Please select a business to load customers.
+                      </div>
+                    ) : sourceCustomers.length === 0 ? (
                       <div className="col-span-1 md:col-span-2 lg:col-span-3 py-6 text-gray-500 text-sm">No customers found.</div>
                     ) : (
                       sourceCustomers.map((customer) => (
@@ -474,7 +501,8 @@ const mockCustomers = [
                     <button
                       className="px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
                       onClick={() => {
-                        const allIds = topSpenders.map((c) => c.id);
+                        // Select all customers currently shown (current page)
+                        const allIds = sourceCustomers.map((c) => c.id);
                         setSelectedCustomers(allIds);
                       }}
                     >
@@ -529,6 +557,54 @@ const mockCustomers = [
 
                   {selectedCustomers.length > 0 && (
                     <p className="text-sm text-blue-600 mt-2">{selectedCustomers.length} top spender(s) selected</p>
+                  )}
+
+                  {/* Pagination footer for customers list */}
+                  {customersResponse?.pagination && (
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        {(() => {
+                          const page = customersResponse.pagination.page || customersPage;
+                          const limit = customersResponse.pagination.limit || CUSTOMERS_PER_PAGE;
+                          const total = customersResponse.pagination.total || 0;
+                          const start = (page - 1) * limit + 1;
+                          const end = Math.min(page * limit, total);
+                          if (total === 0) return 'Showing 0 customers';
+                          return `Showing ${start}-${end} of ${total} customers`;
+                        })()}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCustomersPage((p) => Math.max(1, p - 1))}
+                          disabled={customersPage <= 1 || customersLoading}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        <div className="px-3 py-2 text-sm">
+                          {Array.from({ length: customersResponse.pagination.totalPages || 1 }).slice(0, 10).map((_, idx) => {
+                            const pg = idx + 1;
+                            return (
+                              <button
+                                key={pg}
+                                onClick={() => setCustomersPage(pg)}
+                                disabled={customersLoading}
+                                className={`mx-1 px-3 py-1 rounded ${customersPage === pg ? 'bg-[#6d0e2b] text-white' : 'border border-gray-200 text-gray-700'} ${customersLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                {pg}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          onClick={() => setCustomersPage((p) => Math.min(customersResponse.pagination.totalPages || 1, p + 1))}
+                          disabled={customersPage >= (customersResponse.pagination.totalPages || 1) || customersLoading}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
