@@ -6,6 +6,19 @@ import { useBusinessStore } from "@/store/store";
 import { getRewards as getRewardsApi, createRewardApi, updateRewardApi, deleteRewardApi } from "@/lib/api";
 
 export default function RewardsPage() {
+  // Helper: format date as 30th-08-2025
+  const formatDateShort = (date) => {
+    if (!date) return '—';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    const day = d.getDate();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const isTeen = day >= 11 && day <= 13;
+    const last = day % 10;
+    const suffix = isTeen ? 'th' : last === 1 ? 'st' : last === 2 ? 'nd' : last === 3 ? 'rd' : 'th';
+    return `${day}${suffix}-${month}-${year}`;
+  };
   // Rewards CRUD (now backed by API)
   const [rewards, setRewards] = useState([]);
   const [newReward, setNewReward] = useState({ 
@@ -187,7 +200,7 @@ export default function RewardsPage() {
       {/* Points Info */}
       <div className="mb-4">
         <h2 className="text-xs sm:text-sm font-semibold text-gray-800">
-          10 points = ₦1000
+          ₦1000 = 10 points
         </h2>
       </div>
 
@@ -205,13 +218,33 @@ export default function RewardsPage() {
               onChange={(e) => setNewReward({ ...newReward, label: e.target.value })} 
               className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
             />
-            <input 
-              type="number" 
-              placeholder="Points required *" 
-              value={newReward.points} 
-              onChange={(e) => setNewReward({ ...newReward, points: e.target.value })} 
-              className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
-            />
+            <div className="relative pb-8">
+              <input 
+                type="number" 
+                inputMode="numeric"
+                pattern="\\d*"
+                min="1"
+                step="1"
+                placeholder="Points required *" 
+                value={newReward.points} 
+                onChange={(e) => {
+                  const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                  setNewReward({ ...newReward, points: sanitized });
+                }} 
+                onKeyDown={(evt) => {
+                  const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+                  if (!/[0-9]/.test(evt.key) && !allowed.includes(evt.key)) {
+                    evt.preventDefault();
+                  }
+                }}
+                className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
+              />
+              {Number(newReward.points) > 0 && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-sm p-2 text-xs text-gray-700">
+                  Estimated purchase amount: ₦{(Number(newReward.points) * 100).toLocaleString('en-NG')}
+                </div>
+              )}
+            </div>
             <input 
               type="text" 
               placeholder="Description" 
@@ -265,7 +298,7 @@ export default function RewardsPage() {
                     <p className="text-xs text-[#6d0e2b] font-semibold">{reward.points} pts</p>
                     {(reward.validFrom || reward.validTo) && (
                       <p className="text-xs text-gray-500">
-                        Valid: {reward.validFrom || '—'} to {reward.validTo || '—'}
+                        Valid: {formatDateShort(reward.validFrom)} to {formatDateShort(reward.validTo)}
                       </p>
                     )}
                   </div>
@@ -329,12 +362,32 @@ export default function RewardsPage() {
               
               <div>
                 <label className="text-sm font-medium text-gray-700">Points *</label>
-                <input 
-                  type="number" 
-                  value={editForm.points} 
-                  onChange={(e) => setEditForm({ ...editForm, points: e.target.value })} 
-                  className="w-full rounded-md border px-3 py-2 text-sm mt-1" 
-                />
+                <div className="relative">
+                  <input 
+                    type="number" 
+                    inputMode="numeric"
+                    pattern="\\d*"
+                    min="1"
+                    step="1"
+                    value={editForm.points} 
+                    onChange={(e) => {
+                      const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                      setEditForm({ ...editForm, points: sanitized });
+                    }} 
+                    onKeyDown={(evt) => {
+                      const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+                      if (!/[0-9]/.test(evt.key) && !allowed.includes(evt.key)) {
+                        evt.preventDefault();
+                      }
+                    }}
+                    className="w-full rounded-md border px-3 py-2 text-sm mt-1" 
+                  />
+                  {Number(editForm.points) > 0 && (
+                    <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-sm p-2 text-xs text-gray-700">
+                      Estimated purchase amount: ₦{(Number(editForm.points) * 100).toLocaleString('en-NG')}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div>
