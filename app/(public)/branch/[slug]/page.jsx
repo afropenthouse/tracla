@@ -721,15 +721,15 @@ const PurchaseReceiptUpload = () => {
                 <div className="grid grid-cols-3 gap-4 text-center mb-4">
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
-                      ₦{recordPurchaseMutation.data.data.purchase.amount?.toLocaleString()}
+                      {recordPurchaseMutation?.data?.data?.rewards?.currentPoints ?? 0}
                     </div>
-                    <div className="text-xs text-gray-600">Total spent this purchase</div>
+                    <div className="text-xs text-gray-600">Total Points</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
                       +{recordPurchaseMutation.data.data.purchase.pointsEarned}
                     </div>
-                    <div className="text-xs text-gray-600">Points earned</div>
+                    <div className="text-xs text-gray-600">This Purchase</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
@@ -844,7 +844,8 @@ const PurchaseReceiptUpload = () => {
                         </div>
                       </div>
 
-                      {/* All Available Rewards */}
+                      {/* All Available Rewards - commented out per request */}
+                      { /*
                       <div className="space-y-2">
                         <h4 className="text-sm font-medium text-gray-700 text-left mb-2">Upcoming Reward</h4>
                         {availableRewards.map((reward) => {
@@ -904,6 +905,7 @@ const PurchaseReceiptUpload = () => {
                           );
                         })}
                       </div>
+                      */ }
                     </div>
                   );
                 }
