@@ -165,19 +165,8 @@ const MessageModal = ({ isOpen, onClose, customer, onSend }) => {
               <MessageSquare className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-gray-900">Send Message</h3>
-                {/* Balance badge */}
-                <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
-                  <Wallet className="w-4 h-4 text-emerald-700" />
-                  <span className="text-xs text-emerald-700">Balance:</span>
-                  <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span>
-                  <span className="ml-2 text-xs text-gray-600">{wallet?.balanceMessages ?? 0} messages</span>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600">
-                To: {customer?.phoneNumber || customer?.customerPhone}
-              </p>
+              <h3 className="text-lg font-semibold text-gray-900">Send Message</h3>
+              <p className="text-sm text-gray-600">To: {customer?.phoneNumber || customer?.customerPhone}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -218,6 +207,16 @@ const MessageModal = ({ isOpen, onClose, customer, onSend }) => {
             <p className="text-xs text-gray-500 mt-1">
               {message.length}/1000 characters
             </p>
+          </div>
+
+          {/* Balance row moved below message for clearer layout - single horizontal line */}
+          <div className="mb-4">
+            <div className="flex items-center gap-4 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 w-full">
+              <Wallet className="w-4 h-4 text-emerald-700" />
+              <span className="text-xs text-emerald-700">Balance</span>
+              <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span>
+              <span className="ml-auto text-xs text-gray-600">{wallet?.balanceMessages ?? 0} messages</span>
+            </div>
           </div>
 
           {/* Actions */}
