@@ -711,14 +711,9 @@ const PurchaseReceiptUpload = () => {
                 <Star className="text-white" size={32} />
               </div>
               
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {recordPurchaseMutation.data.data.customer.isNewCustomer ? 'Welcome!' : 'Thank You!'}
-              </h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Thank you!</h2>
               <p className="text-gray-600 mb-6">
-                {recordPurchaseMutation.data.data.customer.isNewCustomer 
-                  ? `Thank you for visiting ${businessInfo.branchName}! Your purchase has been recorded.`
-                  : `You've earned points with ${businessInfo.name}`
-                }
+                {`Thank you for visiting ${businessInfo.name}! Your purchase has been recorded.`}
               </p>
 
               {/* Points Summary */}
@@ -726,15 +721,15 @@ const PurchaseReceiptUpload = () => {
                 <div className="grid grid-cols-3 gap-4 text-center mb-4">
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
-                      {recordPurchaseMutation.data.data.customer.totalPoints}
+                      ₦{recordPurchaseMutation.data.data.purchase.amount?.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-600">Total Points</div>
+                    <div className="text-xs text-gray-600">Total spent this purchase</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
                       +{recordPurchaseMutation.data.data.purchase.pointsEarned}
                     </div>
-                    <div className="text-xs text-gray-600">This Purchase</div>
+                    <div className="text-xs text-gray-600">Points earned</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
@@ -744,10 +739,7 @@ const PurchaseReceiptUpload = () => {
                   </div>
                 </div>
                 
-                {/* Points to Naira conversion */}
-                <div className="text-center text-sm text-gray-600 mb-2">
-                  10 points = ₦1000 spent
-                </div>
+                {/* Points to Naira conversion removed */}
               </div>
 
               {/* Rewards Progress */}
@@ -817,11 +809,16 @@ const PurchaseReceiptUpload = () => {
                         {/* Next Reward Info */}
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-left">
-                            <div className="font-semibold text-gray-900">{nextReward.label}</div>
-                            <div className="text-xs text-gray-600">
-                              {nextReward.description || 'Claim your reward!'}
+                              <div className="font-semibold text-gray-900">{nextReward.label}</div>
+                              <div className="text-xs text-gray-600">
+                                {nextReward.description || 'Claim your reward!'}
+                              </div>
+                              {(nextReward.validFrom || nextReward.validTo) && (
+                                <div className="text-xs text-gray-500">
+                                  {`${nextReward.validFrom ? new Date(nextReward.validFrom).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}${nextReward.validFrom && nextReward.validTo ? ' — ' : ''}${nextReward.validTo ? new Date(nextReward.validTo).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}`}
+                                </div>
+                              )}
                             </div>
-                          </div>
                           <div className="text-right">
                             <div className="font-bold text-[#6c0f2a]">{nextReward.points} pts</div>
                             <div className="text-xs text-gray-500">Required</div>
@@ -849,7 +846,7 @@ const PurchaseReceiptUpload = () => {
 
                       {/* All Available Rewards */}
                       <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-gray-700 text-left mb-2">Available Rewards</h4>
+                        <h4 className="text-sm font-medium text-gray-700 text-left mb-2">Upcoming Reward</h4>
                         {availableRewards.map((reward) => {
                           const isAchieved = currentPoints >= reward.points;
                           const isNextReward = reward.id === nextReward.id;
@@ -881,6 +878,11 @@ const PurchaseReceiptUpload = () => {
                                   </span>
                                   {reward.description && (
                                     <div className="text-xs text-gray-600">{reward.description}</div>
+                                  )}
+                                  {(reward.validFrom || reward.validTo) && (
+                                    <div className="text-xs text-gray-500">
+                                      {`${reward.validFrom ? new Date(reward.validFrom).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}${reward.validFrom && reward.validTo ? ' — ' : ''}${reward.validTo ? new Date(reward.validTo).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}`}
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -916,7 +918,7 @@ const PurchaseReceiptUpload = () => {
                     <Sparkles size={16} className="text-white" />
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">Keep visiting {businessInfo.branchName}!</div>
+                    <div className="font-medium text-gray-900">Keep visiting {businessInfo.name}!</div>
                     <div className="text-sm text-gray-600">Collect more points to unlock amazing rewards</div>
                   </div>
                 </div>
