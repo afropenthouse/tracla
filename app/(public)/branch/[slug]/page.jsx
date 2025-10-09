@@ -15,7 +15,6 @@ import { useParams } from 'next/navigation';
 const PurchaseReceiptUpload = () => {
   const params = useParams();
   const branchSlug = params.slug;
-  // console.log(JSON.stringify('this is the branch slug', branchSlug));
   
   const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -372,12 +371,6 @@ const PurchaseReceiptUpload = () => {
       return;
     }
 
-    // Commenting out merchant name validation
-    // if (!extractedData?.merchant?.name) {
-    //   setError('No merchant name detected from receipt');
-    //   return;
-    // }
-
     const purchaseData = {
       phoneNumber: phoneNumber.replace(/\s/g, ''),
       amount: extractedData.amount,
@@ -398,7 +391,6 @@ const PurchaseReceiptUpload = () => {
           }
         })() : 
         new Date().toISOString(),
-      // merchantName: extractedData.merchant.name // Commented out - not sending merchant name to backend
     };
 
     console.log('📤 Submitting purchase data:', purchaseData);
@@ -506,15 +498,6 @@ const PurchaseReceiptUpload = () => {
                   onDragOver={(e) => e.preventDefault()}
                   className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#d32f2f] transition-colors"
                 >
-                  {/* <div className="flex flex-col items-center mb-6">
-                    <div className="w-16 h-16 bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] rounded-full flex items-center justify-center mb-4">
-                      <Receipt size={24} className="text-white" />
-                    </div>
-                    <p className="text-lg font-medium text-gray-900 mb-2">Upload Your Receipt</p>
-                    <p className="text-sm text-gray-500 mb-4">Choose how you want to add your receipt</p>
-                  </div> */}
-
-                  {/* Camera and Gallery Options */}
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       onClick={() => cameraInputRef.current?.click()}
@@ -738,80 +721,213 @@ const PurchaseReceiptUpload = () => {
                 }
               </p>
 
-              {/* {!recordPurchaseMutation.data.data.customer.isNewCustomer && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-blue-600">{recordPurchaseMutation.data.data.customer.visitCount}</div>
-                      <div className="text-xs text-blue-700">Total Visits</div>
+              {/* Points Summary */}
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div className="grid grid-cols-3 gap-4 text-center mb-4">
+                  <div>
+                    <div className="text-2xl font-bold text-[#6c0f2a]">
+                      {recordPurchaseMutation.data.data.customer.totalPoints}
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-blue-600">₦{recordPurchaseMutation.data.data.customer.totalSpent?.toLocaleString()}</div>
-                      <div className="text-xs text-blue-700">Total Spent</div>
+                    <div className="text-xs text-gray-600">Total Points</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-[#6c0f2a]">
+                      +{recordPurchaseMutation.data.data.purchase.pointsEarned}
                     </div>
+                    <div className="text-xs text-gray-600">This Purchase</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-[#6c0f2a]">
+                      ₦{recordPurchaseMutation.data.data.customer.totalSpent?.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-600">Total Spent</div>
                   </div>
                 </div>
-              )} */}
+                
+                {/* Points to Naira conversion */}
+                <div className="text-center text-sm text-gray-600 mb-2">
+                  10 points = ₦1000 spent
+                </div>
+              </div>
 
-              {/* Points Progress Bar */}
+              {/* Rewards Progress */}
               {(() => {
-                const targetPoints = 100; // Frontend-only target for next reward
-                const totalSpentNaira = Number(recordPurchaseMutation?.data?.data?.customer?.totalSpent || 0);
-                const currentPoints = Math.floor(totalSpentNaira / 1000); // 1 point per ₦1,000 spent (example)
-                const purchasePoints = Math.floor((extractedData?.amount || 0) / 1000);
-                const progressPercent = Math.min(100, Math.round((currentPoints / targetPoints) * 100));
-                const pointsRemaining = Math.max(0, targetPoints - currentPoints);
+                const rewardsData = recordPurchaseMutation.data.data.rewards;
+                const currentPoints = rewardsData.currentPoints;
+                const availableRewards = rewardsData.available || [];
+                const nextReward = rewardsData.nextReward;
+                const hasAchievedAll = rewardsData.hasAchievedAll;
 
-                return (
-                  <div className="mt-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap size={18} className="text-[#d32f2f]" />
-                      <span className="font-medium text-gray-900">Your Points Progress</span>
-                    </div>
-                    <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
-                      <div className="w-full bg-red-200 rounded-full h-3">
-                        <div
-                          className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] h-3 rounded-full transition-all duration-700"
-                          style={{ width: `${progressPercent}%` }}
-                        />
+                // If no rewards are set up
+                if (availableRewards.length === 0) {
+                  return (
+                    <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex items-center gap-2 justify-center mb-2">
+                        <Gift size={18} className="text-yellow-600" />
+                        <span className="font-medium text-yellow-800">No Rewards Available</span>
                       </div>
-                      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                        <div>
-                          <div className="text-lg font-bold text-gray-900">{currentPoints}</div>
-                          <div className="text-xs text-gray-600">Total Points</div>
-                        </div>
-                        <div>
-                          <div className="text-lg font-bold text-gray-900">+{purchasePoints}</div>
-                          <div className="text-xs text-gray-600">This Purchase</div>
-                        </div>
-                        <div>
-                          <div className="text-lg font-bold text-gray-900">{pointsRemaining}</div>
-                          <div className="text-xs text-gray-600">To Next Reward ({targetPoints})</div>
-                        </div>
+                      <p className="text-sm text-yellow-700">
+                        This business hasn't set up any rewards yet. Check back later!
+                      </p>
+                    </div>
+                  );
+                }
+
+                // If customer has achieved all rewards
+                if (hasAchievedAll) {
+                  return (
+                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2 justify-center mb-2">
+                        <CheckCircle size={18} className="text-green-600" />
+                        <span className="font-medium text-green-800">All Rewards Achieved! 🎉</span>
+                      </div>
+                      <p className="text-sm text-green-700 mb-3">
+                        You've unlocked all available rewards! Visit the store to claim your rewards.
+                      </p>
+                      <div className="space-y-2">
+                        {availableRewards.map((reward, index) => (
+                          <div key={reward.id} className="flex items-center justify-between bg-white p-2 rounded">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle size={16} className="text-green-500" />
+                              <span className="text-sm font-medium text-gray-900">{reward.label}</span>
+                            </div>
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                              {reward.points} pts
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                );
+                  );
+                }
+
+                // Show progress to next reward
+                if (nextReward) {
+                  const pointsNeeded = nextReward.points - currentPoints;
+                  const progressPercent = Math.min(100, Math.round((currentPoints / nextReward.points) * 100));
+
+                  return (
+                    <div className="mt-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Zap size={18} className="text-[#d32f2f]" />
+                        <span className="font-medium text-gray-900">Next Reward Progress</span>
+                      </div>
+                      
+                      <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4 mb-4">
+                        {/* Next Reward Info */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-left">
+                            <div className="font-semibold text-gray-900">{nextReward.label}</div>
+                            <div className="text-xs text-gray-600">
+                              {nextReward.description || 'Claim your reward!'}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-[#6c0f2a]">{nextReward.points} pts</div>
+                            <div className="text-xs text-gray-500">Required</div>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-red-200 rounded-full h-3 mb-2">
+                          <div
+                            className="bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] h-3 rounded-full transition-all duration-700"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                        
+                        {/* Progress Text */}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-700">
+                            {currentPoints} / {nextReward.points} points
+                          </span>
+                          <span className="font-semibold text-[#6c0f2a]">
+                            {pointsNeeded} points to go
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* All Available Rewards */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-700 text-left mb-2">Available Rewards</h4>
+                        {availableRewards.map((reward) => {
+                          const isAchieved = currentPoints >= reward.points;
+                          const isNextReward = reward.id === nextReward.id;
+                          
+                          return (
+                            <div 
+                              key={reward.id} 
+                              className={`flex items-center justify-between p-3 rounded-lg border ${
+                                isAchieved 
+                                  ? 'bg-green-50 border-green-200' 
+                                  : isNextReward
+                                  ? 'bg-blue-50 border-blue-200'
+                                  : 'bg-gray-50 border-gray-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isAchieved ? (
+                                  <CheckCircle size={16} className="text-green-500" />
+                                ) : isNextReward ? (
+                                  <Zap size={16} className="text-blue-500" />
+                                ) : (
+                                  <Gift size={16} className="text-gray-400" />
+                                )}
+                                <div className="text-left">
+                                  <span className={`text-sm font-medium ${
+                                    isAchieved ? 'text-green-800' : 'text-gray-900'
+                                  }`}>
+                                    {reward.label}
+                                  </span>
+                                  {reward.description && (
+                                    <div className="text-xs text-gray-600">{reward.description}</div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  isAchieved 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : isNextReward
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {reward.points} pts
+                                </span>
+                                {isAchieved && (
+                                  <div className="text-xs text-green-600 mt-1">Achieved! 🎉</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return null;
               })()}
 
-                <div className="text-left space-y-4 mb-6">
-                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <Gift size={16} className="text-white" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">Keep visiting {businessInfo.branchName}!</div>
-                      <div className="text-sm text-gray-600">Collect more discounts for rewards and discounts</div>
-                    </div>
+              {/* Additional Info */}
+              <div className="text-left space-y-4 mt-6">
+                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Sparkles size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">Keep visiting {businessInfo.branchName}!</div>
+                    <div className="text-sm text-gray-600">Collect more points to unlock amazing rewards</div>
                   </div>
                 </div>
+              </div>
 
-                <button
-                  onClick={resetUpload}
-                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                >
-                  Upload Another Receipt
-                </button>
+              <button
+                onClick={resetUpload}
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium mt-6"
+              >
+                Upload Another Receipt
+              </button>
             </div>
           </motion.div>
         )}
