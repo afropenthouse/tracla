@@ -753,28 +753,6 @@ const PurchaseReceiptUpload = () => {
                 </div>
               )} */}
 
-              <div className="text-left space-y-4 mb-6">
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Heart size={16} className="text-white" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900">Purchase Recorded!</div>
-                    <div className="text-sm text-gray-600">Your purchase has been added to {phoneNumber} for {businessInfo.branchName}</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <Gift size={16} className="text-white" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900">Keep visiting {businessInfo.branchName}!</div>
-                    <div className="text-sm text-gray-600">Collect more discounts for rewards and discounts</div>
-                  </div>
-                </div>
-              </div>
-
               {/* Points Progress Bar */}
               {(() => {
                 const targetPoints = 100; // Frontend-only target for next reward
@@ -816,12 +794,24 @@ const PurchaseReceiptUpload = () => {
                 );
               })()}
 
-              <button
-                onClick={resetUpload}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                Upload Another Receipt
-              </button>
+                <div className="text-left space-y-4 mb-6">
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <Gift size={16} className="text-white" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Keep visiting {businessInfo.branchName}!</div>
+                      <div className="text-sm text-gray-600">Collect more discounts for rewards and discounts</div>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={resetUpload}
+                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Upload Another Receipt
+                </button>
             </div>
           </motion.div>
         )}
