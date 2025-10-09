@@ -4,7 +4,7 @@ import {
   MessageSquare, Send, Users, Clock, CheckCircle, XCircle,
   Loader2, Filter, Search, Calendar, RefreshCw, AlertCircle, Wallet, X, PlusCircle
 } from 'lucide-react';
-import { sendBulkMessage, sendBulkMessageToAll, getMessageHistory } from '@/lib/api';
+import { sendBulkMessage, sendBulkMessageToAll, getMessageHistory, getMessageWallet, initializeTopUp, verifyTopUp } from '@/lib/api';
 import { useCustomersData } from '@/lib/queries/branch';
 import { useBusinessStore } from '@/store/store';
 
@@ -42,6 +42,18 @@ const MessagesPage = () => {
   const computedTopUpAmount = topUpMode === 'messages' ? topUpMessages * PRICE_PER_MESSAGE : topUpAmount;
   const computedTopUpMessages = topUpMode === 'amount' ? Math.floor(topUpAmount / PRICE_PER_MESSAGE) : topUpMessages;
 
+  // Wallet state
+  const [wallet, setWallet] = useState(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+
+  // Top-up flow state
+  const [isInitializingTopUp, setIsInitializingTopUp] = useState(false);
+  const [paystackRef, setPaystackRef] = useState('');
+  const [paystackAuthUrl, setPaystackAuthUrl] = useState('');
+  const [isVerifyingTopUp, setIsVerifyingTopUp] = useState(false);
+  const [topUpStatus, setTopUpStatus] = useState('');
+  const [topUpError, setTopUpError] = useState('');
+
   const { business } = useBusinessStore();
   const businessId = business?.id;
   // Pagination for selected customers list
@@ -57,7 +69,7 @@ const MessagesPage = () => {
     if (activeTab === 'history') {
       fetchMessageHistory();
     }
-    // Always refresh balance when business or tab changes
+    // Always refresh wallet when business or tab changes
     fetchBalance();
     // Ensure customers are refetched when business/tab changes so selected customers panel has fresh data
     try {
@@ -79,8 +91,31 @@ const MessagesPage = () => {
   };
 
   const fetchBalance = async () => {
-    // Balance is intentionally not connected to any service. Always show 0.
-    setBalance(0);
+    if (!businessId) {
+      setWallet(null);
+      setBalance(0);
+      return;
+    }
+    setWalletLoading(true);
+    try {
+      const result = await getMessageWallet(businessId);
+      if (result?.success) {
+        const payload = result.data?.data ?? result.data; // backend wraps in { message, data }
+        setWallet(payload || null);
+        const currentBalanceMsgs = (payload?.balanceMessages ?? 0);
+        // Derive approximate Naira value for display purposes
+        setBalance(currentBalanceMsgs * PRICE_PER_MESSAGE);
+      } else {
+        setWallet(null);
+        setBalance(0);
+      }
+    } catch (error) {
+      console.error('Error fetching message wallet:', error);
+      setWallet(null);
+      setBalance(0);
+    } finally {
+      setWalletLoading(false);
+    }
   };
 
   const [showResultModal, setShowResultModal] = useState(false);
@@ -94,6 +129,19 @@ const MessagesPage = () => {
     setIsLoading(true);
     try {
       let result;
+
+      // Pre-check wallet credits for selected customers to show top-up modal proactively
+      if (messageType !== 'all') {
+        const requiredCredits = selectedCustomers.length;
+        const availableCredits = wallet?.balanceMessages ?? 0;
+        if (requiredCredits > 0 && availableCredits < requiredCredits) {
+          setSendResult({ error: `Insufficient message credits. Required: ${requiredCredits}, Available: ${availableCredits}. Please top up your wallet.` });
+          setShowResultModal(true);
+          setShowTopUpModal(true);
+          setIsLoading(false);
+          return;
+        }
+      }
       
       if (messageType === 'all') {
         result = await sendBulkMessageToAll(businessId, message.trim());
@@ -112,10 +160,16 @@ const MessagesPage = () => {
         setShowResultModal(true);
         setMessage('');
         setSelectedCustomers([]);
+        // Refresh wallet balance after successful send
+        try { await fetchBalance(); } catch (e) { console.warn('Failed to refresh wallet after send', e); }
       } else {
         // Show error in modal
         setSendResult({ error: result.error });
         setShowResultModal(true);
+        // If backend indicates insufficient credits, open top-up modal automatically
+        if (/Insufficient message credits|INSUFFICIENT_CREDITS/i.test(result.error || '')) {
+          setShowTopUpModal(true);
+        }
       }
     } catch (error) {
       console.error('Error sending messages:', error);
@@ -213,6 +267,70 @@ const MessagesPage = () => {
     }
   };
 
+  const handleConfirmTopUp = async () => {
+    try {
+      setTopUpError('');
+      setTopUpStatus('');
+      setIsInitializingTopUp(true);
+
+      const amountNaira = computedTopUpAmount; // Naira
+      if (!amountNaira || amountNaira < PRICE_PER_MESSAGE) {
+        setTopUpError(`Amount must be at least ₦${PRICE_PER_MESSAGE}`);
+        setIsInitializingTopUp(false);
+        return;
+      }
+
+      const res = await initializeTopUp(amountNaira);
+      if (res?.success) {
+        const payload = res.data?.data ?? res.data; // ResponseHandler wraps data
+        const authUrl = payload?.authorization_url;
+        const ref = payload?.reference;
+        if (authUrl) setPaystackAuthUrl(authUrl);
+        if (ref) setPaystackRef(ref);
+        setTopUpStatus('Top-up initialized. Please complete payment, then click Verify Top Up.');
+        try { if (authUrl) window.open(authUrl, '_blank'); } catch (e) {}
+      } else {
+        setTopUpError(res?.error || 'Failed to initialize top-up');
+      }
+    } catch (e) {
+      console.error('Initialize top-up error:', e);
+      setTopUpError('Failed to initialize top-up. Please try again.');
+    } finally {
+      setIsInitializingTopUp(false);
+    }
+  };
+
+  const handleVerifyTopUp = async () => {
+    try {
+      setTopUpError('');
+      setTopUpStatus('');
+      setIsVerifyingTopUp(true);
+
+      if (!paystackRef) {
+        setTopUpError('Missing payment reference.');
+        setIsVerifyingTopUp(false);
+        return;
+      }
+
+      const res = await verifyTopUp(paystackRef);
+      if (res?.success) {
+        const msg = res.data?.message || 'Top-up verified successfully.';
+        setTopUpStatus(msg);
+        await fetchBalance();
+        // Reset reference and auth URL after successful verification
+        setPaystackAuthUrl('');
+        setPaystackRef('');
+      } else {
+        setTopUpError(res?.error || 'Failed to verify top-up');
+      }
+    } catch (e) {
+      console.error('Verify top-up error:', e);
+      setTopUpError('Failed to verify top-up. Please try again.');
+    } finally {
+      setIsVerifyingTopUp(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -225,9 +343,11 @@ const MessagesPage = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 shadow-sm">
               <Wallet className="w-4 h-4 text-emerald-700" />
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-emerald-700">Balance</span>
-                <span className="text-2xl font-bold text-emerald-800">₦0</span>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
+                <Wallet className="w-4 h-4 text-emerald-700" />
+                <span className="text-xs text-emerald-700">Balance:</span>
+                <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span>
+                <span className="ml-2 text-xs text-gray-600">{wallet?.balanceMessages ?? 0} messages</span>
               </div>
             </div>
             <button
@@ -240,6 +360,7 @@ const MessagesPage = () => {
           </div>
         </div>
       </div>
+
       {/* Top Up Modal */}
       {showTopUpModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -298,21 +419,47 @@ const MessagesPage = () => {
               </div>
             )}
 
-            <div className="mt-6 flex items-center justify-end">
-              <button
-                onClick={() => {
-                  // Instead of simulating balance, just close and refresh actual balance
-                  setShowTopUpModal(false);
-                  // fetchBalance(); // Removed to keep balance fixed at 0
-                }}
-                className="px-4 py-2 bg-[#6d0e2b] text-white rounded-lg hover:opacity-90 transition-colors"
-              >
-                Confirm Top Up
-              </button>
+            {topUpError && (
+              <div className="mt-4 text-sm text-red-600">{topUpError}</div>
+            )}
+            {topUpStatus && (
+              <div className="mt-2 text-sm text-green-700">{topUpStatus}</div>
+            )}
+
+            <div className="mt-6 flex items-center justify-end gap-2">
+              {paystackAuthUrl && (
+                <button
+                  onClick={() => {
+                    try { window.open(paystackAuthUrl, '_blank'); } catch (e) {}
+                  }}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  Open Payment Page
+                </button>
+              )}
+              {paystackRef && (
+                <button
+                  onClick={handleVerifyTopUp}
+                  disabled={isVerifyingTopUp}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
+                >
+                  {isVerifyingTopUp ? 'Verifying...' : 'Verify Top Up'}
+                </button>
+              )}
+              {!paystackRef && (
+                <button
+                  onClick={handleConfirmTopUp}
+                  disabled={isInitializingTopUp}
+                  className="px-4 py-2 bg-[#6d0e2b] text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
+                >
+                  {isInitializingTopUp ? 'Initializing...' : 'Confirm Top Up'}
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
+
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8">
@@ -620,8 +767,8 @@ const MessagesPage = () => {
               <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
                 <Wallet className="w-4 h-4 text-emerald-700" />
                 <span className="text-xs text-emerald-700">Balance:</span>
-                <span className="text-sm font-bold text-emerald-800">₦0</span>
-                <span className="ml-2 text-xs text-gray-600">0/0 messages</span>
+                <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span>
+                <span className="ml-2 text-xs text-gray-600">{wallet?.balanceMessages ?? 0} messages</span>
               </div>
             </div>
             <div className="space-y-4">
