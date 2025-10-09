@@ -422,7 +422,7 @@ const PurchaseReceiptUpload = () => {
 
   const isProcessing = processingProgress > 0 || recordPurchaseMutation.isPending;
 
-  // Loading state
+  // Loading states
   if (isLoadingBranch) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
