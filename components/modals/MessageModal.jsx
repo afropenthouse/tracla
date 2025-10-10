@@ -211,11 +211,11 @@ const MessageModal = ({ isOpen, onClose, customer, onSend }) => {
 
           {/* Balance row moved below message for clearer layout - single horizontal line */}
           <div className="mb-4">
-            <div className="flex items-center gap-4 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 w-full">
+            <div className="flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 w-full">
               <Wallet className="w-4 h-4 text-emerald-700" />
-              <span className="text-xs text-emerald-700">Balance</span>
+              <span className="text-xs text-emerald-700">Balance:</span>
               <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span>
-              <span className="ml-auto text-xs text-gray-600">{wallet?.balanceMessages ?? 0} messages</span>
+              <span className="ml-auto text-xs text-gray-600">{(wallet?.balanceMessages ?? 0).toLocaleString()}/{(wallet?.totalTopUpMsgs ?? (wallet?.balanceMessages ?? 0)).toLocaleString()} messages</span>
             </div>
           </div>
 

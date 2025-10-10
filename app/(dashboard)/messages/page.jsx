@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  MessageSquare, Send, Users, Clock, CheckCircle, XCircle,
-  Loader2, Filter, Search, Calendar, RefreshCw, AlertCircle, Wallet, X, PlusCircle
+  MessageSquare, Send, Users, CheckCircle, XCircle,
+  Loader2, Search, Wallet, X, PlusCircle
 } from 'lucide-react';
-import { sendBulkMessage, sendBulkMessageToAll, getMessageHistory, getMessageWallet, initializeTopUp, verifyTopUp } from '@/lib/api';
+import { sendBulkMessage, sendBulkMessageToAll, /* getMessageHistory, */ getMessageWallet, initializeTopUp, verifyTopUp } from '@/lib/api';
 import { useCustomersData } from '@/lib/queries/branch';
 import { useBusinessStore } from '@/store/store';
 
@@ -15,13 +15,14 @@ const MessagesPage = () => {
   const [message, setMessage] = useState('');
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [messageHistory, setMessageHistory] = useState([]);
-  const [historyFilters, setHistoryFilters] = useState({
-    status: '',
-    dateFrom: '',
-    dateTo: '',
-    search: ''
-  });
+  // Removed Message History state
+  // const [messageHistory, setMessageHistory] = useState([]);
+  // const [historyFilters, setHistoryFilters] = useState({
+  //   status: '',
+  //   dateFrom: '',
+  //   dateTo: '',
+  //   search: ''
+  // });
 
   // Top spenders filters
   const [spenderFilters, setSpenderFilters] = useState({
@@ -59,16 +60,25 @@ const MessagesPage = () => {
   // Pagination for selected customers list
   const [customersPage, setCustomersPage] = useState(1);
   const CUSTOMERS_PER_PAGE = 10;
-
-  const { data: customersResponse, isLoading: customersLoading, error: customersError, refetch: refetchCustomers } = useCustomersData({ page: customersPage, limit: CUSTOMERS_PER_PAGE });
+  // Debounce search to avoid excessive network calls while keeping instant UI filtering
+  const [debouncedSpenderSearch, setDebouncedSpenderSearch] = useState(spenderFilters.search);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSpenderSearch(spenderFilters.search), 400);
+    return () => clearTimeout(t);
+  }, [spenderFilters.search]);
+  // When searching by phone, fetch a larger page so results span across all pages
+  const customersLimit = debouncedSpenderSearch ? 1000 : CUSTOMERS_PER_PAGE;
+  const { data: customersResponse, isLoading: customersLoading, error: customersError, refetch: refetchCustomers } = useCustomersData({ page: customersPage, limit: customersLimit, search: debouncedSpenderSearch, scope: 'business' });
+  // Reset to first page whenever debounced search changes
+  useEffect(() => {
+    setCustomersPage(1);
+  }, [debouncedSpenderSearch]);
   // Use backend customers directly. If the API returns no customers, show an empty list.
   const sourceCustomers = customersResponse?.customers || [];
 
   useEffect(() => {
     if (!businessId) return;
-    if (activeTab === 'history') {
-      fetchMessageHistory();
-    }
+    // removed: history fetch
     // Always refresh wallet when business or tab changes
     fetchBalance();
     // Ensure customers are refetched when business/tab changes so selected customers panel has fresh data
@@ -78,17 +88,6 @@ const MessagesPage = () => {
       console.error('Failed to refetch customers on business/tab change', e);
     }
   }, [activeTab, businessId]);
-
-  const fetchMessageHistory = async () => {
-    try {
-      const result = await getMessageHistory(businessId, historyFilters);
-      if (result.success) {
-        setMessageHistory(result.data.messages || []);
-      }
-    } catch (error) {
-      console.error('Error fetching message history:', error);
-    }
-  };
 
   const fetchBalance = async () => {
     if (!businessId) {
@@ -188,18 +187,7 @@ const MessagesPage = () => {
     );
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'sent':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'pending':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
-    }
-  };
+  // removed: getStatusIcon helper
 
   // Derive top spenders from actual customers data
   // Assume each customer has totalSpent, lastVisit, createdAt
@@ -341,13 +329,11 @@ const MessagesPage = () => {
             <p className="text-gray-600">Send bulk SMS messages to your customers</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 shadow-sm">
-              <Wallet className="w-4 h-4 text-emerald-700" />
-              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 shadow-sm">
+              <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-emerald-50 border border-emerald-200">
                 <Wallet className="w-4 h-4 text-emerald-700" />
-                <span className="text-xs text-emerald-700">Balance:</span>
-                <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span>
-                <span className="ml-2 text-xs text-gray-600">{wallet?.balanceMessages ?? 0} messages</span>
+                <span className="text-xs text-emerald-700">Balance: <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span></span>
+                <span className="ml-2 text-xs text-gray-600">{(wallet?.balanceMessages ?? 0).toLocaleString()}/{(wallet?.totalTopUpMsgs ?? (wallet?.balanceMessages ?? 0)).toLocaleString()} messages</span>
               </div>
             </div>
             <button
@@ -474,17 +460,6 @@ const MessagesPage = () => {
             <Send className="w-4 h-4 inline mr-2" />
             Send Messages
           </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'history'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Clock className="w-4 h-4 inline mr-2" />
-            Message History
-          </button>
         </nav>
       </div>
 
@@ -591,39 +566,44 @@ const MessagesPage = () => {
               {messageType === 'topspenders' && (
                 <div className="mt-4 space-y-4">
                   <h4 className="text-sm font-medium text-gray-700">Filter Selected Customers:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {/* First row: Search + Date range */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2.5 py-1.5">
                         <Search className="w-4 h-4 text-gray-500" />
                         <input
-                          type="text"
+                          type="tel"
                           value={spenderFilters.search}
                           onChange={(e) => setSpenderFilters({ ...spenderFilters, search: e.target.value })}
                           placeholder="Search phone"
-                          className="bg-transparent outline-none w-full"
+                          className="bg-transparent outline-none w-full text-sm"
                         />
                       </div>
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
                       <input
                         type="date"
                         value={spenderFilters.dateFrom}
                         onChange={(e) => setSpenderFilters({ ...spenderFilters, dateFrom: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm"
                       />
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
                       <input
                         type="date"
                         value={spenderFilters.dateTo}
                         onChange={(e) => setSpenderFilters({ ...spenderFilters, dateTo: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm"
                       />
                     </div>
-                    <div>
+                  </div>
+
+                  {/* Second row: Amount Range + Actions */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center mt-2">
+                    <div className="md:col-span-4">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Amount Range (₦)</label>
                       <div className="flex items-center gap-2">
                         <input
@@ -631,7 +611,7 @@ const MessagesPage = () => {
                           value={spenderFilters.minAmount}
                           onChange={(e) => setSpenderFilters({ ...spenderFilters, minAmount: e.target.value })}
                           placeholder="Min"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          className="w-28 md:w-36 lg:w-44 px-3 py-2 border border-gray-300 rounded-lg text-sm"
                         />
                         <span className="text-gray-500">-</span>
                         <input
@@ -639,33 +619,43 @@ const MessagesPage = () => {
                           value={spenderFilters.maxAmount}
                           onChange={(e) => setSpenderFilters({ ...spenderFilters, maxAmount: e.target.value })}
                           placeholder="Max"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          className="w-28 md:w-36 lg:w-44 px-3 py-2 border border-gray-300 rounded-lg text-sm"
                         />
-
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex justify-end mb-2 gap-2">
-                    <button
-                      className="px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
-                      onClick={() => {
-                        // Select all customers currently shown (current page)
-                        const allIds = sourceCustomers.map((c) => c.id);
-                        setSelectedCustomers(allIds);
-                      }}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm"
-                      onClick={() => {
-                        setSpenderFilters({ dateFrom: '', dateTo: '', search: '', minAmount: '', maxAmount: '' });
-                        setSelectedCustomers([]);
-                      }}
-                    >
-                      Clear Filters
-                    </button>
+                    <div className="md:col-span-2 flex justify-end gap-2">
+                      <button
+                        className="px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
+                        onClick={() => {
+                          // Toggle select/deselect for currently visible (filtered) customers
+                          const visibleIds = (topSpenders || []).map((c) => c.id);
+                          const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedCustomers.includes(id));
+                          if (allSelected) {
+                            // Deselect only the currently visible ones
+                            setSelectedCustomers((prev) => prev.filter((id) => !visibleIds.includes(id)));
+                          } else {
+                            // Select all currently visible
+                            const merged = Array.from(new Set([...(selectedCustomers || []), ...visibleIds]));
+                            setSelectedCustomers(merged);
+                          }
+                        }}
+                      >
+                        {(() => {
+                          const visibleIds = (topSpenders || []).map((c) => c.id);
+                          const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedCustomers.includes(id));
+                          return allSelected ? 'Deselect' : 'Select All';
+                        })()}
+                      </button>
+                      <button
+                        className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm"
+                        onClick={() => {
+                          // Clear only date and amount range filters, keep search text intact
+                          setSpenderFilters({ ...spenderFilters, dateFrom: '', dateTo: '', minAmount: '', maxAmount: '' });
+                        }}
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">
@@ -766,9 +756,8 @@ const MessagesPage = () => {
               <h3 className="text-lg font-semibold text-gray-900">Compose Message</h3>
               <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
                 <Wallet className="w-4 h-4 text-emerald-700" />
-                <span className="text-xs text-emerald-700">Balance:</span>
-                <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span>
-                <span className="ml-2 text-xs text-gray-600">{wallet?.balanceMessages ?? 0} messages</span>
+                <span className="text-xs text-emerald-700">Balance: <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span></span>
+                <span className="ml-2 text-xs text-gray-600">{(wallet?.balanceMessages ?? 0).toLocaleString()}/{(wallet?.totalTopUpMsgs ?? (wallet?.balanceMessages ?? 0)).toLocaleString()} messages</span>
               </div>
             </div>
             <div className="space-y-4">
@@ -808,129 +797,6 @@ const MessagesPage = () => {
         </div>
       )}
 
-      {/* Message History Tab */}
-      {activeTab === 'history' && (
-        <div className="space-y-6">
-          {/* Filters */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={historyFilters.status}
-                  onChange={(e) => setHistoryFilters({ ...historyFilters, status: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">All</option>
-                  <option value="sent">Sent</option>
-                  <option value="failed">Failed</option>
-                  <option value="pending">Pending</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-                <input
-                  type="date"
-                  value={historyFilters.dateFrom}
-                  onChange={(e) => setHistoryFilters({ ...historyFilters, dateFrom: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                <input
-                  type="date"
-                  value={historyFilters.dateTo}
-                  onChange={(e) => setHistoryFilters({ ...historyFilters, dateTo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                  <Search className="w-4 h-4 text-gray-500" />
-                  <input
-                    type="text"
-                    value={historyFilters.search}
-                    onChange={(e) => setHistoryFilters({ ...historyFilters, search: e.target.value })}
-                    placeholder="Search phone"
-                    className="bg-transparent outline-none w-full"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end mt-4">
-              <button onClick={fetchMessageHistory} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" /> Refresh
-              </button>
-            </div>
-          </div>
-
-          {/* Message History Table */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone Number
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Message
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sent At
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sent By
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {messageHistory.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <p>No messages found</p>
-                        <p className="text-sm">Start sending messages to see them here</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    messageHistory.map((msg, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {msg.phoneNumber}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          <div className="max-w-xs truncate" title={msg.message}>
-                            {msg.message}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(msg.status)}
-                            <span className="capitalize">{msg.status}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(msg.sentAt).toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {msg.sentBy || 'System'}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Top Spenders Tab */}
       {false && activeTab === 'topspenders' && (

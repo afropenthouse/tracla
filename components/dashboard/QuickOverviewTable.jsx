@@ -1,15 +1,13 @@
 "use client"
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Users, ShoppingBag, Phone, Calendar, Clock, ArrowUpRight, 
-  TrendingUp, Eye, MessageSquare, Store, Zap, Star, Crown,
-  Activity, Gift, Receipt, Loader2, AlertCircle
+  Users, ShoppingBag, ArrowUpRight, 
+  TrendingUp, Store, Loader2, AlertCircle
 } from 'lucide-react';
 import { useRecentActivityData } from '@/lib/queries/branch';
 import Link from 'next/link';
 
 const VibeazyQuickOverviewTable = () => {
-  const [hoveredCustomer, setHoveredCustomer] = useState(null);
   const { data: recentActivityData, isLoading, error } = useRecentActivityData();
   
   const recentCustomersData = recentActivityData?.recentCustomers || [];
@@ -85,8 +83,6 @@ const VibeazyQuickOverviewTable = () => {
                 <div
                   key={customer.id}
                   className="group flex items-center justify-between p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/70 hover:shadow-md transition-all duration-300 cursor-pointer"
-                  onMouseEnter={() => setHoveredCustomer(customer.id)}
-                  onMouseLeave={() => setHoveredCustomer(null)}
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <div className="flex-1 min-w-0">
@@ -114,16 +110,7 @@ const VibeazyQuickOverviewTable = () => {
                       </div>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-1 transition-all duration-300 ${
-                    hoveredCustomer === customer.id ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
-                  }`}>
-                    <button className="p-1.5 hover:bg-red-50 rounded-lg transition-colors">
-                      <Eye size={12} className="text-[#6d0e2b]" />
-                    </button>
-                    <button className="p-1.5 hover:bg-red-50 rounded-lg transition-colors">
-                      <MessageSquare size={12} className="text-[#6d0e2b]" />
-                    </button>
-                  </div>
+                  {/* icons removed per UI change request */}
                 </div>
               ))
             )}

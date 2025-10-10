@@ -239,11 +239,7 @@ const OverviewCards = ({ data, isLoading, error }) => {
           {/* Animated background */}
           <div className="absolute inset-0 bg-[#6d0e2b]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
-          {/* Floating particles */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-4 -right-4 w-8 h-8 bg-[#6d0e2b]/10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-            <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-[#6d0e2b]/10 rounded-full group-hover:scale-150 transition-transform duration-700 delay-100"></div>
-          </div>
+          {/* decorative corner petals removed */}
           
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-4">
@@ -370,19 +366,8 @@ const TodayStats = ({ data, isLoading, error }) => {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="bg-white border border-white/40 shadow-lg rounded-xl p-3 sm:p-4 hover:scale-105 transition-all duration-300 group/card"
+              className="bg-white border border-white/40 shadow-lg rounded-xl p-3 sm:p-4 hover:scale-105 transition-all duration-300 group/card flex flex-col items-start"
             >
-              {/* Mobile layout: icon + number + label inline for sleek look */}
-              <div className="flex items-center gap-3 sm:hidden">
-                <div className="p-2 bg-[#6d0e2b]/10 rounded-lg">
-                  <stat.icon size={16} className="text-[#6d0e2b]" />
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-bold text-gray-900">{stat.value}</span>
-                  <span className="text-[11px] font-medium text-gray-600">{stat.title}</span>
-                </div>
-              </div>
-
               {/* Larger screens: original stacked layout */}
               <div className="hidden sm:flex items-center gap-3 mb-2">
                 <div className="p-2 bg-[#6d0e2b]/10 rounded-lg">
@@ -390,9 +375,19 @@ const TodayStats = ({ data, isLoading, error }) => {
                 </div>
                 <span className="text-xs font-semibold text-gray-600">{stat.title}</span>
               </div>
-              <p className="hidden sm:block text-lg font-bold text-gray-900 truncate">
-                {stat.value}
-              </p>
+
+              <div className="hidden sm:block">
+                <p className="text-lg font-bold text-gray-900 truncate">{stat.value}</p>
+              </div>
+
+              {/* Mobile stacked: icon + value centered with title beneath */}
+              <div className="sm:hidden mt-2 w-full flex flex-col items-center">
+                <div className="p-2 bg-[#6d0e2b]/10 rounded-lg mb-2">
+                  <stat.icon size={16} className="text-[#6d0e2b]" />
+                </div>
+                <p className="text-lg font-bold text-gray-900 text-center">{stat.value}</p>
+                <p className="text-xs text-gray-600 text-center mt-1">{stat.title}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -530,12 +525,11 @@ const VibEazyOverview = () => {
   
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-gradient-to-br from-slate-50 via-rose-50/30 to-orange-50/20 overflow-x-hidden">
-      <div className="max-w-7xl mx-auto">
+      {/* Mobile-centered phone-width wrapper: centered on small screens, expands on larger viewports */}
+      <div className="mx-auto w-full max-w-[420px] sm:max-w-3xl md:max-w-5xl lg:max-w-7xl">
         {/* Enhanced Header with Context */}
-        <div className="mb-6 sm:mb-8 bg-white/90 backdrop-blur-xl border border-white/40 shadow-xl rounded-2xl p-4 sm:p-6 relative z-30 group hover:shadow-2xl transition-all duration-500">
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#6d0e2b]/5 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700"></div>
-          
+  <div className="mb-6 sm:mb-8 bg-white/90 backdrop-blur-xl border border-white/40 shadow-xl rounded-2xl p-4 sm:p-6 relative z-30 group hover:shadow-2xl transition-all duration-500">
+          {/* header decorative background removed */}
           <div className="relative z-10">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
               <div className="flex items-center gap-4">

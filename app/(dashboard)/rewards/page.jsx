@@ -1,6 +1,6 @@
 'use client'
 import React, { useMemo, useState, useEffect } from 'react';
-import { Gift, Plus, Trash2, Edit, Search, X, Send } from 'lucide-react';
+import { Gift, Trash2, Edit, Search, X, Send } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBusinessStore } from "@/store/store";
 import { getRewards as getRewardsApi, createRewardApi, updateRewardApi, deleteRewardApi } from "@/lib/api";
@@ -95,14 +95,15 @@ export default function RewardsPage() {
       alert('Please select a business to create rewards.');
       return;
     }
-
-    const points = Number(newReward.points);
-
-    if (!newReward.label.trim() || Number.isNaN(points) || points <= 0) {
+  
+    const amount = Number(newReward.points);
+    const points = Math.floor(amount / 100);
+  
+    if (!newReward.label.trim() || Number.isNaN(amount) || amount <= 0 || points <= 0) {
       alert('Please fill in all required fields with valid data');
       return;
     }
-
+  
     const payload = {
       label: newReward.label.trim(),
       description: newReward.description.trim() || undefined,
@@ -110,7 +111,7 @@ export default function RewardsPage() {
       validFrom: newReward.validFrom || undefined,
       validTo: newReward.validTo || undefined,
     };
-
+  
     createRewardMutation.mutate(payload, {
       onSuccess: () => {
         setNewReward({ label: '', points: '', description: '', validFrom: '', validTo: '' });
@@ -213,9 +214,9 @@ export default function RewardsPage() {
             <input 
               type="text" 
               label="Label"
-              placeholder="Label *" 
+              placeholder="Label (e.g 20% off)" 
               value={newReward.label} 
-              onChange={(e) => setNewReward({ ...newReward, label: e.target.value })} 
+              onChange={(e) => setNewReward({ ...newReward, label: e.target.value.toUpperCase() })} 
               className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
             />
             <div className="relative pb-8">
@@ -225,7 +226,7 @@ export default function RewardsPage() {
                 pattern="\\d*"
                 min="1"
                 step="1"
-                placeholder="Points required *" 
+                placeholder="Enter amount to spend to get reward" 
                 value={newReward.points} 
                 onChange={(e) => {
                   const sanitized = e.target.value.replace(/[^0-9]/g, '');
@@ -241,13 +242,13 @@ export default function RewardsPage() {
               />
               {Number(newReward.points) > 0 && (
                 <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-sm p-2 text-xs text-gray-700">
-                  Estimated purchase amount: ₦{(Number(newReward.points) * 100).toLocaleString('en-NG')}
+                  Estimated points: {Math.floor(Number(newReward.points) / 100)} pts
                 </div>
               )}
             </div>
             <input 
               type="text" 
-              placeholder="Description" 
+              placeholder="Description (e.g, Food, drinks, e.t.c)" 
               value={newReward.description} 
               onChange={(e) => setNewReward({ ...newReward, description: e.target.value })} 
               className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
@@ -274,9 +275,9 @@ export default function RewardsPage() {
             </div>
             <button 
               onClick={createReward} 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#6d0e2b] text-white text-sm hover:opacity-90"
+              className="flex justify-center px-3 py-1.5 rounded-md bg-[#6d0e2b] text-white text-sm hover:opacity-90 mx-auto text-center mt-4"
             >
-              <Plus size={16} /> Create
+              Create
             </button>
           </div>
         </div>
@@ -295,7 +296,7 @@ export default function RewardsPage() {
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{reward.label}</p>
                     <p className="text-xs text-gray-600">{reward.description}</p>
-                    <p className="text-xs text-[#6d0e2b] font-semibold">{reward.points} pts</p>
+                    <p className="text-xs text-[#6d0e2b] font-semibold">₦{(reward.points * 100).toLocaleString('en-NG')}/{reward.points} pts</p>
                     {(reward.validFrom || reward.validTo) && (
                       <p className="text-xs text-gray-500">
                         Valid: {formatDateShort(reward.validFrom)} to {formatDateShort(reward.validTo)}
@@ -383,9 +384,9 @@ export default function RewardsPage() {
                     className="w-full rounded-md border px-3 py-2 text-sm mt-1" 
                   />
                   {Number(editForm.points) > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-sm p-2 text-xs text-gray-700">
-                      Estimated purchase amount: ₦{(Number(editForm.points) * 100).toLocaleString('en-NG')}
-                    </div>
+                    <p className="text-xs text-gray-600">
+                      Estimated amount: ₦{(Number(editForm.points) * 100).toLocaleString('en-NG')}
+                    </p>
                   )}
                 </div>
               </div>
