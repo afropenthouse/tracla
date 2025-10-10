@@ -69,7 +69,21 @@ const MessageModal = ({ isOpen, onClose, customer, onSend }) => {
 
     setIsLoading(true);
     try {
-      const payloadMessage = message.trim();
+      // Normalize text to avoid unsupported SMS characters (e.g., curly quotes becoming ?)
+      const normalize = (s) => (s || '')
+        .replace(/[’‘]/g, "'")
+        .replace(/[“”]/g, '"')
+        .replace(/[–—]/g, '-')
+        .replace(/\u00A0/g, ' ');
+      const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      const businessNameRaw = business?.name?.trim() || '';
+      const businessName = normalize(businessNameRaw);
+      const baseMessage = normalize(message.trim());
+      const prefixRegex = businessName ? new RegExp(`^\\s*${escapeRegExp(businessName)}\\s*:`, 'i') : null;
+      const alreadyPrefixed = prefixRegex ? prefixRegex.test(baseMessage) : false;
+      const payloadMessage = alreadyPrefixed ? baseMessage : `${businessName ? `${businessName}: ` : ''}${baseMessage}`;
+
       if (onSend) {
         await onSend(customer, payloadMessage);
       } else {

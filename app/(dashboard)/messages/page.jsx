@@ -36,7 +36,7 @@ const MessagesPage = () => {
   // Top Up state for purchasing message credits (₦10 per message)
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpMode, setTopUpMode] = useState('messages'); // 'messages' | 'amount'
-  const [topUpMessages, setTopUpMessages] = useState(100);
+  const [topUpMessages] = useState(100);
   const [topUpAmount, setTopUpAmount] = useState(1000);
   const [balance, setBalance] = useState(0);
   const PRICE_PER_MESSAGE = 10; // ₦10 per message
@@ -129,6 +129,21 @@ const MessagesPage = () => {
     try {
       let result;
 
+      // Normalize text to avoid unsupported SMS characters (e.g., curly quotes becoming ?)
+      const normalize = (s) => (s || '')
+        .replace(/[’‘]/g, "'")
+        .replace(/[“”]/g, '"')
+        .replace(/[–—]/g, '-')
+        .replace(/\u00A0/g, ' ');
+      const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      const businessNameRaw = business?.name?.trim() || '';
+      const businessName = normalize(businessNameRaw);
+      const baseMessage = normalize(message.trim());
+      const prefixRegex = businessName ? new RegExp(`^\\s*${escapeRegExp(businessName)}\\s*:`, 'i') : null;
+      const alreadyPrefixed = prefixRegex ? prefixRegex.test(baseMessage) : false;
+      const payloadMessage = alreadyPrefixed ? baseMessage : `${businessName ? `${businessName}: ` : ''}${baseMessage}`;
+
       // Pre-check wallet credits for selected customers to show top-up modal proactively
       if (messageType !== 'all') {
         const requiredCredits = selectedCustomers.length;
@@ -143,14 +158,14 @@ const MessagesPage = () => {
       }
       
       if (messageType === 'all') {
-        result = await sendBulkMessageToAll(businessId, message.trim());
+        result = await sendBulkMessageToAll(businessId, payloadMessage);
       } else {
         if (selectedCustomers.length === 0) {
           alert('Please select at least one customer');
           setIsLoading(false);
           return;
         }
-        result = await sendBulkMessage(businessId, selectedCustomers, message.trim());
+        result = await sendBulkMessage(businessId, selectedCustomers, payloadMessage);
       }
 
       if (result.success) {
