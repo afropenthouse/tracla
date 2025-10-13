@@ -733,7 +733,7 @@ const PurchaseReceiptUpload = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
-                      ₦{recordPurchaseMutation.data.data.customer.totalSpent?.toLocaleString()}
+                      ₦{Number(recordPurchaseMutation.data.data.customer.totalSpent ?? 0).toLocaleString('en-NG', { maximumFractionDigits: 0, minimumFractionDigits: 0 })}
                     </div>
                     <div className="text-xs text-gray-600">Total Spent</div>
                   </div>
@@ -790,7 +790,8 @@ const PurchaseReceiptUpload = () => {
                         <span className="font-medium text-green-800">All Rewards Achieved! 🎉</span>
                       </div>
                       <p className="text-sm text-green-700 mb-3">
-                        You've unlocked all available rewards! Visit the store to claim your rewards.
+-                        You've unlocked all available rewards! Visit the store to claim your rewards.
++                        {`Congrats! You've received a ${availableRewards.length > 0 ? availableRewards[availableRewards.length - 1].label : ''} reward! Show this message at the counter to claim your rewards. Valid for a limited time — redeem now!`}
                       </p>
                       <div className="space-y-2">
                         {availableRewards.map((reward, index) => (
