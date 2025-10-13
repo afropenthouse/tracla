@@ -4,7 +4,7 @@ import {
   MessageSquare, Send, Users, CheckCircle, XCircle,
   Loader2, Search, Wallet, X, PlusCircle
 } from 'lucide-react';
-import { sendBulkMessage, sendBulkMessageToAll, /* getMessageHistory, */ getMessageWallet, initializeTopUp, verifyTopUp } from '@/lib/api';
+import { sendBulkMessage, sendBulkMessageToAll, /* getMessageHistory, */ getMessageWallet, initializeTopUp, verifyTopUp, sendMessageToExternalRecipients } from '@/lib/api';
 import { useCustomersData } from '@/lib/queries/branch';
 import { useBusinessStore } from '@/store/store';
 
@@ -15,6 +15,8 @@ const MessagesPage = () => {
   const [message, setMessage] = useState('');
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [externalRecipients, setExternalRecipients] = useState([]);
+  const [externalPhoneInput, setExternalPhoneInput] = useState('');
   // Removed Message History state
   // const [messageHistory, setMessageHistory] = useState([]);
   // const [historyFilters, setHistoryFilters] = useState({
@@ -146,7 +148,7 @@ const MessagesPage = () => {
 
       // Pre-check wallet credits for selected customers to show top-up modal proactively
       if (messageType !== 'all') {
-        const requiredCredits = selectedCustomers.length;
+        const requiredCredits = messageType === 'external' ? externalRecipients.length : selectedCustomers.length;
         const availableCredits = wallet?.balanceMessages ?? 0;
         if (requiredCredits > 0 && availableCredits < requiredCredits) {
           setSendResult({ error: `Insufficient message credits. Required: ${requiredCredits}, Available: ${availableCredits}. Please top up your wallet.` });
@@ -159,6 +161,13 @@ const MessagesPage = () => {
       
       if (messageType === 'all') {
         result = await sendBulkMessageToAll(businessId, payloadMessage);
+      } else if (messageType === 'external') {
+        if (externalRecipients.length === 0) {
+          alert('Please add at least one external recipient');
+          setIsLoading(false);
+          return;
+        }
+        result = await sendMessageToExternalRecipients(businessId, externalRecipients, payloadMessage);
       } else {
         if (selectedCustomers.length === 0) {
           alert('Please select at least one customer');
@@ -520,7 +529,65 @@ const MessagesPage = () => {
                   />
                   <span className="ml-2 text-sm font-medium text-gray-700">Selected Customers</span>
                 </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="messageType"
+                    value="external"
+                    checked={messageType === 'external'}
+                    onChange={(e) => setMessageType(e.target.value)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm font-medium text-gray-700">External Numbers</span>
+                </label>
               </div>
+
+              {/* External Numbers input and list */}
+              {messageType === 'external' && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="tel"
+                      value={externalPhoneInput}
+                      onChange={(e) => setExternalPhoneInput(e.target.value)}
+                      placeholder="Enter Nigerian number e.g. 09012345678"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
+                      onClick={() => {
+                        const raw = (externalPhoneInput || '').trim();
+                        if (!raw) return;
+                        const digits = raw.replace(/\D/g, '');
+                        if (!/^0\d{10}$/.test(digits) && !/^0\d{9}$/.test(digits)) {
+                          alert('Please enter a valid Nigerian phone number starting with 0 (e.g., 09012345678)');
+                          return;
+                        }
+                        setExternalRecipients((prev) => (prev.includes(digits) ? prev : [...prev, digits]));
+                        setExternalPhoneInput('');
+                      }}
+                    >
+                      <PlusCircle className="w-4 h-4" /> Add recipient
+                    </button>
+                  </div>
+                  {externalRecipients.length > 0 && (
+                    <div className="mt-3">
+                      <div className="flex flex-wrap gap-2">
+                        {externalRecipients.map((pn) => (
+                          <span key={pn} className="inline-flex items-center gap-2 px-2 py-1 border border-gray-200 rounded-full text-sm">
+                            {pn}
+                            <button className="text-red-600" onClick={() => setExternalRecipients((prev) => prev.filter((x) => x !== pn))}>
+                              <X className="w-4 h-4" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-sm text-blue-600 mt-2">{externalRecipients.length} recipient(s) added</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Customer Selection */}
               {messageType === 'selected' && (
@@ -792,7 +859,7 @@ const MessagesPage = () => {
             <div className="flex justify-end">
               <button
                 onClick={handleSendMessage}
-                disabled={isLoading || !message.trim() || (messageType !== 'all' && selectedCustomers.length === 0)}
+                disabled={isLoading || !message.trim() || (messageType === 'external' ? externalRecipients.length === 0 : (messageType !== 'all' && selectedCustomers.length === 0))}
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isLoading ? (
