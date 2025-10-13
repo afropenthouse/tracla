@@ -750,6 +750,22 @@ const PurchaseReceiptUpload = () => {
                 const nextReward = rewardsData.nextReward;
                 const hasAchievedAll = rewardsData.hasAchievedAll;
 
+                // Show banner only when ALL rewards have just been achieved
+                const rewardAchievedMessage = rewardsData.rewardAchievedMessage;
+                if (hasAchievedAll && rewardAchievedMessage) {
+                  return (
+                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2 justify-center mb-2">
+                        <CheckCircle size={18} className="text-green-600" />
+                        <span className="font-medium text-green-800">All Rewards Achieved! 🎉</span>
+                      </div>
+                      <p className="text-sm text-green-700 text-center">
+                        {rewardAchievedMessage}
+                      </p>
+                    </div>
+                  );
+                }
+
                 // If no rewards are set up
                 if (availableRewards.length === 0) {
                   return (

@@ -2,13 +2,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Receipt, Search, MoreVertical, Eye, Users, ChevronDown, Check, FileText, 
-  FileSpreadsheet, Filter, RefreshCw, Calendar, ShoppingBag, Loader2, AlertCircle, Store, BarChart3, ArrowUpDown
+  FileSpreadsheet, Filter, RefreshCw, Calendar, ShoppingBag, Loader2, AlertCircle, Store, BarChart3, ArrowUpDown, MessageSquare
 } from 'lucide-react';
 import { RxCaretDown, RxCaretSort, RxCaretUp } from 'react-icons/rx';
 import { FaAngleLeft, FaAngleRight } from 'react-icons/fa';
 import { usePurchasesData } from '@/lib/queries/branch';
 import { useBranchStore, useBusinessStore } from '@/store/store';
 import { useCustomerDetailsModalStore } from '@/store/modalStore';
+import MessageModal from '@/components/modals/MessageModal';
+import { sendSingleMessage } from '@/lib/api';
+import { useToastStore } from '@/store/toastStore';
 
 // Header Cell Component
 const HeaderCell = ({ text, hasSort = false, onSort, sortBy, order }) => {
@@ -53,6 +56,7 @@ const ActionDropdown = ({ item, onAction }) => {
   
   const actions = [
     { id: 'viewCustomer', label: 'View Customer', icon: Eye, color: 'text-red-600' },
+    { id: 'sendMessage', label: 'Send a message', icon: MessageSquare, color: 'text-green-600' }
     // { id: 'viewReceipt', label: 'View Receipt', icon: Receipt, color: 'text-gray-700' }
   ];
   
@@ -138,6 +142,13 @@ const PurchaseCard = ({ purchase, onAction, formatCurrency, formatDate, formatTi
           <Users size={14} />
           View Customer
         </button>
+        <button
+          onClick={() => onAction('sendMessage', purchase)}
+          className="flex items-center gap-2 px-3 py-1.5 text-green-700 border border-green-700 rounded-lg text-sm hover:bg-green-700 hover:text-white transition-colors cursor-pointer"
+        >
+          <MessageSquare size={14} />
+          Send a message
+        </button>
       </div>
     </div>
   );
@@ -149,6 +160,7 @@ const PurchasesPage = () => {
   const { currentBranch } = useBranchStore();
   const { business } = useBusinessStore();
   const { onOpen: openCustomerModal } = useCustomerDetailsModalStore();
+  const { showSuccess, showError } = useToastStore();
   
   // UI state
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -157,6 +169,10 @@ const PurchasesPage = () => {
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(1);
   const sortRef = useRef(null);
+  
+  // Message modal state
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [messageCustomer, setMessageCustomer] = useState(null);
   
 
   
@@ -267,8 +283,39 @@ const PurchasesPage = () => {
       
       console.log('Opening customer modal with data:', customerData);
       openCustomerModal(customerData);
+    } else if (action === 'sendMessage') {
+      // Prepare minimal customer data for messaging
+      const customerForMessage = {
+        id: item.customerId,
+        phoneNumber: item.customerPhone,
+        branchId: item.branchId,
+        branchName: item.branchName,
+      };
+      setMessageCustomer(customerForMessage);
+      setIsMessageModalOpen(true);
     } else if (action === 'viewReceipt') {
       alert(`View receipt for purchase by ${item.customerPhone}`);
+    }
+  };
+
+  // Send single message (MessageModal invokes this; MessageModal adds business prefix consistently)
+  const handleSendSingleMessage = async (customer, message) => {
+    try {
+      const businessId = business?.id;
+      if (!businessId) {
+        showError('Business ID not found. Please log in again.');
+        return;
+      }
+      const result = await sendSingleMessage(businessId, customer?.id, message);
+      if (result?.success) {
+        showSuccess('Message sent successfully');
+        setIsMessageModalOpen(false);
+      } else {
+        showError(`Failed to send message: ${result?.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to send single message:', error);
+      showError('Failed to send message. Please try again.');
     }
   };
   
@@ -312,7 +359,8 @@ const PurchasesPage = () => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
   return (
-    <div className="min-h-screen p-3 sm:p-4 md:p-6">
+    <>
+      <div className="min-h-screen p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         
         {/* Header */}
@@ -640,13 +688,9 @@ const PurchasesPage = () => {
                     </div>
                   )}
                   <div className="text-center">
-                    <button
-                      onClick={() => handleAction('viewCustomer', purchase)}
-                      className="flex items-center gap-2 px-3 py-1.5 text-[#6c0f2a] border border-[#6c0f2a] rounded-lg text-sm hover:bg-[#6c0f2a] hover:text-white transition-colors cursor-pointer"
-                    >
-                      <Users size={14} />
-                      View Customer
-                    </button>
+                    <div className="flex justify-center">
+                      <ActionDropdown item={purchase} onAction={handleAction} />
+                    </div>
                   </div>
                 </div>
               ))
@@ -719,6 +763,14 @@ const PurchasesPage = () => {
         </div>
       </div>
     </div>
+    {/* Message Modal inside component */}
+    <MessageModal
+      isOpen={isMessageModalOpen}
+      onClose={() => setIsMessageModalOpen(false)}
+      customer={messageCustomer}
+      onSend={handleSendSingleMessage}
+    />
+    </>
   );
 };
 

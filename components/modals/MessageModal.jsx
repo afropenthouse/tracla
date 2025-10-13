@@ -147,6 +147,10 @@ const MessageModal = ({ isOpen, onClose, customer, onSend }) => {
         setTopUpStatus('Top up verified successfully. Your wallet has been credited.');
         setPaystackRef('');
         setPaystackAuthUrl('');
+        
+        //To clear modal after top up is verified
+        setShowTopUpModal(false);
+        showSuccess?.('Top up verified successfully. Your wallet has been credited.');
         // Refresh wallet
         try {
           const result = await getMessageWallet(business.id);

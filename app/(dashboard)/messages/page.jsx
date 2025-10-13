@@ -323,6 +323,8 @@ const MessagesPage = () => {
         // Reset reference and auth URL after successful verification
         setPaystackAuthUrl('');
         setPaystackRef('');
+        setShowTopUpModal(false);
+        // Optionally, show a brief confirmation somewhere (toast if available)
       } else {
         setTopUpError(res?.error || 'Failed to verify top-up');
       }
@@ -344,12 +346,10 @@ const MessagesPage = () => {
             <p className="text-gray-600">Send bulk SMS messages to your customers</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 shadow-sm">
-              <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-emerald-50 border border-emerald-200">
-                <Wallet className="w-4 h-4 text-emerald-700" />
-                <span className="text-xs text-emerald-700">Balance: <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span></span>
-                <span className="ml-2 text-xs text-gray-600">{(wallet?.balanceMessages ?? 0).toLocaleString()}/{(wallet?.totalTopUpMsgs ?? (wallet?.balanceMessages ?? 0)).toLocaleString()} messages</span>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
+              <Wallet className="w-4 h-4 text-emerald-700" />
+              <span className="text-xs text-emerald-700">Balance: <span className="text-sm font-bold text-emerald-800">₦{(balance || 0).toLocaleString()}</span></span>
+              <span className="ml-2 text-xs text-gray-600">{(wallet?.balanceMessages ?? 0).toLocaleString()}/{(wallet?.totalTopUpMsgs ?? (wallet?.balanceMessages ?? 0)).toLocaleString()} messages</span>
             </div>
             <button
               onClick={() => setShowTopUpModal(true)}

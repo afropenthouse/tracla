@@ -1,6 +1,6 @@
 'use client'
-import React, { useMemo, useState, useEffect } from 'react';
-import { Gift, Trash2, Edit, Search, X, Send } from 'lucide-react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { Gift, Trash2, Edit, Search, X, Sparkles, Trophy, Calendar, Tag } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBusinessStore } from "@/store/store";
 import { getRewards as getRewardsApi, createRewardApi, updateRewardApi, deleteRewardApi } from "@/lib/api";
@@ -19,6 +19,7 @@ export default function RewardsPage() {
     const suffix = isTeen ? 'th' : last === 1 ? 'st' : last === 2 ? 'nd' : last === 3 ? 'rd' : 'th';
     return `${day}${suffix}-${month}-${year}`;
   };
+
   // Rewards CRUD (now backed by API)
   const [rewards, setRewards] = useState([]);
   const [newReward, setNewReward] = useState({ 
@@ -44,9 +45,12 @@ export default function RewardsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Reward messaging state
-  const [isRewardMessageOpen, setIsRewardMessageOpen] = useState(false);
-  const [selectedReward, setSelectedReward] = useState(null);
-  const [rewardMessage, setRewardMessage] = useState('');
+  // Remove reward messaging state
+  // const [isRewardMessageOpen, setIsRewardMessageOpen] = useState(false);
+  // const [selectedReward, setSelectedReward] = useState(null);
+  // const [rewardMessage, setRewardMessage] = useState('');
+  const [showSuggestion, setShowSuggestion] = useState(false);
+  const amountFieldRef = useRef(null);
 
   // Replace localStorage with backend-powered fetching
   const { business } = useBusinessStore();
@@ -63,6 +67,16 @@ export default function RewardsPage() {
     const list = rewardsResponse?.data || [];
     setRewards(Array.isArray(list) ? list : []);
   }, [rewardsResponse]);
+
+  useEffect(() => {
+    const onDocMouseDown = (e) => {
+      if (amountFieldRef.current && !amountFieldRef.current.contains(e.target)) {
+        setShowSuggestion(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => document.removeEventListener('mousedown', onDocMouseDown);
+  }, []);
 
   const createRewardMutation = useMutation({
     mutationFn: (payload) => createRewardApi(businessId, payload),
@@ -93,6 +107,12 @@ export default function RewardsPage() {
   const createReward = () => {
     if (!businessId) {
       alert('Please select a business to create rewards.');
+      return;
+    }
+  
+    // Prevent creating more than one reward at a time
+    if (Array.isArray(rewards) && rewards.length > 0) {
+      alert('You already have a reward. Edit or delete the existing reward before creating a new one.');
       return;
     }
   
@@ -166,203 +186,266 @@ export default function RewardsPage() {
     deleteRewardMutation.mutate(deleteConfirm.id);
   };
 
-  // Send reward message (simulated)
-  const sendRewardMessage = () => {
-    if (!rewardMessage.trim()) {
-      alert('Please enter a message');
-      return;
-    }
-
-    // Simulate sending message
-    console.log(`Sending message for reward ${selectedReward.label}:`, rewardMessage);
-    alert('Message sent successfully!');
-    
-    // Close modal and reset
-    setIsRewardMessageOpen(false);
-    setSelectedReward(null);
-    setRewardMessage('');
-  };
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#6d0e2b] flex items-center justify-center shadow-md">
-            <Gift className="text-white" size={20} />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Rewards</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Create and manage customer rewards</p>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#6d0e2b] to-[#8a1a3d] flex items-center justify-center shadow-lg">
+                <Gift className="text-white" size={24} />
+              </div>
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-sm">
+                <Sparkles className="text-white" size={10} />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Rewards</h1>
+              <p className="text-sm text-gray-600 mt-1">Create and manage customer rewards</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Points Info */}
-      <div className="mb-4">
-        <h2 className="text-xs sm:text-sm font-semibold text-gray-800">
-          ₦1000 = 10 points
-        </h2>
-      </div>
 
-      {/* Rewards CRUD */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Create Reward */}
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2">Create Reward</h3>
-          <div className="space-y-2">
-            <input 
-              type="text" 
-              label="Label"
-              placeholder="Label (e.g 20% off)" 
-              value={newReward.label} 
-              onChange={(e) => setNewReward({ ...newReward, label: e.target.value.toUpperCase() })} 
-              className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
-            />
-            <div className="relative pb-8">
-              <input 
-                type="number" 
-                inputMode="numeric"
-                pattern="\\d*"
-                min="1"
-                step="1"
-                placeholder="Enter amount to spend to get reward" 
-                value={newReward.points} 
-                onChange={(e) => {
-                  const sanitized = e.target.value.replace(/[^0-9]/g, '');
-                  setNewReward({ ...newReward, points: sanitized });
-                }} 
-                onKeyDown={(evt) => {
-                  const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
-                  if (!/[0-9]/.test(evt.key) && !allowed.includes(evt.key)) {
-                    evt.preventDefault();
-                  }
-                }}
-                className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
-              />
-              {Number(newReward.points) > 0 && (
-                <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-sm p-2 text-xs text-gray-700">
-                  Estimated points: {Math.floor(Number(newReward.points) / 100)} pts
+        {/* Points Info Card */}
+        <div className="bg-gradient-to-r from-[#6d0e2b] to-[#8a1a3d] rounded-2xl p-6 text-white shadow-lg mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Trophy className="text-amber-300" size={24} />
+              <div>
+                <h2 className="text-lg font-semibold">Create Your Special Reward</h2>
+                {/* <p className="text-amber-100 text-sm">₦1,000 = 10 reward points</p> */}
+                <p className="text-amber-200 text-xs mt-1">Note: You can only create one reward at a time.</p>
+              </div>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+              <p className="text-sm font-medium">Active Rewards: <span className="text-amber-300">{rewards.length}</span></p>
+            </div>
+          </div>
+        </div>
+
+        {/* Rewards CRUD */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Create Reward Card */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <Tag className="text-white" size={16} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Create a Reward</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Reward Label *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g., 20% OFF" 
+                  value={newReward.label} 
+                  onChange={(e) => setNewReward({ ...newReward, label: e.target.value.toUpperCase() })} 
+                  disabled={Array.isArray(rewards) && rewards.length > 0}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                />
+              </div>
+              
+              <div className="relative" ref={amountFieldRef}>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Spending Amount *</label>
+                <input 
+                  type="number" 
+                  inputMode="numeric"
+                  pattern="\\d*"
+                  min="1"
+                  step="1"
+                  placeholder="Enter amount customers need to spend" 
+                  value={newReward.points} 
+                  onChange={(e) => {
+                    const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                    setNewReward({ ...newReward, points: sanitized });
+                    setShowSuggestion(Number(sanitized) > 0);
+                  }} 
+                  onKeyDown={(evt) => {
+                    const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+                    if (!/[0-9]/.test(evt.key) && !allowed.includes(evt.key)) {
+                      evt.preventDefault();
+                    }
+                  }}
+                  onFocus={() => {
+                    if (Number(newReward.points) > 0) setShowSuggestion(true);
+                  }}
+                  disabled={Array.isArray(rewards) && rewards.length > 0}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                />
+                {Number(newReward.points) > 0 && showSuggestion && (
+                  <div className="mt-2 text-xs text-gray-600">
+                    {Math.floor(Number(newReward.points) / 100)}pts to get rewards
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Description</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g., Food, drinks, merchandise, etc." 
+                  value={newReward.description} 
+                  onChange={(e) => setNewReward({ ...newReward, description: e.target.value })} 
+                  disabled={Array.isArray(rewards) && rewards.length > 0}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
+                    <Calendar size={14} />
+                    Valid From
+                  </label>
+                  <input 
+                    type="date" 
+                    value={newReward.validFrom} 
+                    onChange={(e) => setNewReward({ ...newReward, validFrom: e.target.value })} 
+                    disabled={Array.isArray(rewards) && rewards.length > 0}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                  />
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
+                    <Calendar size={14} />
+                    Valid To
+                  </label>
+                  <input 
+                    type="date" 
+                    value={newReward.validTo} 
+                    onChange={(e) => setNewReward({ ...newReward, validTo: e.target.value })} 
+                    disabled={Array.isArray(rewards) && rewards.length > 0}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" 
+                  />
+                </div>
+              </div>
+              
+              <button 
+                onClick={createReward} 
+                disabled={(Array.isArray(rewards) && rewards.length > 0) || createRewardMutation.isLoading}
+                className={`w-full py-3 rounded-xl text-white font-medium transition-all duration-300 mt-4 ${
+                  (Array.isArray(rewards) && rewards.length > 0) 
+                    ? 'bg-gray-300 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-[#6d0e2b] to-[#8a1a3d] hover:from-[#5a0c23] hover:to-[#731732] hover:shadow-lg transform hover:-translate-y-0.5'
+                }`}
+                title={(Array.isArray(rewards) && rewards.length > 0) ? 'A reward already exists. Edit or delete it before creating a new one.' : 'Create a reward'}
+              >
+                {createRewardMutation.isLoading ? 'Creating...' : 'Create Reward'}
+              </button>
+            </div>
+          </div>
+
+          {/* Rewards List Card */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <Gift className="text-white" size={16} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Active Rewards</h3>
+              <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+                {rewards.length} {rewards.length === 1 ? 'reward' : 'rewards'}
+              </span>
+            </div>
+            
+            <div className="space-y-4">
+              {rewardsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6d0e2b]"></div>
+                </div>
+              ) : rewards.length === 0 ? (
+                <div className="text-center py-12">
+                  <Gift className="mx-auto text-gray-300 mb-3" size={48} />
+                  <p className="text-gray-500 text-sm">No rewards yet. Create your first reward!</p>
+                </div>
+              ) : (
+                rewards.map((reward) => (
+                  <div key={reward.id} className="group bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-bold text-gray-900 text-lg">{reward.label}</span>
+                          <span className="bg-gradient-to-r from-[#6d0e2b] to-[#8a1a3d] text-white px-2 py-1 rounded-lg text-xs font-bold">
+                            ₦{(reward.points * 100).toLocaleString('en-NG')}
+                          </span>
+                        </div>
+                        
+                        {reward.description && (
+                          <p className="text-gray-600 text-sm mb-2">{reward.description}</p>
+                        )}
+                        
+                        <div className="flex items-center gap-6 text-xs text-gray-500 flex-nowrap">
+                          <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-semibold whitespace-nowrap inline-flex items-center gap-1">
+                            <span className="font-bold">{reward.points}</span>
+                            <span>pts</span>
+                          </span>
+                          
+                          {(reward.validFrom || reward.validTo) && (
+                            <span className="flex items-center gap-1 whitespace-nowrap">
+                              <Calendar size={12} />
+                              {formatDateShort(reward.validFrom)} → {formatDateShort(reward.validTo)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 sm:flex-nowrap flex-wrap justify-end">
+                        <button 
+                          onClick={() => openEdit(reward)} 
+                          className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200 shadow-sm"
+                          title="Edit reward"
+                        >
+                          <Edit size={16} className="text-gray-600" />
+                        </button>
+                        <button 
+                          onClick={() => openDeleteConfirm(reward)} 
+                          className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-red-50 hover:border-red-300 transition-colors duration-200 shadow-sm"
+                          title="Delete reward"
+                        >
+                          <Trash2 size={16} className="text-red-500" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
-            <input 
-              type="text" 
-              placeholder="Description (e.g, Food, drinks, e.t.c)" 
-              value={newReward.description} 
-              onChange={(e) => setNewReward({ ...newReward, description: e.target.value })} 
-              className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-gray-600">Valid From</label>
-                <input 
-                  type="date" 
-                  value={newReward.validFrom} 
-                  onChange={(e) => setNewReward({ ...newReward, validFrom: e.target.value })} 
-                  className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-600">Valid To</label>
-                <input 
-                  type="date" 
-                  value={newReward.validTo} 
-                  onChange={(e) => setNewReward({ ...newReward, validTo: e.target.value })} 
-                  className="w-full rounded-md border px-2.5 py-1.5 text-sm" 
-                />
-              </div>
-            </div>
-            <button 
-              onClick={createReward} 
-              className="flex justify-center px-3 py-1.5 rounded-md bg-[#6d0e2b] text-white text-sm hover:opacity-90 mx-auto text-center mt-4"
-            >
-              Create
-            </button>
-          </div>
-        </div>
-
-        {/* Rewards List */}
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2">Rewards</h3>
-          <div className="space-y-3">
-            {rewardsLoading ? (
-              <p className="text-sm text-gray-500">Loading rewards...</p>
-            ) : rewards.length === 0 ? (
-              <p className="text-sm text-gray-500">No rewards yet. Create your first reward!</p>
-            ) : (
-              rewards.map((reward) => (
-                <div key={reward.id} className="flex items-center justify-between bg-gray-50 rounded-md p-2.5">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{reward.label}</p>
-                    <p className="text-xs text-gray-600">{reward.description}</p>
-                    <p className="text-xs text-[#6d0e2b] font-semibold">₦{(reward.points * 100).toLocaleString('en-NG')}/{reward.points} pts</p>
-                    {(reward.validFrom || reward.validTo) && (
-                      <p className="text-xs text-gray-500">
-                        Valid: {formatDateShort(reward.validFrom)} to {formatDateShort(reward.validTo)}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => openEdit(reward)} 
-                      className="text-xs p-1.5 rounded-lg border hover:bg-gray-50"
-                      title="Edit reward"
-                    >
-                      <Edit size={14} />
-                    </button>
-                    <button 
-                      onClick={() => openDeleteConfirm(reward)} 
-                      className="text-xs p-1.5 rounded-lg border hover:bg-gray-50 text-red-600"
-                      title="Delete reward"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                    <button 
-                      onClick={() => { 
-                        setSelectedReward(reward); 
-                        setIsRewardMessageOpen(true); 
-                      }} 
-                      className="text-xs px-3 py-1.5 rounded-lg bg-[#6d0e2b] text-white hover:opacity-90"
-                    >
-                      Send Message
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
           </div>
         </div>
       </div>
 
       {/* Edit Reward Modal */}
       {isEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsEditOpen(false)}></div>
-          <div className="relative bg-white rounded-xl border border-gray-200 w-full max-w-md p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Reward</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsEditOpen(false)}></div>
+          <div className="relative bg-white rounded-2xl border border-gray-200 w-full max-w-md p-6 shadow-2xl transform transition-all duration-300 scale-100">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Edit Reward</h3>
               <button 
-                className="p-2 rounded-lg hover:bg-gray-100" 
+                className="p-2 rounded-xl hover:bg-gray-100 transition-colors duration-200" 
                 onClick={() => setIsEditOpen(false)}
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Label *</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Label *</label>
                 <input 
                   type="text" 
                   value={editForm.label} 
                   onChange={(e) => setEditForm({ ...editForm, label: e.target.value })} 
-                  className="w-full rounded-md border px-3 py-2 text-sm mt-1" 
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200" 
                 />
               </div>
               
               <div>
-                <label className="text-sm font-medium text-gray-700">Points *</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Points *</label>
                 <div className="relative">
                   <input 
                     type="number" 
@@ -381,57 +464,57 @@ export default function RewardsPage() {
                         evt.preventDefault();
                       }
                     }}
-                    className="w-full rounded-md border px-3 py-2 text-sm mt-1" 
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200" 
                   />
                   {Number(editForm.points) > 0 && (
-                    <p className="text-xs text-gray-600">
-                      Estimated amount: ₦{(Number(editForm.points) * 100).toLocaleString('en-NG')}
+                    <p className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded-lg">
+                      Estimated amount: <span className="font-semibold">₦{(Number(editForm.points) * 100).toLocaleString('en-NG')}</span>
                     </p>
                   )}
                 </div>
               </div>
               
               <div>
-                <label className="text-sm font-medium text-gray-700">Description</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Description</label>
                 <input 
                   type="text" 
                   value={editForm.description} 
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} 
-                  className="w-full rounded-md border px-3 py-2 text-sm mt-1" 
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200" 
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Valid From</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Valid From</label>
                   <input 
                     type="date" 
                     value={editForm.validFrom} 
                     onChange={(e) => setEditForm({ ...editForm, validFrom: e.target.value })} 
-                    className="w-full rounded-md border px-3 py-2 text-sm mt-1" 
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200" 
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Valid To</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Valid To</label>
                   <input 
                     type="date" 
                     value={editForm.validTo} 
                     onChange={(e) => setEditForm({ ...editForm, validTo: e.target.value })} 
-                    className="w-full rounded-md border px-3 py-2 text-sm mt-1" 
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-[#6d0e2b] focus:border-transparent transition-all duration-200" 
                   />
                 </div>
               </div>
               
-              <div className="flex justify-end gap-3 mt-4">
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
                 <button 
                   onClick={() => setIsEditOpen(false)} 
-                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-6 py-3 text-sm border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={updateReward} 
-                  className="px-4 py-2 text-sm bg-[#6d0e2b] text-white rounded-lg hover:opacity-90"
+                  className="px-6 py-3 text-sm bg-gradient-to-r from-[#6d0e2b] to-[#8a1a3d] text-white rounded-xl hover:from-[#5a0c23] hover:to-[#731732] transition-all duration-300 font-medium shadow-sm"
                 >
                   Update Reward
                 </button>
@@ -443,84 +526,38 @@ export default function RewardsPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirm(null)}></div>
-          <div className="relative bg-white rounded-xl border border-gray-200 w-full max-w-md p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Confirm Delete</h3>
-              <button 
-                className="p-2 rounded-lg hover:bg-gray-100" 
-                onClick={() => setDeleteConfirm(null)}
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Are you sure you want to delete the reward <strong>"{deleteConfirm.label}"</strong>? 
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)}></div>
+          <div className="relative bg-white rounded-2xl border border-gray-200 w-full max-w-md p-6 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="text-red-600" size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Reward</h3>
+              <p className="text-gray-600 text-sm">
+                Are you sure you want to delete <strong>"{deleteConfirm.label}"</strong>? 
                 This action cannot be undone.
               </p>
-              
-              <div className="flex justify-end gap-3 mt-4">
-                <button 
-                  onClick={() => setDeleteConfirm(null)} 
-                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={confirmDelete} 
-                  className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  Delete Reward
-                </button>
-              </div>
+            </div>
+            
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => setDeleteConfirm(null)} 
+                className="px-6 py-3 text-sm border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete} 
+                className="px-6 py-3 text-sm bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 font-medium shadow-sm"
+              >
+                Delete Reward
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Send Message Modal */}
-      {isRewardMessageOpen && selectedReward && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsRewardMessageOpen(false)}></div>
-          <div className="relative bg-white rounded-xl border border-gray-200 w-full max-w-lg p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Send SMS for Reward</h3>
-              <button 
-                className="p-2 rounded-lg hover:bg-gray-100" 
-                onClick={() => setIsRewardMessageOpen(false)}
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            
-            <p className="text-sm text-gray-600 mb-2">
-              Reward: <span className="font-semibold">{selectedReward.label}</span>
-            </p>
-            
-            <textarea
-              value={rewardMessage}
-              onChange={(e) => setRewardMessage(e.target.value)}
-              placeholder="Type your SMS message here..."
-              rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
-            
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={sendRewardMessage}
-                disabled={!rewardMessage.trim()}
-                className="inline-flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="w-4 h-4" />
-                Send SMS
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
