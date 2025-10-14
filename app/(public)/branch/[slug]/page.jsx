@@ -783,7 +783,7 @@ const PurchaseReceiptUpload = () => {
                       </div>
                       <p className="text-sm text-green-700 mb-3">
 {/* -                        You've unlocked all available rewards! Visit the store to claim your rewards. */}
-                     {`You've received a ${availableRewards.length > 0 ? availableRewards[availableRewards.length - 1].label : ''} reward! Show this message at the counter to claim your rewards. Valid for a limited time — redeem now!`}
+                     {`You've received a ${availableRewards.length > 0 ? availableRewards[availableRewards.length - 1].label : ''} reward! Show this message at the counter to claim your reward. Valid for a limited time — redeem now!`}
                       </p>
                       <div className="space-y-2">
                         {availableRewards.map((reward, index) => (
