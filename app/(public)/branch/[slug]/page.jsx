@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Upload, Camera, FileImage, X, CheckCircle, AlertCircle, 
@@ -28,6 +28,7 @@ const PurchaseReceiptUpload = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
+  const allRewardsSmsSentRef = useRef(false);
 
   // Fetch branch information using React Query
   const { data: branchData, isLoading: isLoadingBranch, error: branchError } = useQuery({
@@ -70,6 +71,26 @@ const PurchaseReceiptUpload = () => {
     branchName: "",
     branchAddress: ""
   };
+
+  // Frontend-triggered SMS when all rewards achieved (fallback)
+  useEffect(() => {
+    try {
+      if (step === 3 && recordPurchaseMutation.data && phoneNumber && !allRewardsSmsSentRef.current) {
+        const rewards = recordPurchaseMutation.data.data.rewards;
+        if (rewards?.hasAchievedAll && rewards?.rewardAchievedMessage) {
+          allRewardsSmsSentRef.current = true;
+          api.post(`/public/branch/${branchSlug}/rewards/notify`, {
+            phoneNumber,
+            message: rewards.rewardAchievedMessage,
+          }).catch((err) => {
+            console.warn('Failed to send all-rewards SMS from frontend fallback:', err?.response?.data || err);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('All rewards SMS effect error', e);
+    }
+  }, [step, recordPurchaseMutation.data, phoneNumber, branchSlug]);
 
   const parseReceiptWithGemini = async (imageBase64) => {
     try {
