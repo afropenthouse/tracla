@@ -716,9 +716,9 @@ const PurchaseReceiptUpload = () => {
                 {`Thank you for visiting ${businessInfo.name}! Your purchase has been recorded.`}
               </p>
 
-              {/* Points Summary */}
+              {/* Points Summary (without 'This Purchase') */}
               <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4 mb-6">
-                <div className="grid grid-cols-3 gap-4 text-center mb-4">
+                <div className="grid grid-cols-2 gap-4 text-center mb-4">
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
                       {recordPurchaseMutation?.data?.data?.rewards?.currentPoints ?? 0}
@@ -727,19 +727,11 @@ const PurchaseReceiptUpload = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-[#6c0f2a]">
-                      +{recordPurchaseMutation.data.data.purchase.pointsEarned}
-                    </div>
-                    <div className="text-xs text-gray-600">This Purchase</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-[#6c0f2a]">
                       ₦{Number(recordPurchaseMutation.data.data.customer.totalSpent ?? 0).toLocaleString('en-NG', { maximumFractionDigits: 0, minimumFractionDigits: 0 })}
                     </div>
                     <div className="text-xs text-gray-600">Total Spent</div>
                   </div>
                 </div>
-                
-                {/* Points to Naira conversion removed */}
               </div>
 
               {/* Rewards Progress */}
@@ -787,12 +779,12 @@ const PurchaseReceiptUpload = () => {
                     <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2 justify-center mb-2">
                         <CheckCircle size={18} className="text-green-600" />
-                        <span className="font-medium text-green-800">All Rewards Achieved! 🎉</span>
+                        <span className="font-medium text-green-800">Congrats! 🎉</span>
                       </div>
                       <p className="text-sm text-green-700 mb-3">
 {/* -                        You've unlocked all available rewards! Visit the store to claim your rewards. */}
-+                       {`Congrats! You've received a ${availableRewards.length > 0 ? availableRewards[availableRewards.length - 1].label : ''} reward! Show this message at the counter to claim your rewards. Valid for a limited time — redeem now!`}
-                      </p>s
+                     {`You've received a ${availableRewards.length > 0 ? availableRewards[availableRewards.length - 1].label : ''} reward! Show this message at the counter to claim your rewards. Valid for a limited time — redeem now!`}
+                      </p>
                       <div className="space-y-2">
                         {availableRewards.map((reward, index) => (
                           <div key={reward.id} className="flex items-center justify-between bg-white p-2 rounded">
