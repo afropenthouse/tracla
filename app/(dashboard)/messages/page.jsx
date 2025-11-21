@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   MessageSquare, Send, Users, CheckCircle, XCircle,
-  Loader2, Search, Wallet, X, PlusCircle
+  Loader2, Search, Wallet, X, PlusCircle, Gift, ExternalLink
 } from 'lucide-react';
 import { sendBulkMessage, sendBulkMessageToAll, /* getMessageHistory, */ getMessageWallet, initializeTopUp, verifyTopUp, sendMessageToExternalRecipients } from '@/lib/api';
 import { useCustomersData } from '@/lib/queries/branch';
@@ -368,6 +368,27 @@ const MessagesPage = () => {
               Top Up
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <div className="flex items-center justify-between rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 p-4">
+          <div className="flex items-start gap-3">
+            <Gift className="w-5 h-5 text-[#6c0f2a]" />
+            <div>
+              <p className="text-sm md:text-base text-gray-800">Want to add more deals and promos? Manage them on Vibeazy.</p>
+              <p className="text-xs text-gray-600">Enjoy up to 50% off</p>
+            </div>
+          </div>
+          <a
+            href="https://vibeazy.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-[#6d0e2b] text-white rounded-lg hover:opacity-90"
+          >
+            Visit Vibeazy
+            <ExternalLink className="w-4 h-4" />
+          </a>
         </div>
       </div>
 

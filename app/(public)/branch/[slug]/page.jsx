@@ -10,11 +10,13 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
+import { useToastStore } from '@/store/toastStore';
 import { useParams } from 'next/navigation';  
 
 const PurchaseReceiptUpload = () => {
   const params = useParams();
   const branchSlug = params.slug;
+  const { showSuccess, showInfo, showWarning } = useToastStore();
   
   const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -50,6 +52,27 @@ const PurchaseReceiptUpload = () => {
       setSuccessMessage('Purchase recorded successfully!');
       setStep(3);
       setError(null);
+
+      // Toast: notify SMS send when full rewards achieved
+      try {
+        const rewardsData = data?.data?.rewards;
+        if (rewardsData?.hasAchievedAll) {
+          if (rewardsData?.smsEligible) {
+            showSuccess("A reward SMS has been sent. Show it at the counter.");
+          } else if ((rewardsData?.achievedRewards || []).length > 0) {
+            const reason = rewardsData?.smsReason;
+            if (reason === 'insufficient_credits') {
+              showInfo("Reward achieved, but SMS couldn't be sent: insufficient credits.");
+            } else if (reason === 'invalid_phone') {
+              showInfo("Reward achieved, but SMS couldn't be sent: invalid phone number.");
+            } else {
+              showInfo("Reward achieved. If you don’t receive an SMS, show this screen at the counter.");
+            }
+          }
+        }
+      } catch (e) {
+        // Non-blocking; avoid breaking flow on toast errors
+      }
     },
     onError: (error) => {
       const errorMessage = error.response?.data?.message || 'Failed to record purchase';
