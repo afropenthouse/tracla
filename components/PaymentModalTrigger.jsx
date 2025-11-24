@@ -50,7 +50,7 @@ const PaymentModalTrigger = () => {
         console.log('🚀 OPENING PAYMENT MODAL FOR BASIC PLAN');
         onOpen();
       }
-    }, 1000);
+    }, 1000); //1000 -time
 
     return () => {
       clearTimeout(timeoutId);

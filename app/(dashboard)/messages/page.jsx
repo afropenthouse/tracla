@@ -371,7 +371,7 @@ const MessagesPage = () => {
         </div>
       </div>
 
-      <div className="mb-6">
+      {/* <div className="mb-6">
         <div className="flex items-center justify-between rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 p-4">
           <div className="flex items-start gap-3">
             <Gift className="w-5 h-5 text-[#6c0f2a]" />
@@ -390,7 +390,7 @@ const MessagesPage = () => {
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>
-      </div>
+      </div> */}
 
       {/* Top Up Modal */}
       {showTopUpModal && (
