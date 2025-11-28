@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
-  Upload, Camera, FileImage, X, CheckCircle, AlertCircle, 
+  Upload, Camera, X, CheckCircle, AlertCircle, 
   Loader2, Receipt, Clock, DollarSign, Calendar, Image as ImageIcon,
   Sparkles, Building2, ShoppingCart, CreditCard, Tag, MapPin,
   ArrowRight, Phone, Gift, Star, Zap, Heart
@@ -221,11 +221,18 @@ const PurchaseReceiptUpload = () => {
       }, 100);
 
       const heic2any = (await import('heic2any')).default;
-      const convertedBlob = await heic2any({
+      let convertedBlob = await heic2any({
         blob: file,
         toType: 'image/jpeg',
         quality: 0.9
       });
+
+      // heic2any can return an array for HEIC with multiple frames (e.g., Live Photos)
+      if (Array.isArray(convertedBlob)) {
+        // Pick the first frame; prefer the largest by size if available
+        const blobs = convertedBlob.filter(Boolean);
+        convertedBlob = blobs.sort((a, b) => (b.size || 0) - (a.size || 0))[0] || blobs[0];
+      }
 
       clearInterval(progressInterval);
       setConversionProgress(100);
