@@ -137,28 +137,58 @@ const PurchaseReceiptUpload = () => {
 
   const formatDateTime = (dateTimeObj) => {
     if (!dateTimeObj || !dateTimeObj.date) {
-      return {
-        day: "--",
-        time: "--"
-      };
+      return { day: "--", time: "--" };
     }
 
-    try {
-      // Parse date in DD/MM/YYYY or DD-MM-YYYY format
-      const [day, month, year] = dateTimeObj.date.replace('-', '/').split('/');
-      const dateStr = `${year}-${month}-${day}` + (dateTimeObj.time ? ' ' + dateTimeObj.time : '');
-      const date = new Date(dateStr);
-      
-      return {
-        day: date.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        time: date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-      };
-    } catch (error) {
-      return {
-        day: "--",
-        time: "--"
-      };
+    const rawDate = String(dateTimeObj.date).trim();
+    const rawTime = String(dateTimeObj.time || "").trim();
+
+    const parts = rawDate.replace(/\./g, '/').replace(/-/g, '/').split('/').map(p => p.trim());
+    if (parts.length < 3) {
+      return { day: "--", time: "--" };
     }
+
+    let d = 1, m = 1, y = 1970;
+    if (parts[0].length === 4) {
+      y = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+      d = parseInt(parts[2], 10);
+    } else {
+      d = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+      y = parseInt(parts[2], 10);
+    }
+
+    let h = 0, min = 0;
+    if (rawTime) {
+      const ampmMatch = rawTime.match(/am|pm/i);
+      const sepTime = rawTime.replace(/\./g, ':').replace(/\s+/g, ' ').trim();
+      const nums = sepTime.match(/(\d{1,2}):(\d{2})/);
+      if (nums) {
+        h = parseInt(nums[1], 10);
+        min = parseInt(nums[2], 10);
+      } else {
+        const onlyHour = sepTime.match(/^(\d{1,2})$/);
+        if (onlyHour) {
+          h = parseInt(onlyHour[1], 10);
+        }
+      }
+      if (ampmMatch) {
+        const isPM = /pm/i.test(ampmMatch[0]);
+        if (isPM && h < 12) h += 12;
+        if (!isPM && h === 12) h = 0;
+      }
+    }
+
+    const date = new Date(y, (m || 1) - 1, d || 1, h, min, 0, 0);
+    if (isNaN(date.getTime())) {
+      return { day: "--", time: "--" };
+    }
+
+    return {
+      day: date.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+      time: date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    };
   };
 
   const isHEIC = (file) => {
@@ -385,18 +415,41 @@ const PurchaseReceiptUpload = () => {
       return;
     }
 
-    // Check if date is valid (can be parsed properly)
-    try {
-      const [day, month, year] = extractedData.dateTime.date.replace('-', '/').split('/');
-      const dateStr = `${year}-${month}-${day}` + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '');
-      const date = new Date(dateStr);
-      
-      // Check if date is invalid (NaN)
-      if (isNaN(date.getTime())) {
-        setError('Invalid purchase date detected from receipt');
-        return;
+    const _rawDate = String(extractedData.dateTime.date).trim();
+    const _rawTime = String(extractedData.dateTime.time || "").trim();
+    const _parts = _rawDate.replace(/\./g, '/').replace(/-/g, '/').split('/').map(p => p.trim());
+    let _d = 1, _m = 1, _y = 1970;
+    if (_parts[0] && _parts[0].length === 4) {
+      _y = parseInt(_parts[0], 10);
+      _m = parseInt(_parts[1], 10);
+      _d = parseInt(_parts[2], 10);
+    } else {
+      _d = parseInt(_parts[0] || '1', 10);
+      _m = parseInt(_parts[1] || '1', 10);
+      _y = parseInt(_parts[2] || '1970', 10);
+    }
+    let _h = 0, _min = 0;
+    if (_rawTime) {
+      const _ampm = _rawTime.match(/am|pm/i);
+      const _t = _rawTime.replace(/\./g, ':').replace(/\s+/g, ' ').trim();
+      const _nums = _t.match(/(\d{1,2}):(\d{2})/);
+      if (_nums) {
+        _h = parseInt(_nums[1], 10);
+        _min = parseInt(_nums[2], 10);
+      } else {
+        const _onlyHour = _t.match(/^(\d{1,2})$/);
+        if (_onlyHour) {
+          _h = parseInt(_onlyHour[1], 10);
+        }
       }
-    } catch (error) {
+      if (_ampm) {
+        const _isPM = /pm/i.test(_ampm[0]);
+        if (_isPM && _h < 12) _h += 12;
+        if (!_isPM && _h === 12) _h = 0;
+      }
+    }
+    const _dateCheck = new Date(_y, (_m || 1) - 1, _d || 1, _h, _min, 0, 0);
+    if (isNaN(_dateCheck.getTime())) {
       setError('Invalid purchase date detected from receipt');
       return;
     }
@@ -406,21 +459,41 @@ const PurchaseReceiptUpload = () => {
       amount: extractedData.amount,
       purchaseDate: extractedData.dateTime && extractedData.dateTime.date ? 
         (() => {
-          try {
-            const [day, month, year] = extractedData.dateTime.date.replace('-', '/').split('/');
-            const dateStr = `${year}-${month}-${day}` + (extractedData.dateTime.time ? ' ' + extractedData.dateTime.time : '');
-            const date = new Date(dateStr);
-            
-            // Check if date is valid before converting to ISO string
-            if (isNaN(date.getTime())) {
-              return new Date().toISOString(); // Fallback to current date
-            }
-            return date.toISOString();
-          } catch (error) {
-            return new Date().toISOString(); // Fallback to current date on any error
+          const rd = String(extractedData.dateTime.date).trim();
+          const rt = String(extractedData.dateTime.time || "").trim();
+          const ps = rd.replace(/\./g, '/').replace(/-/g, '/').split('/').map(p => p.trim());
+          let dd = 1, mm = 1, yy = 1970;
+          if (ps[0] && ps[0].length === 4) {
+            yy = parseInt(ps[0], 10);
+            mm = parseInt(ps[1], 10);
+            dd = parseInt(ps[2], 10);
+          } else {
+            dd = parseInt(ps[0] || '1', 10);
+            mm = parseInt(ps[1] || '1', 10);
+            yy = parseInt(ps[2] || '1970', 10);
           }
-        })() : 
-        new Date().toISOString(),
+          let hh = 0, mi = 0;
+          if (rt) {
+            const ap = rt.match(/am|pm/i);
+            const tt = rt.replace(/\./g, ':').replace(/\s+/g, ' ').trim();
+            const mt = tt.match(/(\d{1,2}):(\d{2})/);
+            if (mt) {
+              hh = parseInt(mt[1], 10);
+              mi = parseInt(mt[2], 10);
+            } else {
+              const oh = tt.match(/^(\d{1,2})$/);
+              if (oh) hh = parseInt(oh[1], 10);
+            }
+            if (ap) {
+              const pm = /pm/i.test(ap[0]);
+              if (pm && hh < 12) hh += 12;
+              if (!pm && hh === 12) hh = 0;
+            }
+          }
+          const dObj = new Date(yy, (mm || 1) - 1, dd || 1, hh, mi, 0, 0);
+          if (isNaN(dObj.getTime())) return new Date().toISOString();
+          return dObj.toISOString();
+        })() : new Date().toISOString(),
     };
 
     console.log('📤 Submitting purchase data:', purchaseData);
