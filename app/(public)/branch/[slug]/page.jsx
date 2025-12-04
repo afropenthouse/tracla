@@ -601,7 +601,7 @@ const PurchaseReceiptUpload = () => {
             <div>
               <h1 className="text-xl font-bold text-gray-900">{businessInfo.name}</h1>
               <p className="text-sm text-gray-600">
-                {businessInfo.branchName ? `${businessInfo.branchName} • ` : ''}Earn points with every visit!
+                Earn points with every visit!
               </p>
             </div>
           </div>
@@ -785,7 +785,7 @@ const PurchaseReceiptUpload = () => {
                       Business
                     </span>
                     <span className="text-sm text-gray-800">
-                      {businessInfo.name}{businessInfo.branchName ? ` • ${businessInfo.branchName}` : ''}
+                      {businessInfo.name}
                     </span>
                   </div>
                 )}
