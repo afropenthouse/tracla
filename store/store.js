@@ -150,8 +150,12 @@ export const useSubscriptionStore = create()(
       expiresAt: null,
       lastPaymentModalShown: null,
       dismissedUntil: null,
+      trialEndsAt: null,
+      trialStartsAt: null,
+      lastTrialModalShown: null,
+      dismissedUntilTrial: null,
 
-      // Set subscription data
+      // Set subscription data  
       setSubscription: (subscription) => set({ 
         subscription,
         isSubscribed: !!subscription,
@@ -176,6 +180,43 @@ export const useSubscriptionStore = create()(
         dismissedUntil: Date.now() + (60 * 60 * 1000) // 1 hour from now
       }),
 
+      // Ensure a 14-day trial is set for first-time users
+      ensureTrialInitialized: () => set((state) => ({
+        trialStartsAt: state.trialStartsAt || Date.now(),
+        trialEndsAt: state.trialEndsAt || (Date.now() + (14 * 24 * 60 * 60 * 1000))
+      })),
+
+      // Explicitly set trial end timestamp
+      setTrialEndsAt: (timestamp) => set({ trialEndsAt: timestamp }),
+      setTrialStartsAt: (timestamp) => set({ trialStartsAt: timestamp }),
+
+      // Get remaining trial milliseconds
+      getTrialRemainingMs: () => {
+        const state = get();
+        if (!state.trialEndsAt) return 0;
+        return Math.max(0, state.trialEndsAt - Date.now());
+      },
+
+      // Trial modal cadence
+      updateLastTrialModalShown: () => set({ lastTrialModalShown: Date.now() }),
+      dismissTrialModalLonger: () => set({
+        lastTrialModalShown: Date.now(),
+        dismissedUntilTrial: Date.now() + (60 * 60 * 1000)
+      }),
+      resetTrialModalSnooze: () => set({
+        lastTrialModalShown: null,
+        dismissedUntilTrial: null,
+      }),
+      shouldShowTrialModal: () => {
+        const state = get();
+        const now = Date.now();
+        if (!state.trialEndsAt) return false;
+        if (state.trialEndsAt <= now) return false; // no trial
+        if (state.dismissedUntilTrial && now < state.dismissedUntilTrial) return false;
+        const lastShown = state.lastTrialModalShown;
+        return !lastShown || (now - lastShown) >= 300000; // 5 minutes
+      },
+
       // Check if enough time has passed to show modal again
       shouldShowPaymentModal: () => {
         const state = get();
@@ -199,7 +240,11 @@ export const useSubscriptionStore = create()(
         plan: null,
         expiresAt: null,
         lastPaymentModalShown: null,
-        dismissedUntil: null
+        dismissedUntil: null,
+        trialEndsAt: null,
+        trialStartsAt: null,
+        lastTrialModalShown: null,
+        dismissedUntilTrial: null
       }),
     }),
     {

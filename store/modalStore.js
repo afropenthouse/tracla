@@ -69,4 +69,10 @@ export const useCustomerDetailsModalStore = create((set) => ({
   onClose: () => set({ isOpen: false, customer: null }),
 }));
 
+export const useTrialModalStore = create((set) => ({
+  isOpen: false,
+  onOpen: () => set({ isOpen: true }),
+  onClose: () => set({ isOpen: false }),
+}));
+
 

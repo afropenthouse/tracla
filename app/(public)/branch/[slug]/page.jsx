@@ -1,4 +1,5 @@
 "use client";
+// Business name display based on receipt match (remove this block to disable)
 
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -93,6 +94,44 @@ const PurchaseReceiptUpload = () => {
     branchName: "",
     branchAddress: ""
   };
+
+  const normalizeText = (str = "") => {
+    return String(str).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+  };
+
+  const tokenSetJaccardSimilarity = (a = "", b = "") => {
+    const ta = new Set(normalizeText(a).split(" ").filter(Boolean));
+    const tb = new Set(normalizeText(b).split(" ").filter(Boolean));
+    if (ta.size === 0 && tb.size === 0) return 0;
+    let inter = 0;
+    ta.forEach((t) => { if (tb.has(t)) inter++; });
+    const union = new Set([...ta, ...tb]).size;
+    return union === 0 ? 0 : inter / union;
+  };
+
+  const charOverlapSimilarity = (a = "", b = "") => {
+    const sa = new Set(normalizeText(a).replace(/\s+/g, ""));
+    const sb = new Set(normalizeText(b).replace(/\s+/g, ""));
+    if (sa.size === 0 && sb.size === 0) return 0;
+    let inter = 0;
+    sa.forEach((c) => { if (sb.has(c)) inter++; });
+    const union = new Set([...sa, ...sb]).size;
+    return union === 0 ? 0 : inter / union;
+  };
+
+  const computeNameSimilarity = (a = "", b = "") => {
+    const na = normalizeText(a);
+    const nb = normalizeText(b);
+    if (!na || !nb) return 0;
+    if (na === nb) return 1;
+    if (na.includes(nb) || nb.includes(na)) return Math.max(na.length, nb.length) > 0 ? Math.min(na.length, nb.length) / Math.max(na.length, nb.length) : 0;
+    return Math.max(tokenSetJaccardSimilarity(na, nb), charOverlapSimilarity(na, nb));
+  };
+
+  const receiptMerchantName = extractedData?.merchant?.name || "";
+  const nameSimilarity = computeNameSimilarity(receiptMerchantName, businessInfo.name);
+  const shouldShowBusinessMatch = !!receiptMerchantName && !!businessInfo.name && nameSimilarity >= 0.3;
+  const isFullNameMatch = normalizeText(receiptMerchantName) === normalizeText(businessInfo.name);
 
   const parseReceiptWithGemini = async (imageBase64) => {
     try {
@@ -739,7 +778,17 @@ const PurchaseReceiptUpload = () => {
                   <span className="text-sm font-medium text-gray-700">Amount Spent</span>
                   <span className="text-lg font-bold text-green-600">₦{extractedData.amount?.toLocaleString() || '0'}</span>
                 </div>
-                
+                {shouldShowBusinessMatch && (
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <Building2 size={16} />
+                      Business
+                    </span>
+                    <span className="text-sm text-gray-800">
+                      {businessInfo.name}{businessInfo.branchName ? ` • ${businessInfo.branchName}` : ''}
+                    </span>
+                  </div>
+                )}
                 {extractedData.dateTime && (
                   <>
                     <div className="flex items-center justify-between mb-2">

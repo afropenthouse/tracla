@@ -10,9 +10,9 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { businessKeys, branchKeys } from "@/lib/queries/branch";
 
-import { useBranchStore, useBusinessStore, useCurrentPlanStore } from '@/store/store';
+import { useBranchStore, useBusinessStore, useCurrentPlanStore, useSubscriptionStore } from '@/store/store';
 import { useLoadingStore } from '@/store/loadingStore';
-import { useForgotPasswordModalStore } from '@/store/modalStore';
+import { useForgotPasswordModalStore, useTrialModalStore } from '@/store/modalStore';
 import { setAuthCookies, setUserCookies } from '@/actions/cookies/cookies';
 
 export default function LoginPage() {
@@ -22,8 +22,10 @@ export default function LoginPage() {
   const { setBusiness } = useBusinessStore();
   const { setBranches, setCurrentBranch } = useBranchStore();
   const { setCurrentPlan } = useCurrentPlanStore();
+  const { setTrialStartsAt, setTrialEndsAt } = useSubscriptionStore();
   const { showSuccess, showError } = useToastStore();
   const { onOpen: openForgotPassword } = useForgotPasswordModalStore();
+  const { onOpen: openTrialModal } = useTrialModalStore();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -114,6 +116,24 @@ export default function LoginPage() {
       // Store current plan data in Zustand store
       if (currentPlan) {
         setCurrentPlan(currentPlan);
+
+        // Initialize trial based on login time if on basic tier
+        if (currentPlan.tierName && currentPlan.tierName.toLowerCase() === 'basic') {
+          const now = Date.now();
+          // Only set if not already set
+          const state = require('@/store/store').useSubscriptionStore.getState();
+          if (!state.trialStartsAt || !state.trialEndsAt) {
+            setTrialStartsAt(now);
+            setTrialEndsAt(now + (14 * 24 * 60 * 60 * 1000));
+          }
+
+          // Always show trial modal on login
+          const subActions = require('@/store/store').useSubscriptionStore.getState();
+          if (typeof subActions.resetTrialModalSnooze === 'function') {
+            subActions.resetTrialModalSnooze();
+          }
+          openTrialModal();
+        }
       }
       
       hideLoader();

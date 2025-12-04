@@ -38,6 +38,22 @@ const Pricing = () => {
       ],
       highlight: false
     },
+    {
+      id: 'custom',
+      name: 'Custom',
+      price: 'Custom',
+      description: 'Tailored plan for unique business needs',
+      features: [
+        {text: 'Access to customer dashboard with spending data', included: true},
+        {text: 'Identify and reward top spenders', included: true},
+        {text: 'View customer insights: number of visits, total spend, etc.', included: true},
+        {text: '3 branches only', included: true},
+        {text: 'Segment customers better using dashboard filters', included: true},
+        {text: 'Priority support', included: true},
+        {text: 'Dedicated account manager', included: true},
+      ],
+      highlight: false,
+    },
   ];
   return (
     <section className="py-20 bg-[#f9f2f4]">
@@ -56,7 +72,7 @@ const Pricing = () => {
         </motion.div>
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-screen-2xl mx-auto items-start">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.id}
@@ -90,9 +106,19 @@ const Pricing = () => {
                           ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
                           : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
                       }`}
-                      onClick={() => router.push('/signup')}
+                      onClick={() => {
+                        if (plan.id === 'custom') {
+                          try {
+                            window.open('mailto:traclaapp@gmail.com?subject=Custom%20Plan%20Request', '_blank');
+                          } catch (e) {
+                            router.push('/signup');
+                          }
+                        } else {
+                          router.push('/signup');
+                        }
+                      }}
                     >
-                      Select Plan
+                      {plan.id === 'custom' ? 'Contact Sales' : 'Select Plan'}
                     </button>
                   </div>
 

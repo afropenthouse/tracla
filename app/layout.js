@@ -3,8 +3,9 @@ import "./globals.css";
 import QueryProvider from "@/components/QueryProvider";
 import GlobalLoader from "@/components/common/GlobalLoader";
 import Toast from "@/components/common/Toast";
-// import PaymentModal from "@/components/modals/PaymentModal";
-// import PaymentModalTrigger from "@/components/PaymentModalTrigger";
+import PaymentModal from "@/components/modals/PaymentModal";
+import PaymentModalTrigger from "@/components/PaymentModalTrigger";
+import TrialModal from "@/components/modals/TrialModal";
 import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
 import CustomerDetailsModal from "@/components/modals/CustomerDetailsModal";
 import SubscriptionDebugPanel from "@/components/dev/SubscriptionDebugPanel";  
@@ -33,8 +34,9 @@ export default function RootLayout({ children }) {
         <QueryProvider>
           <GlobalLoader />
           <Toast />
-          {/* <PaymentModal /> */}
-          {/* <PaymentModalTrigger /> */}
+          <PaymentModal />
+          <TrialModal />
+          <PaymentModalTrigger />
           <ForgotPasswordModal />
           <CustomerDetailsModal />
           <SubscriptionDebugPanel />

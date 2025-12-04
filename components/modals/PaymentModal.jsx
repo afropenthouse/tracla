@@ -46,7 +46,7 @@ const PaymentModal = () => {
         {text: 'Access to customer dashboard with spending data', included: true},
         {text: 'Identify and reward top spenders', included: true},
         {text: 'View customer insights: number of visits, total spend, etc.', included: true},
-        {text: '3 branches only', included: true},
+        {text: '1 branch only', included: true},
         {text: 'Segment customers better using dashboard filters', included: true},
       ],
       highlight: true
@@ -60,12 +60,28 @@ const PaymentModal = () => {
         {text: 'Access to customer dashboard with spending data', included: true},
         {text: 'Identify and reward top spenders', included: true},
         {text: 'View customer insights: number of visits, total spend, etc.', included: true},
-        {text: 'Unlimited branches', included: true},
+        {text: '3 branches only', included: true},
         {text: 'Segment customers better using dashboard filters', included: true},
         {text: 'Priority support', included: true},
         {text: 'Dedicated account manager', included: true},
       ],
       highlight: false
+    },
+    {
+      id: 'custom',
+      name: 'Custom',
+      price: 'Custom',
+      description: 'Tailored plan for unique business needs',
+      features: [
+        {text: 'Access to customer dashboard with spending data', included: true},
+        {text: 'Identify and reward top spenders', included: true},
+        {text: 'View customer insights: number of visits, total spend, etc.', included: true},
+        {text: 'Unlimited branches', included: true},
+        {text: 'Segment customers better using dashboard filters', included: true},
+        {text: 'Priority support', included: true},
+        {text: 'Dedicated account manager', included: true},
+      ],
+      highlight: false,
     },
   ];
 
@@ -88,6 +104,15 @@ const PaymentModal = () => {
 
   const handlePlanSelect = async (planId) => {
     const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+
+    if (plan.id === 'custom') {
+      showSuccess('We\'ll reach out to set up a custom plan.');
+      try {
+        window.open('mailto:traclaapp@gmail.com?subject=Custom%20Plan%20Request', '_blank');
+      } catch (e) {}
+      return;
+    }
     const paymentData = {
       planId,
       planName: plan.name,
@@ -199,7 +224,7 @@ const PaymentModal = () => {
   const renderPlansStep = () => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200/50">
+      <div className="flex items-center justify-between p-3 sm:p-6 border-b border-white/30 bg-gradient-to-r from-white/80 to-white/60">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <div className="w-8 h-8 sm:w-12 sm:h-12 bg-[#6c0f2a] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
             <Crown className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
@@ -219,119 +244,66 @@ const PaymentModal = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-6">
-        {/* Mobile Tabs */}
-        <div className="md:hidden mb-6">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            {plans.map((plan) => (
-              <button
+        {/* Mobile Horizontal Scroll */}
+        <div className="md:hidden overflow-x-auto -mx-3 sm:-mx-6 px-3 sm:px-6">
+          <div className="flex gap-4 snap-x snap-mandatory">
+            {plans.map((plan, index) => (
+              <motion.div
                 key={plan.id}
-                onClick={() => setActiveMobilePlan(plan.id)}
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                  activeMobilePlan === plan.id
-                    ? plan.highlight
-                      ? 'bg-[#6c0f2a] text-white'
-                      : 'bg-white text-gray-900'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`min-w-[85%] snap-start rounded-2xl overflow-hidden flex flex-col relative ${plan.highlight ? 'border-2 border-[#6c0f2a] z-10' : 'border border-gray-200'}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
               >
-                {plan.name}
-              </button>
+                <div className={`p-4 text-center ${plan.highlight ? 'bg-[#6c0f2a] text-white' : 'bg-white'} relative`}>
+                  <h3 className={`text-lg font-bold ${plan.highlight ? 'text-white' : 'text-[#6c0f2a]'}`}>{plan.name}</h3>
+                  <p className={`text-xs mb-3 ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>{plan.description}</p>
+                  <div className="my-3">
+                    <span className="text-2xl font-bold">{plan.price}</span>
+                    <span className={`text-sm ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>/mo</span>
+                  </div>
+                </div>
+                <div className="bg-white p-4 flex-grow">
+                  <div className="mb-4">
+                    <button
+                      onClick={() => handlePlanSelect(plan.id)}
+                      disabled={isCreatingDVA && selectedPlanForPayment === plan.id}
+                      className={`w-full py-2.5 rounded-lg font-medium text-sm transition-all duration-300 cursor-pointer ${
+                        plan.highlight ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]' : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {isCreatingDVA && selectedPlanForPayment === plan.id ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span className="text-xs">Generating Account...</span>
+                        </div>
+                        ) : (
+                          plan.id === 'custom' ? 'Contact Sales' : 'Choose Plan'
+                        )}
+                      </button>
+                  </div>
+                  <ul className="space-y-2">
+                    {plan.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 flex-shrink-0 mr-2 mt-0.5 ${feature.included ? 'text-green-500' : 'text-red-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          {feature.included ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          )}
+                        </svg>
+                        <span className={`text-xs ${feature.included ? 'text-gray-700' : 'text-gray-400'}`}>{feature.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
 
-        {/* Mobile Single Plan View */}
-        <div className="md:hidden">
-          {plans
-            .filter(plan => plan.id === activeMobilePlan)
-            .map((plan) => (
-              <motion.div
-                key={plan.id}
-                className={`rounded-2xl overflow-hidden flex flex-col relative ${plan.highlight ? 'border-2 border-[#6c0f2a] z-10' : 'border border-gray-200'}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className={`p-4 text-center ${plan.highlight ? 'bg-[#6c0f2a] text-white' : 'bg-white'} relative`}>
-                  <h3 className={`text-lg font-bold ${plan.highlight ? 'text-white' : 'text-[#6c0f2a]'}`}>
-                    {plan.name}
-                  </h3>
-                  <p className={`text-xs mb-3 ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>
-                    {plan.description}
-                  </p>
-                  
-                  <div className="my-3">
-                    <span className="text-2xl font-bold">
-                      {plan.price}
-                    </span>
-                    <span className={`text-sm ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>
-                      /mo
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col flex-grow">
-                  <div className="bg-white p-4 flex-grow">
-                    {/* Payment Button */}
-                    <div className="mb-4">
-                      <button
-                        onClick={() => handlePlanSelect(plan.id)}
-                        disabled={isCreatingDVA && selectedPlanForPayment === plan.id}
-                        className={`w-full py-2.5 rounded-lg font-medium text-sm transition-all duration-300 cursor-pointer ${
-                          plan.highlight
-                            ? 'bg-[#6c0f2a] text-white hover:bg-[#5a0d23]'
-                            : 'bg-[#f8e5ea] text-[#6c0f2a] hover:bg-[#f0d8df]'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        {isCreatingDVA && selectedPlanForPayment === plan.id ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-xs">Generating Account...</span>
-                          </div>
-                        ) : (
-                          'Choose Plan'
-                        )}
-                      </button>
-                    </div>
-
-                    <ul className="space-y-2">
-                      {plan.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start">
-                          {feature.included ? (
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg" 
-                              className="h-4 w-4 flex-shrink-0 mr-2 mt-0.5 text-green-500" 
-                              fill="none" 
-                              viewBox="0 0 24 24" 
-                              stroke="currentColor"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg" 
-                              className="h-4 w-4 flex-shrink-0 mr-2 mt-0.5 text-red-400" 
-                              fill="none" 
-                              viewBox="0 0 24 24" 
-                              stroke="currentColor"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          )}
-                          <span className={`text-xs ${feature.included ? 'text-gray-700' : 'text-gray-400'}`}>
-                            {feature.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-        </div>
-
-        {/* Desktop Grid View */}
-        <div className="hidden md:grid md:grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto items-start">
+        {/* Desktop/Large Grid View */}
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-screen-2xl mx-auto items-start">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.id}
@@ -378,7 +350,7 @@ const PaymentModal = () => {
                           <span className="text-sm">Generating Account...</span>
                         </div>
                       ) : (
-                        'Choose Plan'
+                        plan.id === 'custom' ? 'Contact Sales' : 'Choose Plan'
                       )}
                     </button>
                   </div>
@@ -422,8 +394,7 @@ const PaymentModal = () => {
         {/* Footer */}
         <div className="mt-6 sm:mt-8 text-center">
           <div className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-            <p>All plans include 24/7 support and a 30-day money-back guarantee</p>
-            {/* <p className="mt-1">Cancel anytime • No setup fees</p> */}
+            <p>Need a tailored plan? Contact sales for custom pricing and features.</p>
           </div>
           <button
             onClick={handleRemindLater}
@@ -447,12 +418,12 @@ const PaymentModal = () => {
           >
             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
           </button>
-          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-[#6c0f2a] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-            <CreditCard className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+          <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#6c0f2a] to-[#d32f2f] flex items-center justify-center shadow-lg flex-shrink-0">
+            <CreditCard className="w-4 h-4 sm:w-6 sm:h-6 text-white drop-shadow" />
           </div>
           <div className="min-w-0">
             <h2 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Payment Details</h2>
-            <p className="text-xs sm:text-base text-gray-600">Transfer to complete your subscription</p>
+            <p className="text-xs sm:text-base text-gray-500">Transfer to complete your subscription</p>
           </div>
         </div>
         <button
@@ -467,7 +438,7 @@ const PaymentModal = () => {
       <div className="flex-1 overflow-y-auto p-3 sm:p-6">
         <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
           {/* Order Summary */}
-          <div className="bg-gradient-to-r from-[#6c0f2a]/10 to-[#d32f2f]/10 rounded-xl p-4 sm:p-6 border border-[#6c0f2a]/20">
+          <div className="rounded-xl p-4 sm:p-6 bg-white/60 backdrop-blur-sm border border-white/40 shadow-sm">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Order Summary</h3>
             <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <div className="flex justify-between items-center">
@@ -481,21 +452,21 @@ const PaymentModal = () => {
               <div className="border-t border-gray-200 pt-2 sm:pt-3 mt-2 sm:mt-3">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-900 text-xs sm:text-sm">Total:</span>
-                  <span className="text-lg sm:text-xl font-bold text-[#6c0f2a]">{paymentDetails?.amount}</span>
+                  <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#6c0f2a] to-[#d32f2f] bg-clip-text text-transparent">{paymentDetails?.amount}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Bank Details */}
-          <div className="bg-white border-2 border-[#6c0f2a]/20 rounded-xl p-4 sm:p-6">
+          <div className="bg-white/70 backdrop-blur-sm border border-white/40 rounded-xl p-4 sm:p-6 shadow-sm">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
               <Banknote className="w-4 h-4 sm:w-5 sm:h-5 text-[#6c0f2a]" />
               Bank Details
             </h3>
             
             <div className="space-y-3 sm:space-y-4">
-              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-white/60 hover:bg-white/80 transition-colors rounded-xl shadow-sm">
                 <div className="flex items-center gap-3">
                   <Building className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   <div>
@@ -505,13 +476,13 @@ const PaymentModal = () => {
                 </div>
                 <button
                   onClick={() => copyToClipboard(bankDetails.bankName, 'Bank name')}
-                  className="p-1.5 sm:p-2 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-white/60 ring-1 ring-gray-200 transition-colors cursor-pointer"
                 >
                   <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-white/60 hover:bg-white/80 transition-colors rounded-xl shadow-sm">
                 <div className="flex items-center gap-3">
                   <Hash className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   <div>
@@ -521,13 +492,13 @@ const PaymentModal = () => {
                 </div>
                 <button
                   onClick={() => copyToClipboard(bankDetails.accountNumber, 'Account number')}
-                  className="p-1.5 sm:p-2 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-white/60 ring-1 ring-gray-200 transition-colors cursor-pointer"
                 >
                   <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-white/60 hover:bg-white/80 transition-colors rounded-xl shadow-sm">
                 <div className="flex items-center gap-3">
                   <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   <div>
@@ -537,7 +508,7 @@ const PaymentModal = () => {
                 </div>
                 <button
                   onClick={() => copyToClipboard(bankDetails.accountName, 'Account name')}
-                  className="p-1.5 sm:p-2 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-white/60 ring-1 ring-gray-200 transition-colors cursor-pointer"
                 >
                   <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 </button>
@@ -548,8 +519,8 @@ const PaymentModal = () => {
 
         {/* Important Note */}
         <div className="max-w-4xl mx-auto mt-3 sm:mt-4">
-          <div className="p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-800">
+          <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-200 rounded-xl shadow-sm">
+            <p className="text-xs text-indigo-900">
               <strong>Important:</strong> You must transfer the exact amount shown for quick payment verification.
             </p>
           </div>
@@ -573,14 +544,14 @@ const PaymentModal = () => {
               setVerificationError('');
               setCurrentStep('plans');
             }}
-            className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs sm:text-sm cursor-pointer"
+            className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 border border-white/50 bg-white/40 backdrop-blur-sm text-gray-800 rounded-xl hover:bg-white/60 transition-colors font-medium text-xs sm:text-sm cursor-pointer"
           >
             Go Back
           </button>
           <button
             onClick={handlePaymentConfirm}
             disabled={isProcessing}
-            className="flex-1 bg-[#6c0f2a] text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg hover:bg-[#5a0d23] transition-colors font-medium text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="flex-1 bg-gradient-to-r from-[#6c0f2a] to-[#d32f2f] text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all font-medium text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isProcessing ? (
               <div className="flex items-center justify-center gap-2">
@@ -685,22 +656,21 @@ const PaymentModal = () => {
           
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                         w-[90vw] max-w-[400px] sm:max-w-2xl bg-white/80 backdrop-blur-xl 
-                         rounded-2xl shadow-2xl border border-white/20 z-50 overflow-hidden max-h-[85vh]
-                         ${currentStep === 'plans' ? 'lg:max-w-4xl' : 'lg:max-w-2xl'}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 p-2 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className={`mx-auto h-full ${currentStep === 'plans' ? 'max-w-screen-2xl' : 'max-w-3xl'}`}>
+              <div className="h-full bg-white/80 backdrop-blur-2xl rounded-[24px] shadow-2xl border border-white/30 ring-1 ring-black/5 overflow-hidden">
             <AnimatePresence mode="wait">
               {currentStep === 'plans' && (
                 <motion.div
                   key="plans"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                   className="h-full flex flex-col"
                 >
@@ -734,6 +704,8 @@ const PaymentModal = () => {
                 </motion.div>
               )}
             </AnimatePresence>
+              </div>
+            </div>
           </motion.div>
         </>
       )}
