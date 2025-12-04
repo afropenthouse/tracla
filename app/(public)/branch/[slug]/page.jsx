@@ -6,7 +6,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Upload, Camera, X, CheckCircle, AlertCircle, 
   Loader2, Receipt, Clock, DollarSign, Calendar, Image as ImageIcon,
-  Sparkles, Building2, ShoppingCart, CreditCard, Tag, MapPin,
+  Sparkles, ShoppingCart, CreditCard, Tag, MapPin,
   ArrowRight, Phone, Gift, Star, Zap, Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -461,7 +461,7 @@ const PurchaseReceiptUpload = () => {
     }
 
     if (!(!!receiptMerchantName && !!businessInfo.name && nameSimilarity >= 0.3)) {
-      const msg = "Receipt doesn't match the receipt for the store you are in";
+      const msg = "Receipt doesn't match the business name that you're in";
       setError(msg);
       try { if (typeof showWarning === 'function') showWarning(msg); } catch {}
       return;
@@ -791,15 +791,7 @@ const PurchaseReceiptUpload = () => {
                   <span className="text-sm font-medium text-gray-700">Amount Spent</span>
                   <span className="text-lg font-bold text-green-600">₦{extractedData.amount?.toLocaleString() || '0'}</span>
                 </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                    <Building2 size={16} />
-                    Business
-                  </span>
-                  <span className="text-sm text-gray-800">
-                    {shouldShowBusinessMatch ? businessInfo.name : '-'}
-                  </span>
-                </div>
+                
                 {extractedData.dateTime && (
                   <>
                     <div className="flex items-center justify-between mb-2">
