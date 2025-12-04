@@ -132,6 +132,7 @@ const PurchaseReceiptUpload = () => {
   const nameSimilarity = computeNameSimilarity(receiptMerchantName, businessInfo.name);
   const shouldShowBusinessMatch = !!receiptMerchantName && !!businessInfo.name && nameSimilarity >= 0.3;
   const isFullNameMatch = normalizeText(receiptMerchantName) === normalizeText(businessInfo.name);
+  const canSubmit = !!extractedData?.dateTime?.date && !!extractedData?.dateTime?.time && shouldShowBusinessMatch && !!phoneNumber.trim();
 
   const parseReceiptWithGemini = async (imageBase64) => {
     try {
@@ -451,6 +452,16 @@ const PurchaseReceiptUpload = () => {
 
     if (!extractedData?.dateTime?.date) {
       setError('No purchase date detected from receipt');
+      return;
+    }
+
+    if (!extractedData?.dateTime?.time) {
+      setError('No purchase time detected from receipt');
+      return;
+    }
+
+    if (!(!!receiptMerchantName && !!businessInfo.name && nameSimilarity >= 0.3)) {
+      setError('Could not verify business name from receipt');
       return;
     }
 
@@ -778,17 +789,15 @@ const PurchaseReceiptUpload = () => {
                   <span className="text-sm font-medium text-gray-700">Amount Spent</span>
                   <span className="text-lg font-bold text-green-600">₦{extractedData.amount?.toLocaleString() || '0'}</span>
                 </div>
-                {shouldShowBusinessMatch && (
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Building2 size={16} />
-                      Business
-                    </span>
-                    <span className="text-sm text-gray-800">
-                      {businessInfo.name}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Building2 size={16} />
+                    Business
+                  </span>
+                  <span className="text-sm text-gray-800">
+                    {shouldShowBusinessMatch ? businessInfo.name : '-'}
+                  </span>
+                </div>
                 {extractedData.dateTime && (
                   <>
                     <div className="flex items-center justify-between mb-2">
@@ -828,7 +837,7 @@ const PurchaseReceiptUpload = () => {
 
                 <button
                   onClick={handleSubmit}
-                  disabled={recordPurchaseMutation.isPending}
+                  disabled={recordPurchaseMutation.isPending || !canSubmit}
                   className="w-full bg-gradient-to-r from-[#d32f2f] to-[#6c0f2a] text-white py-4 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all flex items-center justify-center gap-2"
                 >
                   {recordPurchaseMutation.isPending ? (
