@@ -132,7 +132,7 @@ const PurchaseReceiptUpload = () => {
   const nameSimilarity = computeNameSimilarity(receiptMerchantName, businessInfo.name);
   const shouldShowBusinessMatch = !!receiptMerchantName && !!businessInfo.name && nameSimilarity >= 0.3;
   const isFullNameMatch = normalizeText(receiptMerchantName) === normalizeText(businessInfo.name);
-  const canSubmit = !!extractedData?.dateTime?.date && !!extractedData?.dateTime?.time && shouldShowBusinessMatch && !!phoneNumber.trim();
+  const canSubmit = !!extractedData?.dateTime?.date && !!extractedData?.dateTime?.time && !!phoneNumber.trim();
 
   const parseReceiptWithGemini = async (imageBase64) => {
     try {
@@ -461,7 +461,9 @@ const PurchaseReceiptUpload = () => {
     }
 
     if (!(!!receiptMerchantName && !!businessInfo.name && nameSimilarity >= 0.3)) {
-      setError('Could not verify business name from receipt');
+      const msg = "Receipt doesn't match the receipt for the store you are in";
+      setError(msg);
+      try { if (typeof showWarning === 'function') showWarning(msg); } catch {}
       return;
     }
 
