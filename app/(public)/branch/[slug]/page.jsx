@@ -461,7 +461,7 @@ const PurchaseReceiptUpload = () => {
     }
 
     if (!(!!receiptMerchantName && !!businessInfo.name && nameSimilarity >= 0.3)) {
-      const msg = "Receipt doesn't match the business name that you're in";
+      const msg = "The receipt is not valid for this business";
       setError(msg);
       try { if (typeof showWarning === 'function') showWarning(msg); } catch {}
       return;

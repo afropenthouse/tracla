@@ -66,7 +66,7 @@ const PaymentModal = () => {
         {text: '1 branch only', included: true},
         {text: 'Segment customers better using dashboard filters', included: true},
       ],
-      highlight: true
+      highlight: false
     },
     {
       id: 'enterprise',
@@ -82,7 +82,7 @@ const PaymentModal = () => {
         {text: 'Priority support', included: true},
         {text: 'Dedicated account manager', included: true},
       ],
-      highlight: false
+      highlight: true
     },
     {
       id: 'custom',
@@ -155,7 +155,7 @@ const PaymentModal = () => {
       const dvaData = dvaResponse.data.dva;
       setBankDetails({
         bankName: dvaData.bankName,
-        accountName: dvaData.accountName,
+        accountName: `Tracla ${business?.name || 'Business'}`,
         accountNumber: dvaData.accountNumber,
         sortCode: dvaData.bankId?.toString() || ""
       });

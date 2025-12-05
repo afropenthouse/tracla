@@ -19,7 +19,7 @@ const Pricing = () => {
         {text: '3 branches only', included: true},
         {text: 'Segment customers better using dashboard filters', included: true},
       ],
-      highlight: true
+      highlight: false
     },
     {
       id: 'enterprise',
@@ -36,7 +36,7 @@ const Pricing = () => {
         {text: 'Priority support', included: true},
         {text: 'Dedicated account manager', included: true},
       ],
-      highlight: false
+      highlight: true
     },
     {
       id: 'custom',
