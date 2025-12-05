@@ -36,6 +36,23 @@ const PaymentModal = () => {
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState(null);
   const [verificationError, setVerificationError] = useState('');
 
+  const MIN_MONTHS = 6;
+
+  const parseNaira = (str) => {
+    if (!str) return 0;
+    const cleaned = String(str).replace(/[^0-9.]/g, '');
+    return Number(cleaned) || 0;
+  };
+
+  const formatNaira = (amount) => {
+    try {
+      const formatter = new Intl.NumberFormat('en-NG');
+      return `₦${formatter.format(Math.round(Number(amount) || 0))}`;
+    } catch {
+      return `₦${Math.round(Number(amount) || 0)}`;
+    }
+  };
+
   const plans = [
     {
       id: 'growth',
@@ -113,11 +130,13 @@ const PaymentModal = () => {
       } catch (e) {}
       return;
     }
+    const monthlyAmount = parseNaira(plan.price);
+    const totalAmountForPeriod = monthlyAmount * MIN_MONTHS;
     const paymentData = {
       planId,
       planName: plan.name,
-      amount: plan.price,
-      periodText: 'for 1 month'
+      amount: formatNaira(totalAmountForPeriod),
+      periodText: `for ${MIN_MONTHS} months`
     };
     
     setPaymentDetails(paymentData);
@@ -128,8 +147,8 @@ const PaymentModal = () => {
       // Call DVA API to get dedicated virtual account
       const dvaResponse = await getDVA({
         plan: planId,
-        billingPeriod: 'monthly',
-        amount: plan.price
+        billingPeriod: 'six_months',
+        amount: totalAmountForPeriod
       });
       
       // Update bank details with real DVA data
@@ -183,8 +202,8 @@ const PaymentModal = () => {
         plan: planData.currentTier,
         planName: paymentDetails.planName,
         amount: paymentDetails.amount,
-        period: 'monthly',
-        expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
+        period: 'six_months',
+        expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000 * MIN_MONTHS),
         isActive: true
       });
       
@@ -261,6 +280,7 @@ const PaymentModal = () => {
                   <div className="my-3">
                     <span className="text-2xl font-bold">{plan.price}</span>
                     <span className={`text-sm ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>/mo</span>
+                    <div className={`text-[10px] mt-1 ${plan.highlight ? 'text-white/80' : 'text-gray-500'}`}>Billed {MIN_MONTHS} months upfront</div>
                   </div>
                 </div>
                 <div className="bg-white p-4 flex-grow">
@@ -328,6 +348,7 @@ const PaymentModal = () => {
                   <span className={`text-base ${plan.highlight ? 'text-white' : 'text-gray-600'}`}>
                     /mo
                   </span>
+                  <div className={`text-xs mt-1 ${plan.highlight ? 'text-white/80' : 'text-gray-500'}`}>Billed {MIN_MONTHS} months upfront</div>
                 </div>
               </div>
 
