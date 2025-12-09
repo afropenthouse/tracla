@@ -1,28 +1,30 @@
 import { NextResponse } from 'next/server';
 import vision from '@google-cloud/vision';
 
+// Initialize Google Vision client
 let client;
-const getClient = () => {
-  if (client) return client;
-  try {
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      client = new vision.ImageAnnotatorClient({
-        keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-      });
-    } else if (process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY) {
-      const credentials = JSON.parse(process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY);
-      client = new vision.ImageAnnotatorClient({
-        credentials: credentials,
-        projectId: credentials.project_id,
-      });
-    } else {
-      return null;
-    }
-    return client;
-  } catch (error) {
-    return null;
+
+try {
+  // Try using keyFilename first
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    client = new vision.ImageAnnotatorClient({
+      keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    });
   }
-};
+  // Fallback: Use service account key from environment variable
+  else if (process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY) {
+    const credentials = JSON.parse(process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY);
+    client = new vision.ImageAnnotatorClient({
+      credentials: credentials,
+      projectId: credentials.project_id,
+    });
+  }
+  else {
+    throw new Error('No Google Cloud credentials configured');
+  }
+} catch (error) {
+  console.error('❌ Google Vision client initialization failed:', error.message);
+}
 
 // Enhanced receipt parsing functions
 const parseAmount = (text) => {
@@ -259,8 +261,9 @@ const parsePaymentMethod = (text) => {
 
 export async function POST(request) {
   try {
-    const c = getClient();
-    if (!c) {
+    // Check if client is initialized
+    if (!client) {
+      console.error('❌ Google Vision client not initialized');
       return NextResponse.json(
         { 
           success: false, 
@@ -284,7 +287,7 @@ export async function POST(request) {
     console.log('📁 Using credentials from:', process.env.GOOGLE_APPLICATION_CREDENTIALS ? 'file' : 'environment variable');
 
     // Call Google Vision API
-    const [result] = await c.textDetection({
+    const [result] = await client.textDetection({
       image: {
         content: image,
       },
