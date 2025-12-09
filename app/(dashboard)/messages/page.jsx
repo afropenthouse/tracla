@@ -160,7 +160,30 @@ const MessagesPage = () => {
       }
       
       if (messageType === 'all') {
-        result = await sendBulkMessageToAll(businessId, payloadMessage);
+        const resAll = await sendBulkMessageToAll(businessId, payloadMessage);
+        if (resAll.success) {
+          if (externalRecipients.length > 0) {
+            const resExt = await sendMessageToExternalRecipients(businessId, externalRecipients, payloadMessage);
+            if (resExt.success) {
+              const payloadAll = resAll.data?.data ?? resAll.data;
+              const payloadExt = resExt.data?.data ?? resExt.data;
+              const combined = {
+                totalCustomers: (payloadAll?.totalCustomers || 0) + (payloadExt?.totalRecipients || 0),
+                totalSent: (payloadAll?.totalSent || 0) + (payloadExt?.totalSent || 0),
+                totalFailed: (payloadAll?.totalFailed || 0) + (payloadExt?.totalFailed || 0),
+                branchFilter: payloadAll?.branchFilter,
+                results: Array.isArray(payloadExt?.results) ? payloadExt.results : []
+              };
+              result = { success: true, data: { data: combined } };
+            } else {
+              result = resAll;
+            }
+          } else {
+            result = resAll;
+          }
+        } else {
+          result = resAll;
+        }
       } else if (messageType === 'external') {
         if (externalRecipients.length === 0) {
           alert('Please add at least one external recipient');
@@ -564,7 +587,7 @@ const MessagesPage = () => {
               </div>
 
               {/* External Numbers input and list */}
-              {messageType === 'external' && (
+              {(messageType === 'external' || messageType === 'all') && (
                 <div className="mt-2">
                   <div className="flex items-center gap-2">
                     <input
