@@ -37,6 +37,53 @@ import {
   Edit3,
 } from "lucide-react";
 
+const CustomerCard = ({ customer, title, description, icon: Icon }) => (
+  <div className="group bg-white/90 backdrop-blur-xl border border-white/40 rounded-2xl p-5 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 relative overflow-hidden">
+    <div className="absolute inset-0 bg-[#6d0e2b]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+    <div className="relative z-10">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-3 bg-[#6d0e2b] rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <Icon size={18} className="text-white" />
+        </div>
+        <div>
+          <h3 className="font-bold text-gray-900 text-sm">{title}</h3>
+          <p className="text-xs text-gray-600">{description}</p>
+        </div>
+      </div>
+      {customer ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/50">
+            <div className="p-2 bg-[#6d0e2b]/10 rounded-lg">
+              <Phone size={14} className="text-[#6d0e2b]" />
+            </div>
+            <div>
+              <span className="font-semibold text-gray-900 block text-sm">{customer.phone}</span>
+              <span className="text-xs text-gray-600">Phone Number</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/50">
+              <span className="text-xs text-gray-600 block mb-1">Total Spent</span>
+              <span className="text-lg font-bold text-[#6d0e2b]">
+                ₦{customer.spend?.toLocaleString() || customer.totalSpend?.toLocaleString() || 0}
+              </span>
+            </div>
+            <div className="text-center p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/50">
+              <span className="text-xs text-gray-600 block mb-1">Visits</span>
+              <span className="text-lg font-bold text-gray-900">{customer.visits || 0}</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-6">
+          <Icon size={32} className="text-gray-400 mx-auto mb-3" />
+          <p className="text-sm text-gray-600">No customer data available</p>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 // Enhanced TimePeriodFilter with solid color buttons
 const TimePeriodFilter = ({ selectedPeriod, onPeriodChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -432,56 +479,7 @@ const CustomerCards = ({ topSpender, frequentCustomer, allTimeCustomer, isLoadin
     );
   }
 
-  const CustomerCard = ({ customer, title, description, icon: Icon }) => (
-    <div className="group bg-white/90 backdrop-blur-xl border border-white/40 rounded-2xl p-5 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 relative overflow-hidden">
-      {/* Background color */}
-      <div className="absolute inset-0 bg-[#6d0e2b]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 bg-[#6d0e2b] rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-            <Icon size={18} className="text-white" />
-          </div>
-          <div>
-            <h3 className="font-bold text-gray-900 text-sm">{title}</h3>
-            <p className="text-xs text-gray-600">{description}</p>
-          </div>
-        </div>
-        
-        {customer ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/50">
-              <div className="p-2 bg-[#6d0e2b]/10 rounded-lg">
-                <Phone size={14} className="text-[#6d0e2b]" />
-              </div>
-              <div>
-                <span className="font-semibold text-gray-900 block text-sm">{customer.phone}</span>
-                <span className="text-xs text-gray-600">Phone Number</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/50">
-                <span className="text-xs text-gray-600 block mb-1">Total Spent</span>
-                <span className="text-lg font-bold text-[#6d0e2b]">
-                  ₦{customer.spend?.toLocaleString() || customer.totalSpend?.toLocaleString() || 0}
-                </span>
-              </div>
-              <div className="text-center p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/50">
-                <span className="text-xs text-gray-600 block mb-1">Visits</span>
-                <span className="text-lg font-bold text-gray-900">{customer.visits || 0}</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <Icon size={32} className="text-gray-400 mx-auto mb-3" />
-            <p className="text-sm text-gray-600">No customer data available</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
