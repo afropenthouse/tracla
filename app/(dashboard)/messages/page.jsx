@@ -17,6 +17,8 @@ const MessagesPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [externalRecipients, setExternalRecipients] = useState([]);
   const [externalPhoneInput, setExternalPhoneInput] = useState('');
+  const [externalInputMode, setExternalInputMode] = useState('single');
+  const [bulkNumbersText, setBulkNumbersText] = useState('');
   // Removed Message History state
   // const [messageHistory, setMessageHistory] = useState([]);
   // const [historyFilters, setHistoryFilters] = useState({
@@ -589,31 +591,80 @@ const MessagesPage = () => {
               {/* External Numbers input and list */}
               {(messageType === 'external' || messageType === 'all') && (
                 <div className="mt-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="tel"
-                      value={externalPhoneInput}
-                      onChange={(e) => setExternalPhoneInput(e.target.value)}
-                      placeholder="Enter Nigerian number e.g. 09012345678"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
+                  <div className="mb-3 flex items-center gap-2">
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
-                      onClick={() => {
-                        const raw = (externalPhoneInput || '').trim();
-                        if (!raw) return;
-                        const digits = raw.replace(/\D/g, '');
-                        if (!/^0\d{10}$/.test(digits) && !/^0\d{9}$/.test(digits)) {
-                          alert('Please enter a valid Nigerian phone number starting with 0 (e.g., 09012345678)');
-                          return;
-                        }
-                        setExternalRecipients((prev) => (prev.includes(digits) ? prev : [...prev, digits]));
-                        setExternalPhoneInput('');
-                      }}
+                      onClick={() => setExternalInputMode('single')}
+                      className={`px-3 py-1 rounded-lg border text-sm ${externalInputMode === 'single' ? 'bg-gray-100 border-gray-300' : 'border-gray-200'}`}
                     >
-                      <PlusCircle className="w-4 h-4" /> Add recipient
+                      Single Number
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setExternalInputMode('bulk')}
+                      className={`px-3 py-1 rounded-lg border text-sm ${externalInputMode === 'bulk' ? 'bg-gray-100 border-gray-300' : 'border-gray-200'}`}
+                    >
+                      Bulk Numbers
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {externalInputMode === 'single' ? (
+                      <>
+                        <input
+                          type="tel"
+                          value={externalPhoneInput}
+                          onChange={(e) => setExternalPhoneInput(e.target.value)}
+                          placeholder="Enter Nigerian number e.g. 09012345678"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
+                          onClick={() => {
+                            const raw = (externalPhoneInput || '').trim();
+                            if (!raw) return;
+                            const digits = raw.replace(/\D/g, '');
+                            if (!/^0\d{10}$/.test(digits) && !/^0\d{9}$/.test(digits)) {
+                              alert('Please enter a valid Nigerian phone number starting with 0 (e.g., 09012345678)');
+                              return;
+                            }
+                            setExternalRecipients((prev) => (prev.includes(digits) ? prev : [...prev, digits]));
+                            setExternalPhoneInput('');
+                          }}
+                        >
+                          <PlusCircle className="w-4 h-4" /> Add recipient
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <textarea
+                          value={bulkNumbersText}
+                          onChange={(e) => setBulkNumbersText(e.target.value)}
+                          placeholder="Paste numbers (one per line or comma-separated). Supports 0XXXXXXXXXX, +234XXXXXXXXXX, 234XXXXXXXXXX"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm h-24"
+                        />
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-[#6d0e2b] text-white text-sm"
+                            onClick={() => {
+                              const raw = (bulkNumbersText || '').trim();
+                              if (!raw) return;
+                              const tokens = raw.split(/[\n,\s]+/).filter(Boolean);
+                              const cleaned = tokens.map((t) => t.replace(/[^+\d]/g, '').replace(/[^\d]/g, ''));
+                              const filtered = cleaned.filter((d) => /^\d{10,15}$/.test(d));
+                              const unique = Array.from(new Set(filtered));
+                              setExternalRecipients((prev) => {
+                                const merged = Array.from(new Set([...(prev || []), ...unique]));
+                                return merged;
+                              });
+                            }}
+                          >
+                            <PlusCircle className="w-4 h-4" /> Add numbers
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                   {externalRecipients.length > 0 && (
                     <div className="mt-3">
